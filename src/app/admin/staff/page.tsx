@@ -22,7 +22,7 @@ export default function StaffManagementPage() {
       const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
       const token = tokenRow ? tokenRow.split('=')[1] : null;
       
-      const res = await fetch('http://localhost:3001/users/admin/staff', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/admin/staff`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -49,7 +49,7 @@ export default function StaffManagementPage() {
       const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
       const token = tokenRow ? tokenRow.split('=')[1] : null;
       
-      const res = await fetch('http://localhost:3001/users/admin/staff', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/admin/staff`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -78,7 +78,7 @@ export default function StaffManagementPage() {
       const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
       const token = tokenRow ? tokenRow.split('=')[1] : null;
       
-      const res = await fetch(`http://localhost:3001/users/admin/staff/${staffId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/admin/staff/${staffId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

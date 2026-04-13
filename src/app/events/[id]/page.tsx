@@ -15,7 +15,7 @@ export default function EventDetail({ params }: { params: { id: string } }) {
   const [event, setEvent] = useState<any>(null);
 
   useEffect(() => {
-    fetch(`http://localhost:3001/events/${params.id}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/events/${params.id}`)
       .then(res => res.json())
       .then(data => setEvent(data))
       .catch(console.error);
@@ -75,7 +75,7 @@ export default function EventDetail({ params }: { params: { id: string } }) {
         throw new Error('Primero debes iniciar sesión para comprar boletas.');
       }
 
-      const res = await fetch('http://localhost:3001/orders/checkout-wompi', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/orders/checkout-wompi`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

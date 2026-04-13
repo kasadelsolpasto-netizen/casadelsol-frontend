@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     
     // Conectamos directamente con el backend al endpoint de login general.
     // El backend tiene su propio interceptor .env que devuelve OWNER si coinciden las llaves.
-    const backRes = await fetch('http://localhost:3001/auth/login', {
+    const backRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })

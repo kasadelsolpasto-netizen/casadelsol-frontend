@@ -60,7 +60,7 @@ export default function NewEventPage() {
       const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
       const authToken = tokenRow ? tokenRow.split('=')[1] : null;
 
-      const res = await fetch('http://localhost:3001/events', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/events`, {
         method: 'POST',
         headers: { 
            'Content-Type': 'application/json',

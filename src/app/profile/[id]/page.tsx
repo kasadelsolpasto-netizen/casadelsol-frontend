@@ -21,7 +21,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
     setPassMsg('Actualizando...');
     try {
       const token = document.cookie.split('kasa_auth_token=')[1]?.split(';')[0];
-      const res = await fetch(`http://localhost:3001/users/${params.id}/password`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/${params.id}/password`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ newPassword })
@@ -48,7 +48,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
       }
 
       try {
-        const res = await fetch(`http://localhost:3001/users/${params.id}/profile`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/${params.id}/profile`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {

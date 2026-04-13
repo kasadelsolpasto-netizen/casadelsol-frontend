@@ -5,7 +5,7 @@ import { Navbar } from '@/components/Navbar';
 export default async function Home() {
   let events = [];
   try {
-    const res = await fetch('http://localhost:3001/events', { cache: 'no-store' });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/events`, { cache: 'no-store' });
     if (res.ok) events = await res.json();
   } catch (error) {
     console.error('Error fetching events:', error);

@@ -54,7 +54,7 @@ export default function ScannerPage() {
 
       if (!authToken) throw new Error("No tienes sesión");
 
-      const res = await fetch('http://localhost:3001/qrs/scan', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/qrs/scan`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

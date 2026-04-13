@@ -33,7 +33,7 @@ export default function SettingsPage() {
         const token = document.cookie.split('kasa_auth_token=')[1]?.split(';')[0];
         if (!token) return router.push('/login');
 
-        const res = await fetch('http://localhost:3001/admin/settings/wompi', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/settings/wompi`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -63,7 +63,7 @@ export default function SettingsPage() {
 
     try {
       const token = document.cookie.split('kasa_auth_token=')[1]?.split(';')[0];
-      const res = await fetch('http://localhost:3001/admin/settings/wompi', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/settings/wompi`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -102,7 +102,7 @@ export default function SettingsPage() {
       if (adminEmail) body.email = adminEmail;
       if (adminPassword) body.password = adminPassword;
 
-      const res = await fetch('http://localhost:3001/users/admin/credentials', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/admin/credentials`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
