@@ -3,10 +3,15 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/admin')) {
+    // Permitir acceso a la ruta de login de admin sin token
+    if (request.nextUrl.pathname === '/admin/login') {
+      return NextResponse.next();
+    }
+
     const token = request.cookies.get('kasa_auth_token')?.value;
     
     if (!token) {
-      return NextResponse.redirect(new URL('/login', request.url));
+      return NextResponse.redirect(new URL('/admin/login', request.url));
     }
 
     try {
@@ -23,7 +28,7 @@ export function middleware(request: NextRequest) {
       const payload = JSON.parse(decodeURIComponent(escape(payloadString)));
       
       // Solo OWNER puede entrar a las rutas /admin en general
-      if (request.nextUrl.pathname.startsWith('/admin') && payload.role !== 'OWNER') {
+      if (payload.role !== 'OWNER') {
          return NextResponse.redirect(new URL('/', request.url));
       }
 
@@ -35,7 +40,7 @@ export function middleware(request: NextRequest) {
       }
       
     } catch (error) {
-      return NextResponse.redirect(new URL('/login', request.url));
+      return NextResponse.redirect(new URL('/admin/login', request.url));
     }
   }
 
