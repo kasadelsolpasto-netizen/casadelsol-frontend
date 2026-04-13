@@ -1,101 +1,77 @@
-import Image from "next/image";
+import Link from 'next/link';
+import { ArrowLeft, ArrowRight, Calendar, MapPin, Tag } from 'lucide-react';
+import { Navbar } from '@/components/Navbar';
 
-export default function Home() {
+export default async function Home() {
+  let events = [];
+  try {
+    const res = await fetch('http://localhost:3001/events', { cache: 'no-store' });
+    if (res.ok) events = await res.json();
+  } catch (error) {
+    console.error('Error fetching events:', error);
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen">
+      <Navbar />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Hero / Feed Principal */}
+      <main className="max-w-7xl mx-auto px-6 py-16">
+        <div className="mb-16">
+          <h1 className="text-4xl md:text-6xl font-black uppercase tracking-widest text-white mb-4">
+            Próximos <span className="text-neon-green neon-text-primary">Eventos</span>
+          </h1>
+          <p className="text-lg text-zinc-400 max-w-2xl text-balance">
+            Navega por la cartelera de música electrónica oficial. Asegura tu entrada y vive la rave antes del Sold Out.
+          </p>
+        </div>
+
+        {/* Listado / Grid de eventos */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {events.map((event: any) => {
+            const minPrice = event.ticket_types && event.ticket_types.length > 0
+              ? Math.min(...event.ticket_types.map((t: any) => t.price))
+              : 0;
+            return (
+            <Link href={`/events/${event.id}`} key={event.id} className="group glass-panel rounded-2xl overflow-hidden hover:neon-border-primary transition-all duration-300 transform hover:-translate-y-2 pb-1 relative">
+              <div className="h-56 w-full bg-zinc-900 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10"></div>
+                <img 
+                  src={event.flyer_url} 
+                  alt={event.title}
+                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 opacity-80 group-hover:opacity-100" 
+                />
+              </div>
+              
+              <div className="p-6">
+                <h2 className="text-2xl font-bold uppercase tracking-wider text-white group-hover:text-neon-green transition-colors mb-4 line-clamp-1">
+                  {event.title}
+                </h2>
+                
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center text-sm text-zinc-400 gap-3">
+                    <Calendar className="w-4 h-4 text-neon-purple" />
+                    <span>{new Date(event.date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                  </div>
+                  <div className="flex items-center text-sm text-zinc-400 gap-3">
+                    <MapPin className="w-4 h-4 text-neon-purple" />
+                    <span className="line-clamp-1">{event.venue}</span>
+                  </div>
+                  <div className="flex items-center text-sm text-zinc-400 gap-3">
+                    <Tag className="w-4 h-4 text-neon-green" />
+                    <span className="font-semibold text-zinc-200">Desde {Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(minPrice)}</span>
+                  </div>
+                </div>
+
+                <div className="w-full text-center py-3 border border-zinc-700 rounded-lg text-xs uppercase tracking-widest font-bold text-zinc-300 group-hover:bg-neon-green group-hover:text-black group-hover:border-neon-green transition-all flex justify-center items-center gap-2">
+                  Ver Detalles <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </Link>
+            );
+          })}
         </div>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
