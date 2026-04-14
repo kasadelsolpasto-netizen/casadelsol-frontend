@@ -168,19 +168,16 @@ export default function CheckoutWizard({
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
-      {/* Sheet: slides from bottom on mobile, centered on desktop */}
+      {/* Sheet: centered on all screens now for better mobile keyboard UX */}
       <div
-        className="w-full sm:max-w-md bg-[#090909] border border-zinc-800/80 sm:rounded-2xl rounded-t-2xl relative overflow-hidden shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300 flex flex-col max-h-[92dvh]"
+        className="w-full max-w-md bg-[#090909] border border-zinc-800/80 rounded-2xl relative overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col max-h-[85dvh]"
         onClick={e => e.stopPropagation()}
       >
         {/* Accent line */}
         <div className={`absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r transition-all duration-500 ${accentGradient}`} />
-
-        {/* Drag indicator (mobile) */}
-        <div className="sm:hidden w-10 h-1 bg-zinc-700 rounded-full mx-auto mt-3 mb-1 shrink-0" />
 
         {/* Close btn */}
         <button onClick={onClose} className="absolute top-4 right-4 text-zinc-600 hover:text-white transition-colors z-10 p-1">
