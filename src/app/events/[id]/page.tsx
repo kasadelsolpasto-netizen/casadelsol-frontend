@@ -12,6 +12,7 @@ export default function EventDetail({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [attendees, setAttendees] = useState<any[]>([{ attendee_name: '', attendee_dni: '', attendee_email: '' }]);
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
 
