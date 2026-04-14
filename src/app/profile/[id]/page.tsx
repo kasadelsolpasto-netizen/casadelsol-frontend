@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Navbar } from '@/components/Navbar';
-import { Ticket, QrCode, User, Star, MapPin, Calendar, CheckCircle, X, Lock } from 'lucide-react';
+import { Ticket, QrCode, User, Star, MapPin, Calendar, CheckCircle, X, Lock, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -116,8 +115,6 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen pb-20">
-      <Navbar />
-
       <main className="max-w-6xl mx-auto px-6 py-12">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-zinc-800 pb-8 relative">
           <div className="flex items-center gap-6">
@@ -167,18 +164,27 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                              </div>
                            ) : (
                              <div className="flex flex-wrap items-center gap-4 pt-4 sm:pt-0 border-t border-zinc-800 sm:border-0 w-full justify-start sm:justify-end">
-                               {order.qr_codes && order.qr_codes.map((qr: any) => (
-                                 <div key={qr.id} className="flex flex-col items-center gap-2 group/qr">
-                                    <div onClick={() => {if(!qr.used_at) setSelectedQr(qr)}} className={`w-24 h-24 bg-white p-2 border border-zinc-700 rounded-lg flex items-center justify-center transition-all shadow-lg ${qr.used_at ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:bg-neon-green hover:border-neon-green hover:scale-110'}`}>
-                                       <QRCodeSVG value={qr.token_hash || 'qr_legacy'} size={80} level={"H"} includeMargin={false} />
-                                    </div>
-                                    <span className="text-[9px] text-zinc-400 uppercase font-black tracking-widest mt-1 text-center truncate w-24">
-                                      {qr.attendee_name || 'Titular'}
-                                      <br/>
-                                      <span className={qr.used_at ? "text-red-500" : "text-neon-green"}>{qr.used_at ? 'USADO' : 'VÁLIDO'}</span>
-                                    </span>
-                                 </div>
-                               ))}
+                                {order.qr_codes && order.qr_codes.map((qr: any) => (
+                                  <div key={qr.id} className="flex flex-col items-center gap-1.5 group/qr">
+                                     <div onClick={() => {if(!qr.used_at) setSelectedQr(qr)}} className={`w-24 h-24 bg-white p-2 border border-zinc-700 rounded-lg flex items-center justify-center transition-all shadow-lg ${qr.used_at ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:bg-neon-green hover:border-neon-green hover:scale-110'}`}>
+                                        <QRCodeSVG value={qr.token_hash || 'qr_legacy'} size={80} level={"H"} includeMargin={false} />
+                                     </div>
+                                     <span className="text-[9px] text-zinc-400 uppercase font-black tracking-widest text-center truncate w-24">
+                                       {qr.attendee_name || 'Titular'}<br/>
+                                       <span className={qr.used_at ? "text-red-500" : "text-neon-green"}>{qr.used_at ? 'USADO' : 'VÁLIDO'}</span>
+                                     </span>
+                                     {/* Share button */}
+                                     {!qr.used_at && (
+                                       <Link
+                                         href={`/ticket/${qr.token_hash}`}
+                                         target="_blank"
+                                         className="flex items-center gap-1 text-[9px] text-zinc-500 hover:text-neon-green uppercase tracking-widest font-bold transition-colors w-24 justify-center"
+                                       >
+                                         <Share2 className="w-2.5 h-2.5" /> Compartir
+                                       </Link>
+                                     )}
+                                  </div>
+                                ))}
                              </div>
                            )}
                          </div>
