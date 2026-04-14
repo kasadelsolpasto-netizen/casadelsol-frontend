@@ -1,10 +1,9 @@
 "use client";
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-// Esta página recibe el token de Google OAuth desde el backend
-// y lo guarda en cookie/localStorage igual que el login normal
-export default function GoogleCallbackPage() {
+// Componente interno que maneja la lógica
+function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -33,12 +32,22 @@ export default function GoogleCallbackPage() {
     }
   }, [searchParams, router]);
 
+  return null;
+}
+
+// Embalaje principal con Suspense obligatorio de Next.js
+export default function GoogleCallbackPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4">
       <div className="w-10 h-10 rounded-full border-2 border-neon-green border-t-transparent animate-spin" />
       <p className="text-zinc-500 uppercase tracking-widest text-xs font-bold">
         Conectando con Google…
       </p>
+      
+      {/* Suspense es requerido por Next.js al usar useSearchParams */}
+      <Suspense fallback={null}>
+        <CallbackContent />
+      </Suspense>
     </div>
   );
 }
