@@ -168,12 +168,12 @@ export default function CheckoutWizard({
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md overflow-y-auto flex justify-center items-start pt-6 pb-6 px-4 sm:items-center sm:pt-4 sm:pb-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
-      {/* Sheet: centered on all screens now for better mobile keyboard UX */}
+      {/* Sheet: Scrollable outer wrapper prevents keyboard from cutting inputs */}
       <div
-        className="w-full max-w-md bg-[#090909] border border-zinc-800/80 rounded-2xl relative overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col max-h-[85dvh]"
+        className="w-full max-w-md bg-[#090909] border border-zinc-800/80 rounded-2xl relative overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col mt-auto mb-auto max-h-[calc(100dvh-3rem)] sm:max-h-[85dvh]"
         onClick={e => e.stopPropagation()}
       >
         {/* Accent line */}
