@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { QrCode, CalendarPlus, Users, Activity, LogOut, Ticket } from 'lucide-react';
+import { QrCode, CalendarPlus, Users, Activity, Ticket } from 'lucide-react';
 import { AdminGuard } from '@/components/AdminGuard';
+import AdminLogoutButton from '@/components/AdminLogoutButton';
 
 export default function AdminDashboard() {
   return (
@@ -36,9 +37,7 @@ export default function AdminDashboard() {
           </nav>
 
           <div className="p-4 border-t border-zinc-800">
-            <button className="flex items-center gap-3 px-4 py-3 w-full text-zinc-500 hover:text-red-500 rounded-lg tracking-wider text-sm transition-all">
-              <LogOut className="w-4 h-4" /> Cerrar Sesión
-            </button>
+            <AdminLogoutButton />
           </div>
         </aside>
 

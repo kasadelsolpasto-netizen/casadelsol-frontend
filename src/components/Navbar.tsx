@@ -52,11 +52,14 @@ export function Navbar() {
               </button>
               
               <div className="absolute right-0 top-full w-56 glass-panel rounded-xl border border-zinc-800 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all flex flex-col py-2 z-50 shadow-2xl translate-y-2 group-hover/menu:translate-y-0">
-                <Link href={`/profile/${user.id}`} className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-zinc-300 hover:text-neon-green hover:bg-zinc-900/50 transition-colors">
-                  Mi Perfil & Bóveda
-                </Link>
+                {/* Perfil solo para usuarios normales */}
+                {user.role === 'USER' && (
+                  <Link href={`/profile/${user.id}`} className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-zinc-300 hover:text-neon-green hover:bg-zinc-900/50 transition-colors">
+                    Mi Perfil & Bóveda
+                  </Link>
+                )}
                 {user.role === 'OWNER' && (
-                  <Link href="/admin" className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-zinc-300 hover:text-neon-purple hover:bg-zinc-900/50 transition-colors">
+                  <Link href="/admin" className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-neon-purple hover:bg-neon-purple/10 transition-colors">
                     Dashboard Supremo
                   </Link>
                 )}
@@ -65,7 +68,7 @@ export function Navbar() {
                     [ Lanzar Escáner QR ]
                   </Link>
                 )}
-                <div className="h-px bg-zinc-800/80 my-1 mx-2"></div>
+                <div className="h-px bg-zinc-800/80 my-1 mx-2" />
                 <button onClick={logout} className="w-full px-5 py-3 text-xs font-bold uppercase tracking-widest text-red-500 hover:bg-zinc-900/50 transition-colors text-left flex items-center gap-2">
                   <LogOut className="w-4 h-4" /> Cerrar Sesión
                 </button>

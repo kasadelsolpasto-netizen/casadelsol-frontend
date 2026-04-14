@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
   ArrowRight, ArrowLeft, Lock, Mail, User, X, Ticket,
   CheckCircle, ChevronRight, Users, Trash2, Pencil,
-  ChevronDown, ChevronUp, AlertTriangle
+  ChevronDown, ChevronUp, AlertTriangle, PlusCircle
 } from 'lucide-react';
 
 interface CheckoutWizardProps {
@@ -482,6 +482,23 @@ export default function CheckoutWizard({
                   );
                 })}
               </div>
+
+              {/* Add another attendee button */}
+              {attendees.length < (ticketType?.available || 10) && (
+                <button
+                  onClick={() => {
+                    const next = [...attendees, EMPTY_ATTENDEE()];
+                    setAttendees(next);
+                    setQuantity(next.length);
+                    setExpandedIdx(next.length - 1); // auto-expand the new card
+                    setDeleteConfirmIdx(null);
+                  }}
+                  className="w-full mb-3 py-3 rounded-xl border border-dashed border-zinc-700 hover:border-neon-green/60 text-zinc-500 hover:text-neon-green transition-all text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 group active:scale-[0.98]"
+                >
+                  <PlusCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                  Añadir otra entrada
+                </button>
+              )}
 
               {/* Total bar */}
               <div className="flex justify-between items-center bg-neon-green/5 border border-neon-green/20 rounded-xl px-4 py-3.5 mb-4">
