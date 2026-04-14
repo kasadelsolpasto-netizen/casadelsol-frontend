@@ -1,122 +1,203 @@
 "use client";
-import { useEffect, useState } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, XCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowLeft, Loader2, UserCheck, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 import { StaffGuard } from '@/components/StaffGuard';
 
+type ScanStatus =
+  | { type: 'idle' }
+  | { type: 'loading' }
+  | { type: 'admitted'; name: string; ticket: string; time: string }
+  | { type: 'already_used'; name: string; when: string }
+  | { type: 'invalid'; message: string };
+
 export default function ScannerPage() {
-  const router = useRouter();
-  const [scanResult, setScanResult] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<{success: boolean, message: string} | null>(null);
+  const [status, setStatus] = useState<ScanStatus>({ type: 'idle' });
+  const cooldownRef = useRef(false);
+  const scannerRef = useRef<any>(null);
 
   useEffect(() => {
-    // Only mount to the DOM element "reader"
-    const scanner = new Html5QrcodeScanner(
-      "reader",
-      { fps: 10, qrbox: { width: 280, height: 280 }, rememberLastUsedCamera: true },
-      false
-    );
+    // ── Dynamic import: evita que Next.js ejecute html5-qrcode en el servidor ──
+    let scanner: any;
 
-    let isProcessing = false;
+    import('html5-qrcode').then(({ Html5QrcodeScanner }) => {
+      scanner = new Html5QrcodeScanner(
+        'qr-reader',
+        { fps: 10, qrbox: { width: 260, height: 260 }, rememberLastUsedCamera: true },
+        false
+      );
+      scannerRef.current = scanner;
 
-    scanner.render(
-      (decodedText) => {
-        if (isProcessing) return;
-        isProcessing = true;
-        setScanResult(decodedText);
-        
-        handleScan(decodedText).finally(() => {
-          setTimeout(() => {
-            isProcessing = false;
-            setScanResult(null);
-            setStatus(null);
-          }, 3500); // Darle 3.5 segundos al portero para leer antes del proximo escaneo
-        });
-      },
-      (err) => {
-        // Ignorar fallos de cuadros vacios
-      }
-    );
+      scanner.render(
+        (decodedText: string) => {
+          if (cooldownRef.current) return;
+          cooldownRef.current = true;
+          handleScan(decodedText).finally(() => {
+            // Esperar 4 segundos antes del próximo escaneo
+            setTimeout(() => {
+              cooldownRef.current = false;
+              setStatus({ type: 'idle' });
+            }, 4000);
+          });
+        },
+        () => { /* ignorar errores de frame vacío */ }
+      );
+    }).catch(err => {
+      console.error('Error loading QR scanner:', err);
+    });
 
     return () => {
-      scanner.clear().catch(e => console.error("Scanner clear fail", e));
+      if (scannerRef.current) {
+        scannerRef.current.clear().catch(() => {});
+      }
     };
   }, []);
 
   const handleScan = async (token: string) => {
-    setLoading(true);
+    setStatus({ type: 'loading' });
     try {
-      const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
-      const authToken = tokenRow ? tokenRow.split('=')[1] : null;
+      const tokenRow = document.cookie.split('; ').find(r => r.startsWith('kasa_auth_token='));
+      const authToken = tokenRow?.split('=')[1];
+      if (!authToken) throw new Error('Sin sesión activa');
 
-      if (!authToken) throw new Error("No tienes sesión");
-
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/qrs/scan`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}` 
-        },
-        body: JSON.stringify({ token })
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/qrs/scan`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+          body: JSON.stringify({ token }),
+        }
+      );
 
       const data = await res.json();
 
-      if (!res.ok) {
-        setStatus({ success: false, message: data.message });
-      } else {
-        setStatus({ success: true, message: `ACCESO CONCEDIDO: ${data.order.user.name}` });
+      if (res.status === 400) {
+        // QR ya quemado — extraer fecha del mensaje
+        const match = data.message?.match(/\d{1,2}\/\d{1,2}\/\d{4}.*/);
+        setStatus({
+          type: 'already_used',
+          name: data.attendee_name || '—',
+          when: match ? match[0] : data.message || 'Antes',
+        });
+        return;
       }
+
+      if (!res.ok) {
+        setStatus({ type: 'invalid', message: data.message || 'QR inválido o falso' });
+        return;
+      }
+
+      // ✅ Acceso concedido
+      setStatus({
+        type: 'admitted',
+        name: data.attendee_name || data.order?.user?.name || 'Asistente',
+        ticket: data.ticket_type?.name || data.order?.order_items?.[0]?.ticket_type?.name || 'Entrada',
+        time: new Date().toLocaleTimeString('es-CO'),
+      });
     } catch (err: any) {
-      setStatus({ success: false, message: err.message || 'Error de red' });
-    } finally {
-      setLoading(false);
+      setStatus({ type: 'invalid', message: err.message || 'Error de red' });
     }
   };
 
   return (
     <StaffGuard>
-      <div className="min-h-screen bg-black text-white flex flex-col items-center">
-        <div className="w-full bg-zinc-900 border-b border-zinc-800 p-4 flex items-center justify-between z-10">
-          <Link href="/" className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors">
-            <ArrowLeft className="w-5 h-5" /> Salir
+      <div className="min-h-screen bg-[#050505] text-white flex flex-col">
+
+        {/* Header */}
+        <div className="w-full bg-black/80 backdrop-blur border-b border-zinc-800 px-4 py-3 flex items-center justify-between z-20 sticky top-0">
+          <Link href="/" className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors text-sm font-bold uppercase tracking-widest">
+            <ArrowLeft className="w-4 h-4" /> Salir
           </Link>
-          <span className="font-black uppercase tracking-widest text-neon-purple text-xs">Punto de Control</span>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
+            <span className="font-black uppercase tracking-widest text-neon-green text-xs">Punto de Control</span>
+          </div>
+          <div className="w-16" /> {/* spacer */}
         </div>
 
-        <div className="w-full max-w-md p-6 flex flex-col items-center mt-8">
-          <h1 className="text-2xl font-black uppercase tracking-widest mb-2 text-center text-neon-green">Escáner de Acceso</h1>
-          <p className="text-zinc-500 text-sm mb-8 text-center uppercase tracking-widest font-semibold">Apunta el lente al QR del Raver</p>
+        {/* Body */}
+        <div className="flex-1 flex flex-col items-center px-4 py-6 max-w-md mx-auto w-full">
 
-          {/* CONTENEDOR DEL ESCÁNER */}
-          <div id="reader" className="w-full bg-black border-2 border-zinc-800 rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)]"></div>
+          <h1 className="text-2xl font-black uppercase tracking-widest text-white mb-1 text-center">
+            Escáner QR
+          </h1>
+          <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-6 text-center">
+            Apunta el lente al código del asistente
+          </p>
 
-          {/* FEEDBACK VISUAL INMEDIATO PARA EL STAFF */}
-          <div className="mt-8 w-full h-32 flex flex-col items-center justify-center text-center">
-            {loading && (
-               <div className="flex flex-col items-center text-zinc-400 animate-pulse">
-                  <Loader2 className="w-8 h-8 animate-spin mb-2 text-neon-purple" />
-                  <span className="uppercase text-xs font-bold tracking-widest">Verificando en Base de Datos...</span>
-               </div>
+          {/* Viewfinder container */}
+          <div className="w-full rounded-2xl overflow-hidden border-2 border-zinc-800 shadow-[0_0_50px_rgba(0,0,0,0.9)] bg-black relative">
+            {/* Neon corner decorations */}
+            <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-neon-green rounded-tl z-10 pointer-events-none" />
+            <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-neon-green rounded-tr z-10 pointer-events-none" />
+            <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-neon-green rounded-bl z-10 pointer-events-none" />
+            <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-neon-green rounded-br z-10 pointer-events-none" />
+            <div id="qr-reader" className="w-full" />
+          </div>
+
+          {/* Status feedback */}
+          <div className="mt-6 w-full min-h-[120px] flex items-center justify-center">
+
+            {/* Idle */}
+            {status.type === 'idle' && (
+              <div className="w-full p-5 rounded-2xl border border-zinc-800 bg-black/40 flex items-center justify-center">
+                <span className="text-zinc-600 uppercase tracking-widest text-xs font-bold animate-pulse">
+                  Esperando código…
+                </span>
+              </div>
             )}
 
-            {status && !loading && (
-               <div className={`w-full p-6 rounded-2xl border-2 flex flex-col items-center ${status.success ? 'bg-neon-green/10 border-neon-green text-neon-green shadow-[0_0_30px_rgba(57,255,20,0.2)]' : 'bg-red-500/10 border-red-500 text-red-500 shadow-[0_0_30px_rgba(239,68,68,0.2)]'}`}>
-                  {status.success ? <CheckCircle className="w-12 h-12 mb-2" /> : <XCircle className="w-12 h-12 mb-2" />}
-                  <p className="font-black uppercase tracking-widest text-lg">{status.success ? 'Adelante' : 'Rechazado'}</p>
-                  <p className="text-xs font-bold uppercase tracking-wider opacity-80 mt-1">{status.message}</p>
-               </div>
+            {/* Loading */}
+            {status.type === 'loading' && (
+              <div className="w-full p-5 rounded-2xl border border-neon-purple/40 bg-neon-purple/5 flex flex-col items-center gap-2">
+                <Loader2 className="w-8 h-8 animate-spin text-neon-purple" />
+                <span className="uppercase text-xs font-bold tracking-widest text-neon-purple">Verificando…</span>
+              </div>
             )}
-            
-            {!status && !loading && (
-              <div className="w-full p-6 glass-panel rounded-2xl border border-zinc-800 flex items-center justify-center h-full">
-                 <span className="text-zinc-600 uppercase tracking-widest text-xs font-bold animate-pulse">Esperando Código...</span>
+
+            {/* ✅ ADMITTED */}
+            {status.type === 'admitted' && (
+              <div className="w-full p-5 rounded-2xl border-2 border-neon-green bg-neon-green/5 shadow-[0_0_40px_rgba(57,255,20,0.2)] flex flex-col items-center gap-2 animate-in zoom-in-95 duration-200">
+                <div className="w-16 h-16 rounded-full bg-neon-green/20 border-2 border-neon-green flex items-center justify-center">
+                  <UserCheck className="w-8 h-8 text-neon-green" />
+                </div>
+                <p className="font-black uppercase tracking-widest text-neon-green text-xl">✓ INGRESADO</p>
+                <p className="text-white font-black text-lg uppercase tracking-wide">{status.name}</p>
+                <p className="text-neon-green/70 text-xs font-bold uppercase tracking-widest">{status.ticket}</p>
+                <p className="text-zinc-500 text-[10px] uppercase tracking-widest">{status.time}</p>
+              </div>
+            )}
+
+            {/* ⚠️ ALREADY USED */}
+            {status.type === 'already_used' && (
+              <div className="w-full p-5 rounded-2xl border-2 border-orange-500 bg-orange-500/5 shadow-[0_0_30px_rgba(249,115,22,0.2)] flex flex-col items-center gap-2 animate-in zoom-in-95 duration-200">
+                <div className="w-16 h-16 rounded-full bg-orange-500/20 border-2 border-orange-500 flex items-center justify-center">
+                  <ShieldAlert className="w-8 h-8 text-orange-400" />
+                </div>
+                <p className="font-black uppercase tracking-widest text-orange-400 text-xl">⚠ YA USADO</p>
+                <p className="text-orange-300/80 text-xs font-bold uppercase tracking-widest text-center">
+                  Este QR ya fue escaneado anteriormente
+                </p>
+              </div>
+            )}
+
+            {/* ❌ INVALID */}
+            {status.type === 'invalid' && (
+              <div className="w-full p-5 rounded-2xl border-2 border-red-500 bg-red-500/5 shadow-[0_0_30px_rgba(239,68,68,0.2)] flex flex-col items-center gap-2 animate-in zoom-in-95 duration-200">
+                <div className="w-16 h-16 rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center">
+                  <XCircle className="w-8 h-8 text-red-400" />
+                </div>
+                <p className="font-black uppercase tracking-widest text-red-400 text-xl">✗ RECHAZADO</p>
+                <p className="text-red-400/70 text-xs font-bold uppercase tracking-widest text-center">{status.message}</p>
               </div>
             )}
           </div>
+
+          {/* Instruction */}
+          <p className="mt-6 text-center text-[10px] text-zinc-700 uppercase tracking-widest">
+            El escáner se reinicia automáticamente después de cada lectura
+          </p>
         </div>
       </div>
     </StaffGuard>
