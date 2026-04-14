@@ -87,6 +87,12 @@ export default function CheckoutWizard({
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
+
+    if (authMode === 'REGISTER' && authPassword.length < 8) {
+      setAuthError('La contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+
     setAuthLoading(true);
     try {
       if (authMode === 'REGISTER') {
@@ -239,7 +245,7 @@ export default function CheckoutWizard({
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-600 w-4 h-4" />
-                  <input type="password" required value={authPassword} onChange={e => setAuthPassword(e.target.value)}
+                  <input type="password" required minLength={authMode === 'REGISTER' ? 8 : undefined} value={authPassword} onChange={e => setAuthPassword(e.target.value)}
                     placeholder="Contraseña"
                     className="w-full bg-black border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-white text-sm placeholder-zinc-700 outline-none focus:border-neon-green focus:ring-1 focus:ring-neon-green transition-all" />
                 </div>

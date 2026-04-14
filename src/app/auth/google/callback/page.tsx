@@ -23,10 +23,10 @@ function CallbackContent() {
       document.cookie = `kasa_auth_token=${token}; path=/; max-age=86400;`;
       localStorage.setItem('kasa_user', JSON.stringify(user));
 
-      // Redirigir según el rol
-      if (user.role === 'OWNER') router.replace('/admin');
-      else if (user.role === 'STAFF') router.replace('/scanner');
-      else router.replace(`/profile/${user.id}`);
+      // Redirigir según el rol con recarga completa para que el Navbar global detecte el usuario
+      if (user.role === 'OWNER') window.location.href = '/admin';
+      else if (user.role === 'STAFF') window.location.href = '/scanner';
+      else window.location.href = `/profile/${user.id}`;
     } catch {
       router.push('/login?error=google_failed');
     }
