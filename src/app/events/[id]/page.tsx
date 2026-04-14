@@ -4,6 +4,7 @@ import { ArrowLeft, Calendar, MapPin } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
+import AuthModal from '@/components/AuthModal';
 
 export default function EventDetail({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function EventDetail({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const [event, setEvent] = useState<any>(null);
 
@@ -72,7 +74,9 @@ export default function EventDetail({ params }: { params: { id: string } }) {
       const token = tokenArray ? tokenArray.split('=')[1] : null;
 
       if (!token) {
-        throw new Error('Primero debes iniciar sesión para comprar boletas.');
+        setShowAuthModal(true);
+        setLoading(false);
+        return;
       }
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/orders/checkout-wompi`, {
@@ -244,7 +248,7 @@ export default function EventDetail({ params }: { params: { id: string } }) {
       </div>
 
       {/* Botón Flotante (Ethereal Dark UX) */}
-      <div className="fixed bottom-6 w-full flex justify-center z-50 lg:hidden pointer-events-none px-4">
+      <div className="fixed bottom-6 w-full flex justify-center z-40 lg:hidden pointer-events-none px-4">
         <button 
           onClick={() => document.getElementById('tickets-section')?.scrollIntoView({ behavior: 'smooth' })}
           className="pointer-events-auto relative overflow-hidden group bg-[#050505]/80 backdrop-blur-md border border-purple-900/50 hover:border-purple-500/80 shadow-[0_0_30px_rgba(0,0,0,0.9)] hover:shadow-[0_0_50px_rgba(168,85,247,0.4)] px-8 py-3.5 rounded-full transition-all duration-300 transform hover:-translate-y-1 hover:-rotate-1 active:scale-95 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-500"
@@ -268,6 +272,15 @@ export default function EventDetail({ params }: { params: { id: string } }) {
         </button>
       </div>
 
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => {
+          setShowAuthModal(false);
+          // Opcional: Podría esperar 100ms extra si las cookies de render cambian tarde.
+          setTimeout(handleCheckout, 300);
+        }}
+      />
     </div>
   );
 }
