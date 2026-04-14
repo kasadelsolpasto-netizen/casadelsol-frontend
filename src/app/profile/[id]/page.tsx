@@ -272,7 +272,6 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
             <p className="text-neon-green font-black uppercase tracking-widest text-center text-xl sm:text-2xl mb-1">{selectedQr.attendee_name || profile?.name}</p>
             <p className="text-zinc-500 font-semibold uppercase tracking-widest text-center text-xs">C.C. {selectedQr.attendee_dni || 'REGISTRADO'}</p>
           </div>
-          </div>
         </div>
       )}
     </div>
