@@ -8,6 +8,11 @@ const outfit = Outfit({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Kasa del Sol | Private Raves",
   description: "Ticketing platform for exclusive techno and electronic raves.",
+  icons: {
+    icon: "/api/brand/icon",
+    apple: "/api/brand/icon",
+  },
+  manifest: "/manifest.ts"
 };
 
 export const viewport: Viewport = {

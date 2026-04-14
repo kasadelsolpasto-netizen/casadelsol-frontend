@@ -1,13 +1,13 @@
 "use client";
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Save, Lock, Link as LinkIcon, AlertTriangle, Key } from 'lucide-react';
+import { ArrowLeft, CreditCard, Save, Lock, Link as LinkIcon, AlertTriangle, Key, Image as ImageIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AdminGuard } from '@/components/AdminGuard';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'pagos' | 'general' | 'seguridad'>('pagos');
+  const [activeTab, setActiveTab] = useState<'pagos' | 'brand' | 'seguridad'>('pagos');
   
   // Wompi config state
   const [publicKey, setPublicKey] = useState('');
@@ -25,6 +25,11 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Brand / PWA state
+  const [logoBase64, setLogoBase64] = useState<string | null>(null);
+  const [isSavingBrand, setIsSavingBrand] = useState(false);
+  const [saveBrandMessage, setSaveBrandMessage] = useState('');
 
   // Fetch initial config
   useEffect(() => {
@@ -45,6 +50,14 @@ export default function SettingsPage() {
             setEventsSecret(data.eventsSecret || '');
             setIntegritySecret(data.integritySecret || '');
             setEnvironment(data.environment || 'sandbox');
+          }
+        }
+
+        const brandRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/settings/brand`);
+        if (brandRes.ok) {
+          const brandData = await brandRes.json();
+          if (brandData && brandData.logoBase64) {
+            setLogoBase64(brandData.logoBase64);
           }
         }
       } catch (err) {
@@ -82,6 +95,51 @@ export default function SettingsPage() {
     } finally {
       setIsSaving(false);
       setTimeout(() => setSaveMessage(''), 3000);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setSaveBrandMessage('Por favor selecciona una imagen válida');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setLogoBase64(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveBrand = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingBrand(true);
+    setSaveBrandMessage('');
+
+    try {
+      const token = document.cookie.split('kasa_auth_token=')[1]?.split(';')[0];
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/settings/brand`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ logoBase64 })
+      });
+
+      if (res.ok) {
+        setSaveBrandMessage('Logo y Marca actualizados. Los PWA e iconos se generarán dinámicamente.');
+      } else {
+        setSaveBrandMessage('Fallo al guardar.');
+      }
+    } catch (err) {
+      setSaveBrandMessage('Error de conexión.');
+    } finally {
+      setIsSavingBrand(false);
+      setTimeout(() => setSaveBrandMessage(''), 4000);
     }
   };
 
@@ -144,8 +202,7 @@ export default function SettingsPage() {
         </header>
 
         <div className="flex flex-col lg:flex-row gap-12">
-          {/* Menú Lateral Navegación Settings */}
-          <div className="lg:w-1/4 space-y-2">
+          {/* Menú Lateral Navegaci           <div className="lg:w-1/4 space-y-2">
              <button 
                onClick={() => setActiveTab('pagos')} 
                className={`w-full text-left px-5 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-3 border ${activeTab === 'pagos' ? 'bg-neon-purple/10 border-neon-purple text-neon-purple shadow-[0_0_15px_rgba(191,0,255,0.2)]' : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'}`}
@@ -153,11 +210,18 @@ export default function SettingsPage() {
                <CreditCard className="w-4 h-4" /> Pasarela Wompi
              </button>
              <button 
+               onClick={() => setActiveTab('brand')} 
+               className={`w-full text-left px-5 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-3 border ${activeTab === 'brand' ? 'bg-neon-green/10 border-neon-green text-neon-green shadow-[0_0_15px_rgba(57,255,20,0.2)]' : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'}`}
+             >
+               <ImageIcon className="w-4 h-4" /> Marca & PWA
+             </button>
+             <button 
                onClick={() => setActiveTab('seguridad')} 
                className={`w-full text-left px-5 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-3 border ${activeTab === 'seguridad' ? 'bg-red-900/10 border-red-500 text-red-500 shadow-[0_0_15px_rgba(220,38,38,0.2)]' : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'}`}
              >
                <Key className="w-4 h-4" /> Bóveda Suprema
              </button>
+          </div>>
           </div>
 
           {/* Cuerpos de Configuración */}
@@ -272,6 +336,73 @@ export default function SettingsPage() {
                           className="flex items-center gap-2 bg-neon-purple text-white px-8 py-3 rounded text-sm font-black uppercase tracking-widest hover:shadow-[0_0_20px_rgba(191,0,255,0.5)] transition-all disabled:opacity-50"
                         >
                           <Save className="w-4 h-4" /> {isSaving ? 'Guardando...' : 'Aplicar Llaves'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                {activeTab === 'brand' && (
+                  <div className="glass-panel p-8 rounded-2xl border-t-2 border-t-neon-green animate-in fade-in slide-in-from-bottom-4 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-neon-green/10 blur-3xl rounded-full"></div>
+                    
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className="w-12 h-12 rounded-xl bg-neon-green/20 flex items-center justify-center border border-neon-green/50">
+                         <ImageIcon className="w-6 h-6 text-neon-green" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-black uppercase tracking-widest text-white">Marca & Aplicación PWA</h2>
+                        <p className="text-xs text-zinc-400 mt-1 uppercase tracking-widest font-bold">Personaliza tu Web App Instalable</p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleSaveBrand} className="space-y-6 relative z-10">
+                      <div className="bg-zinc-900/50 p-4 rounded-lg flex items-start gap-4 border border-zinc-800 mb-8">
+                        <AlertTriangle className="w-5 h-5 text-neon-green shrink-0 mt-0.5" />
+                        <div>
+                           <p className="text-xs text-zinc-300">Sube un logo cuadrado. Este se usará como identificador de tu marca, creará el <b>Favicon</b> de las pestañas del navegador, y construirá la <b>App móvil interactiva (PWA)</b> que descargan tus usuarios.</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="flex flex-col md:flex-row gap-6 items-center">
+                          <div className={`w-36 h-36 shrink-0 rounded-2xl border-2 border-dashed ${logoBase64 ? 'border-neon-green' : 'border-zinc-700'} flex items-center justify-center overflow-hidden bg-black/50 relative group`}>
+                            {logoBase64 ? (
+                              <img src={logoBase64} alt="Logo" className="w-full h-full object-cover" />
+                            ) : (
+                              <ImageIcon className="w-8 h-8 text-zinc-700 group-hover:text-neon-green transition-colors" />
+                            )}
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <label className="cursor-pointer bg-neon-green text-black text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded hover:bg-white transition-colors">
+                                Cambiar
+                                <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                              </label>
+                            </div>
+                          </div>
+                          
+                          <div className="flex-1 space-y-2 text-center md:text-left">
+                            <label className="text-xs font-black uppercase tracking-widest text-white">Sube la Imagen Oficial</label>
+                            <p className="text-[10px] text-zinc-400">Recomendamos una imagen cuadrada (ej: 512x512) en formato PNG con fondo transparente o negro.</p>
+                            {!logoBase64 && (
+                              <label className="inline-block mt-2 cursor-pointer bg-zinc-800 text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2 hover:bg-zinc-700 transition-colors border border-zinc-700 rounded">
+                                Seleccionar Archivo
+                                <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                              </label>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-6 border-t border-zinc-800 flex items-center justify-between">
+                        <p className={`text-xs font-bold uppercase tracking-widest ${saveBrandMessage.includes('Error') || saveBrandMessage.includes('Fallo') ? 'text-red-500' : 'text-neon-green'}`}>
+                          {saveBrandMessage}
+                        </p>
+                        <button 
+                          type="submit" 
+                          disabled={isSavingBrand || !logoBase64}
+                          className="flex items-center gap-2 bg-neon-green text-black px-8 py-3 rounded text-sm font-black uppercase tracking-widest hover:shadow-[0_0_20px_rgba(57,255,20,0.5)] transition-all disabled:opacity-50 hover:bg-white"
+                        >
+                          <Save className="w-4 h-4" /> {isSavingBrand ? 'Generando...' : 'Aplicar Marca'}
                         </button>
                       </div>
                     </form>

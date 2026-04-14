@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Ticket, QrCode, User, Star, MapPin, Calendar, CheckCircle, X, Lock, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
+import { InstallAppButton } from '@/components/InstallAppButton';
 
 export default function ProfilePage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -243,6 +244,11 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                 </section>
               </div>
         </div>
+
+        {/* APP INSTALLER BANNER EN LA BÓVEDA */}
+        <div className="mt-16 w-full text-center border-t border-zinc-800/50 pt-8 mt-20">
+           <InstallAppButton />
+        </div>
       </main>
 
       {selectedQr && (
@@ -265,6 +271,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
             <p className="text-zinc-400 font-bold uppercase tracking-widest text-xs mb-2">Entrada Válida Para</p>
             <p className="text-neon-green font-black uppercase tracking-widest text-center text-xl sm:text-2xl mb-1">{selectedQr.attendee_name || profile?.name}</p>
             <p className="text-zinc-500 font-semibold uppercase tracking-widest text-center text-xs">C.C. {selectedQr.attendee_dni || 'REGISTRADO'}</p>
+          </div>
           </div>
         </div>
       )}
