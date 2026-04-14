@@ -48,9 +48,14 @@ export default function ForgotPasswordPage() {
               <CheckCircle className="w-8 h-8" />
             </div>
             <h2 className="text-xl font-bold mb-2 text-white uppercase tracking-widest">Enlace Enviado</h2>
-            <p className="text-zinc-400 text-sm mb-8 leading-relaxed">
+            <p className="text-zinc-400 text-sm mb-4 leading-relaxed">
               Si existe una cuenta asociada a <span className="text-white font-semibold">{email}</span>, acabamos de enviarte un enlace de recuperación.
             </p>
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-8">
+              <p className="text-yellow-400 text-xs font-bold uppercase tracking-wide">
+                ⚠️ Por favor revisa bien tu carpeta de spam o correo no deseado por si acaso.
+              </p>
+            </div>
             <Link href="/login" className="text-neon-green hover:text-white uppercase tracking-widest font-bold text-xs transition-colors flex items-center justify-center gap-2">
               <ArrowLeft className="w-4 h-4" /> Volver al Login
             </Link>
