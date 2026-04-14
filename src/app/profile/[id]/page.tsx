@@ -10,7 +10,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedQr, setSelectedQr] = useState<string | null>(null);
+  const [selectedQr, setSelectedQr] = useState<any>(null);
 
   const [newPassword, setNewPassword] = useState('');
   const [passMsg, setPassMsg] = useState('');
@@ -166,11 +166,19 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                 <span className="text-[10px] text-orange-500/70 uppercase font-bold tracking-widest mt-2 px-2">Esperando a Wompi</span>
                              </div>
                            ) : (
-                             <div className="flex sm:flex-col items-center gap-4 sm:gap-2 pt-4 sm:pt-0 border-t border-zinc-800 sm:border-0 w-full sm:w-auto justify-between sm:justify-start">
-                                <div onClick={() => {if(!order.qr_code?.used_at) setSelectedQr(order.qr_code?.token_hash || 'qr_legacy_placeholder')}} className={`w-24 h-24 bg-white p-2 border border-zinc-700 rounded-lg flex items-center justify-center transition-all shadow-lg ${order.qr_code?.used_at ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer group-hover:bg-neon-green group-hover:border-neon-green group-hover:scale-110'}`}>
-                                   <QRCodeSVG value={order.qr_code?.token_hash || 'qr_legacy_placeholder'} size={80} level={"H"} includeMargin={false} />
-                                </div>
-                                <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-2">{order.qr_code?.used_at ? 'USADO' : 'VALIDO'}</span>
+                             <div className="flex flex-wrap items-center gap-4 pt-4 sm:pt-0 border-t border-zinc-800 sm:border-0 w-full justify-start sm:justify-end">
+                               {order.qr_codes && order.qr_codes.map((qr: any) => (
+                                 <div key={qr.id} className="flex flex-col items-center gap-2 group/qr">
+                                    <div onClick={() => {if(!qr.used_at) setSelectedQr(qr)}} className={`w-24 h-24 bg-white p-2 border border-zinc-700 rounded-lg flex items-center justify-center transition-all shadow-lg ${qr.used_at ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:bg-neon-green hover:border-neon-green hover:scale-110'}`}>
+                                       <QRCodeSVG value={qr.token_hash || 'qr_legacy'} size={80} level={"H"} includeMargin={false} />
+                                    </div>
+                                    <span className="text-[9px] text-zinc-400 uppercase font-black tracking-widest mt-1 text-center truncate w-24">
+                                      {qr.attendee_name || 'Titular'}
+                                      <br/>
+                                      <span className={qr.used_at ? "text-red-500" : "text-neon-green"}>{qr.used_at ? 'USADO' : 'VÁLIDO'}</span>
+                                    </span>
+                                 </div>
+                               ))}
                              </div>
                            )}
                          </div>
@@ -238,7 +246,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
           
           <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-[0_0_60px_rgba(57,255,20,0.3)] animate-in zoom-in duration-300" onClick={e => e.stopPropagation()}>
             <QRCodeSVG 
-               value={selectedQr} 
+               value={selectedQr.token_hash || 'qr_legacy'} 
                size={280} 
                level={"H"} 
                includeMargin={false} 
@@ -246,9 +254,10 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
             />
           </div>
           
-          <div className="mt-12 flex flex-col items-center" onClick={e => e.stopPropagation()}>
-            <p className="text-neon-green font-black uppercase tracking-widest text-center text-lg sm:text-2xl mb-2">Muestra este código</p>
-            <p className="text-zinc-400 font-semibold uppercase tracking-widest text-center text-xs sm:text-sm">En la puerta principal para ingresar</p>
+          <div className="mt-10 flex flex-col items-center bg-black/50 border border-zinc-800 rounded-2xl p-6" onClick={e => e.stopPropagation()}>
+            <p className="text-zinc-400 font-bold uppercase tracking-widest text-xs mb-2">Entrada Válida Para</p>
+            <p className="text-neon-green font-black uppercase tracking-widest text-center text-xl sm:text-2xl mb-1">{selectedQr.attendee_name || profile?.name}</p>
+            <p className="text-zinc-500 font-semibold uppercase tracking-widest text-center text-xs">C.C. {selectedQr.attendee_dni || 'REGISTRADO'}</p>
           </div>
         </div>
       )}

@@ -10,9 +10,35 @@ export default function EventDetail({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [selectedTicket, setSelectedTicket] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [attendees, setAttendees] = useState<any[]>([{ attendee_name: '', attendee_dni: '', attendee_email: '' }]);
   const [success, setSuccess] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Ajustar el array de asistentes si cambia la cantidad
+  useEffect(() => {
+    setAttendees(prev => {
+      const newAttendees = [...prev];
+      if (quantity > prev.length) {
+        for (let i = prev.length; i < quantity; i++) {
+          newAttendees.push({ attendee_name: '', attendee_dni: '', attendee_email: '' });
+        }
+      } else if (quantity < prev.length) {
+        newAttendees.splice(quantity);
+      }
+      return newAttendees;
+    });
+  }, [quantity]);
+
+  useEffect(() => {
+    try {
+      const savedUser = localStorage.getItem('kasa_user');
+      if (savedUser) {
+        const u = JSON.parse(savedUser);
+        setAttendees([{ attendee_name: u.name || '', attendee_dni: '', attendee_email: u.email || '' }]);
+      }
+    } catch {}
+  }, []);
 
   const [event, setEvent] = useState<any>(null);
 
@@ -78,6 +104,17 @@ export default function EventDetail({ params }: { params: { id: string } }) {
         setLoading(false);
         return;
       }
+      
+      // Validar formularios vacíos
+      const incomplete = attendees.some(att => !att.attendee_name || !att.attendee_dni || !att.attendee_email);
+      if (incomplete) {
+        throw new Error('Por favor completa los datos de todos los asistentes (Nombre, Documento, Correo).');
+      }
+
+      const payloadAttendees = attendees.map(att => ({
+        ...att,
+        ticket_type_id: selectedTicket
+      }));
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/orders/checkout-wompi`, {
         method: 'POST',
@@ -85,7 +122,7 @@ export default function EventDetail({ params }: { params: { id: string } }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ ticket_type_id: selectedTicket, quantity: 1 })
+        body: JSON.stringify({ attendees: payloadAttendees })
       });
 
       if (!res.ok) {
@@ -228,13 +265,72 @@ export default function EventDetail({ params }: { params: { id: string } }) {
                         {Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(ticket.price)}
                       </span>
                       {canBuy && (
-                        <div className={`w-4 h-4 rounded-full border-2 ${selectedTicket === ticket.id ? 'border-neon-green bg-neon-green' : 'border-zinc-600'}`}></div>
+                        <div className={`w-4 h-4 rounded-full border-2 transition-all ${selectedTicket === ticket.id ? 'border-neon-green bg-neon-green' : 'border-zinc-600'}`}></div>
                       )}
                     </div>
                   </div>
                 );
               })}
             </div>
+
+            {selectedTicket && (
+              <div className="mt-8 animate-in fade-in slide-in-from-top-4">
+                <div className="flex justify-between items-center mb-6 bg-black/50 p-4 rounded-xl border border-zinc-800">
+                  <span className="text-zinc-300 font-bold uppercase tracking-widest text-xs">Cantidad de Boletas</span>
+                  <div className="flex items-center bg-black border border-zinc-700/50 rounded-lg overflow-hidden">
+                    <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="px-4 py-2 hover:bg-zinc-800 text-white font-black transition-colors" disabled={quantity <= 1}>-</button>
+                    <div className="px-4 py-2 font-black text-white border-l border-r border-zinc-700/50 w-12 text-center">{quantity}</div>
+                    <button onClick={() => setQuantity(q => q + 1)} className="px-4 py-2 hover:bg-zinc-800 text-white font-black transition-colors">+</button>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 border-b border-zinc-800 pb-2">Información de Asistentes</h4>
+                  {attendees.map((att, idx) => (
+                    <div key={idx} className="bg-black/40 border border-zinc-800/80 p-5 rounded-xl space-y-4 relative group hover:border-zinc-600 transition-colors">
+                      <div className="absolute -top-3 -left-3 w-7 h-7 bg-black border border-neon-green text-neon-green shadow-[0_0_10px_rgba(57,255,20,0.2)] font-black flex items-center justify-center rounded-full text-xs">{idx + 1}</div>
+                      
+                      <input 
+                        type="text" 
+                        placeholder="Nombre Completo" 
+                        required
+                        className="w-full bg-black/50 border border-zinc-800 rounded-lg py-2.5 px-4 text-white text-sm placeholder-zinc-700 outline-none focus:border-neon-green focus:ring-1 focus:ring-neon-green transition-all"
+                        value={att.attendee_name} 
+                        onChange={e => { 
+                          const copy = [...attendees]; 
+                          copy[idx].attendee_name = e.target.value; 
+                          setAttendees(copy); 
+                        }} 
+                      />
+                      <input 
+                        type="text" 
+                        placeholder="Cédula / Pasaporte" 
+                        required
+                        className="w-full bg-black/50 border border-zinc-800 rounded-lg py-2.5 px-4 text-white text-sm placeholder-zinc-700 outline-none focus:border-neon-green focus:ring-1 focus:ring-neon-green transition-all"
+                        value={att.attendee_dni} 
+                        onChange={e => { 
+                          const copy = [...attendees]; 
+                          copy[idx].attendee_dni = e.target.value; 
+                          setAttendees(copy); 
+                        }} 
+                      />
+                      <input 
+                        type="email" 
+                        placeholder="Correo Electrónico" 
+                        required
+                        className="w-full bg-black/50 border border-zinc-800 rounded-lg py-2.5 px-4 text-white text-sm placeholder-zinc-700 outline-none focus:border-neon-green focus:ring-1 focus:ring-neon-green transition-all"
+                        value={att.attendee_email} 
+                        onChange={e => { 
+                          const copy = [...attendees]; 
+                          copy[idx].attendee_email = e.target.value; 
+                          setAttendees(copy); 
+                        }} 
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <button 
               onClick={handleCheckout}
