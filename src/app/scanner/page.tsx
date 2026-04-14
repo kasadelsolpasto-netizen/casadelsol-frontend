@@ -41,7 +41,12 @@ export default function ScannerPage() {
           (decodedText: string) => {
             if (cooldownRef.current) return;
             cooldownRef.current = true;
-            handleScan(decodedText).finally(() => {
+            // Soporta QRs con URL completa: https://.../ticket/[token]
+            // y QRs legacy con token crudo
+            const token = decodedText.includes('/ticket/')
+              ? decodedText.split('/ticket/')[1]?.split('?')[0]?.trim()
+              : decodedText.trim();
+            handleScan(token).finally(() => {
               setTimeout(() => {
                 cooldownRef.current = false;
                 setStatus({ type: 'idle' });

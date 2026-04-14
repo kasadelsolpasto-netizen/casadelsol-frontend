@@ -5,6 +5,7 @@ import {
   CheckCircle, ChevronRight, Users, Trash2, Pencil,
   ChevronDown, ChevronUp, AlertTriangle, PlusCircle
 } from 'lucide-react';
+import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 
 interface CheckoutWizardProps {
   isOpen: boolean;
@@ -211,6 +212,14 @@ export default function CheckoutWizard({
                   className={`flex-1 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${authMode === 'REGISTER' ? 'bg-neon-purple text-white' : 'text-zinc-500 hover:text-white'}`}>
                   Registrarse
                 </button>
+              </div>
+
+              <GoogleSignInButton className="mb-4" />
+
+              <div className="flex items-center gap-4 mb-4">
+                <div className="h-[1px] flex-1 bg-zinc-800"></div>
+                <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">o con tu email</span>
+                <div className="h-[1px] flex-1 bg-zinc-800"></div>
               </div>
 
               <form onSubmit={handleAuth} className="space-y-3.5">

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { ArrowRight, Lock, Mail, Briefcase, Music } from 'lucide-react';
+import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -97,6 +98,14 @@ export default function LoginPage() {
         <p className="text-zinc-400 mb-6 text-sm">Ingresa al portal para conseguir tus entradas y QRs de acceso.</p>
         
         {error && <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm text-center">{error}</div>}
+
+        <GoogleSignInButton className="mb-6" />
+
+        <div className="flex items-center gap-4 mb-6">
+          <div className="h-[1px] flex-1 bg-zinc-800"></div>
+          <span className="text-zinc-500 text-xs uppercase font-bold tracking-widest">o ingresa con tu email</span>
+          <div className="h-[1px] flex-1 bg-zinc-800"></div>
+        </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-2">

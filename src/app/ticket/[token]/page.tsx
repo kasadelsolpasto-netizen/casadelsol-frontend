@@ -200,7 +200,7 @@ export default function PublicTicketPage({ params }: { params: { token: string }
             <div className={`p-3 rounded-2xl ${ticket.is_used ? 'bg-zinc-900 opacity-30 grayscale' : 'bg-white shadow-[0_0_30px_rgba(57,255,20,0.25)]'}`}>
               <QRCodeSVG
                 id="qr-svg-full"
-                value={ticket.token}
+                value={`${BASE_URL}/ticket/${ticket.token}`}
                 size={210}
                 level="H"
                 includeMargin={false}

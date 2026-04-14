@@ -10,6 +10,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedQr, setSelectedQr] = useState<any>(null);
+  const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://casadelsol-frontend.vercel.app';
 
   const [newPassword, setNewPassword] = useState('');
   const [passMsg, setPassMsg] = useState('');
@@ -167,7 +168,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                 {order.qr_codes && order.qr_codes.map((qr: any) => (
                                   <div key={qr.id} className="flex flex-col items-center gap-1.5 group/qr">
                                      <div onClick={() => {if(!qr.used_at) setSelectedQr(qr)}} className={`w-24 h-24 bg-white p-2 border border-zinc-700 rounded-lg flex items-center justify-center transition-all shadow-lg ${qr.used_at ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:bg-neon-green hover:border-neon-green hover:scale-110'}`}>
-                                        <QRCodeSVG value={qr.token_hash || 'qr_legacy'} size={80} level={"H"} includeMargin={false} />
+                                        <QRCodeSVG value={qr.token_hash ? `${BASE_URL}/ticket/${qr.token_hash}` : 'kasa-legacy'} size={80} level={"H"} includeMargin={false} />
                                      </div>
                                      <span className="text-[9px] text-zinc-400 uppercase font-black tracking-widest text-center truncate w-24">
                                        {qr.attendee_name || 'Titular'}<br/>
@@ -252,7 +253,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
           
           <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-[0_0_60px_rgba(57,255,20,0.3)] animate-in zoom-in duration-300" onClick={e => e.stopPropagation()}>
             <QRCodeSVG 
-               value={selectedQr.token_hash || 'qr_legacy'} 
+             value={selectedQr?.token_hash ? `${BASE_URL}/ticket/${selectedQr.token_hash}` : 'kasa-legacy'}
                size={280} 
                level={"H"} 
                includeMargin={false} 
