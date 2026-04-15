@@ -70,8 +70,8 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
   };
 
   const actualizarEvento = async () => {
-    if (!formData.title || !formData.date || !flyerUrl) {
-       return alert("⚠️ Faltan datos esenciales o el Flyer del evento.");
+    if (!formData.title || !formData.date) {
+       return alert("⚠️ Faltan datos esenciales (Título o Fecha).");
     }
     
     setPublishing(true);
