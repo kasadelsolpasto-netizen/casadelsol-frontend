@@ -202,7 +202,8 @@ export default function SettingsPage() {
         </header>
 
         <div className="flex flex-col lg:flex-row gap-12">
-          {/* Menú Lateral Navegaci           <div className="lg:w-1/4 space-y-2">
+          {/* Menú Lateral Navegación */}
+          <div className="lg:w-1/4 space-y-2">
              <button 
                onClick={() => setActiveTab('pagos')} 
                className={`w-full text-left px-5 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-3 border ${activeTab === 'pagos' ? 'bg-neon-purple/10 border-neon-purple text-neon-purple shadow-[0_0_15px_rgba(191,0,255,0.2)]' : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'}`}
@@ -221,7 +222,6 @@ export default function SettingsPage() {
              >
                <Key className="w-4 h-4" /> Bóveda Suprema
              </button>
-          </div>>
           </div>
 
           {/* Cuerpos de Configuración */}
