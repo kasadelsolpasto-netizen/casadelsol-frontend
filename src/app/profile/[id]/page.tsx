@@ -297,57 +297,59 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                   <h3 className="text-base font-bold uppercase tracking-widest text-zinc-200 mb-6 flex items-center gap-2">
                     Seguridad de Cuenta
                   </h3>
-                  <form onSubmit={handleProfileUpdate} className="space-y-4 mb-8">
-                     <div className="space-y-2">
-                       <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex justify-between">
-                         Nombre de Raver 
-                         {profileMsg && <span className="text-neon-purple lowercase tracking-normal">{profileMsg}</span>}
-                       </label>
-                       <input 
-                         type="text" 
-                         value={newName} 
-                         onChange={e => setNewName(e.target.value)}
-                         className="w-full bg-zinc-900 border border-zinc-800 rounded py-2 px-3 text-white text-sm outline-none focus:border-neon-purple transition-colors" 
-                       />
-                     </div>
-                     <button type="submit" className="text-[10px] bg-zinc-800 hover:bg-neon-purple text-white font-bold uppercase py-1 px-3 rounded transition-all">
-                       Guardar Nombre
-                     </button>
-                  </form>
-                  <div className="space-y-2 pt-2 border-t border-zinc-800/50 mb-6">
-                     <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">Email (Identidad)</label>
-                     <input type="text" readOnly defaultValue={profile?.email} className="w-full bg-black/30 border border-zinc-900 rounded py-2 px-3 text-zinc-500 text-xs outline-none cursor-not-allowed" />
-                  </div>
-                     <div className="space-y-2 pt-2 border-t border-zinc-800/50">
-                       <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex justify-between">
-                         Nueva Contraseña 
-                       </label>
-                       <input 
-                         type="password" 
-                         placeholder="Ingresa nueva llave secreta" 
-                         value={newPassword}
-                         onChange={e => setNewPassword(e.target.value)}
-                         className={`w-full bg-black/50 border rounded py-2 px-3 text-white text-sm outline-none transition-all font-mono tracking-widest placeholder:tracking-normal placeholder:font-sans ${passwordsMatch ? 'border-neon-green/50 ring-1 ring-neon-green/20' : 'border-zinc-800 focus:border-neon-purple'}`} 
-                       />
-                     </div>
-                     <div className="space-y-2 pt-2">
-                       <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex justify-between">
-                         Confirmar Contraseña
-                         {passwordsMatch && <span className="text-neon-green lowercase tracking-normal animate-pulse">✓ coinciden</span>}
-                         {passMsg && <span className={`lowercase tracking-normal ${passMsg.includes('Error') || passMsg.includes('No coincide') ? 'text-red-500' : 'text-neon-green'}`}>{passMsg}</span>}
-                       </label>
-                       <input 
-                         type="password" 
-                         placeholder="Repite la nueva llave" 
-                         value={confirmPassword}
-                         onChange={e => setConfirmPassword(e.target.value)}
-                         className={`w-full bg-black/50 border rounded py-2 px-3 text-white text-sm outline-none transition-all font-mono tracking-widest placeholder:tracking-normal placeholder:font-sans ${passwordsMatch ? 'border-neon-green/50 ring-1 ring-neon-green/20 shadow-[0_0_15px_rgba(57,255,20,0.05)]' : 'border-zinc-800 focus:border-neon-purple'}`} 
-                       />
-                     </div>
-                     <button type="submit" disabled={!passwordsMatch && newPassword.length > 0} className="w-full mt-2 bg-transparent border border-zinc-700 hover:border-neon-purple hover:bg-neon-purple/10 text-white font-bold uppercase tracking-widest text-xs py-3 rounded transition-all disabled:opacity-30 disabled:cursor-not-allowed">
-                       Actualizar Contraseña
-                     </button>
-                  </form>
+                   <form onSubmit={handleProfileUpdate} className="space-y-4 mb-8">
+                      <div className="space-y-2">
+                        <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex justify-between">
+                          Nombre de Raver 
+                          {profileMsg && <span className="text-neon-purple lowercase tracking-normal">{profileMsg}</span>}
+                        </label>
+                        <input 
+                          type="text" 
+                          value={newName} 
+                          onChange={e => setNewName(e.target.value)}
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded py-2 px-3 text-white text-sm outline-none focus:border-neon-purple transition-colors" 
+                        />
+                      </div>
+                      <button type="submit" className="text-[10px] bg-zinc-800 hover:bg-neon-purple text-white font-bold uppercase py-1 px-3 rounded transition-all">
+                        Guardar Nombre
+                      </button>
+                   </form>
+
+                   <form onSubmit={handlePasswordChange} className="space-y-6">
+                      <div className="space-y-2 pt-2 border-t border-zinc-800/50 mb-6">
+                         <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">Email (Identidad)</label>
+                         <input type="text" readOnly defaultValue={profile?.email} className="w-full bg-black/30 border border-zinc-900 rounded py-2 px-3 text-zinc-500 text-xs outline-none cursor-not-allowed" />
+                      </div>
+                      <div className="space-y-2 pt-2 border-t border-zinc-800/50">
+                        <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex justify-between">
+                          Nueva Contraseña 
+                        </label>
+                        <input 
+                          type="password" 
+                          placeholder="Ingresa nueva llave secreta" 
+                          value={newPassword}
+                          onChange={e => setNewPassword(e.target.value)}
+                          className={`w-full bg-black/50 border rounded py-2 px-3 text-white text-sm outline-none transition-all font-mono tracking-widest placeholder:tracking-normal placeholder:font-sans ${passwordsMatch ? 'border-neon-green/50 ring-1 ring-neon-green/20' : 'border-zinc-800 focus:border-neon-purple'}`} 
+                        />
+                      </div>
+                      <div className="space-y-2 pt-2">
+                        <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex justify-between">
+                          Confirmar Contraseña
+                          {passwordsMatch && <span className="text-neon-green lowercase tracking-normal animate-pulse">✓ coinciden</span>}
+                          {passMsg && <span className={`lowercase tracking-normal ${passMsg.includes('Error') || passMsg.includes('No coincide') ? 'text-red-500' : 'text-neon-green'}`}>{passMsg}</span>}
+                        </label>
+                        <input 
+                          type="password" 
+                          placeholder="Repite la nueva llave" 
+                          value={confirmPassword}
+                          onChange={e => setConfirmPassword(e.target.value)}
+                          className={`w-full bg-black/50 border rounded py-2 px-3 text-white text-sm outline-none transition-all font-mono tracking-widest placeholder:tracking-normal placeholder:font-sans ${passwordsMatch ? 'border-neon-green/50 ring-1 ring-neon-green/20 shadow-[0_0_15px_rgba(57,255,20,0.05)]' : 'border-zinc-800 focus:border-neon-purple'}`} 
+                        />
+                      </div>
+                      <button type="submit" disabled={!passwordsMatch && newPassword.length > 0} className="w-full mt-2 bg-transparent border border-zinc-700 hover:border-neon-purple hover:bg-neon-purple/10 text-white font-bold uppercase tracking-widest text-xs py-3 rounded transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                        Actualizar Contraseña
+                      </button>
+                   </form>
                 </section>
               </div>
         </div>
