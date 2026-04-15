@@ -9,10 +9,9 @@ export const metadata: Metadata = {
   title: "Kasa del Sol | Private Raves",
   description: "Ticketing platform for exclusive techno and electronic raves.",
   icons: {
-    icon: "/api/brand/icon",
-    apple: "/api/brand/icon",
+    icon: "/api/brand/icon?v=1",
+    apple: "/api/brand/icon?v=1",
   },
-  manifest: "/manifest.ts"
 };
 
 export const viewport: Viewport = {

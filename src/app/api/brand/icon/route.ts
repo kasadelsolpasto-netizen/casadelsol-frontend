@@ -12,16 +12,7 @@ export async function GET() {
 
     const data = await res.json();
     if (!data || !data.logoBase64) {
-      // Default icon if not uploaded yet
-      // Generates a simple transparent 1x1 base64 png
-      const transparentPixel = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
-      const buffer = Buffer.from(transparentPixel, 'base64');
-      return new NextResponse(buffer, {
-        headers: {
-          'Content-Type': 'image/png',
-          'Cache-Control': 'public, max-age=3600, s-maxage=3600',
-        },
-      });
+      return new NextResponse('Icon not configured', { status: 404 });
     }
 
     // Extract mime type and base64 data

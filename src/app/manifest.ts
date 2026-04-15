@@ -7,17 +7,17 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Sistemas de Seguridad y Boletería (Bóveda)',
     start_url: '/',
     display: 'standalone',
-    background_color: '#000000',
-    theme_color: '#000000',
+    background_color: '#030303',
+    theme_color: '#030303',
     icons: [
       {
-        src: '/api/brand/icon',
+        src: '/api/brand/icon?v=1',
         sizes: '192x192',
         type: 'image/png',
         purpose: 'maskable any',
       },
       {
-        src: '/api/brand/icon',
+        src: '/api/brand/icon?v=1',
         sizes: '512x512',
         type: 'image/png',
         purpose: 'maskable any',
