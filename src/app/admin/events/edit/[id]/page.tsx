@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { Image as ImageIcon, Upload, ArrowLeft, Loader2, Save } from 'lucide-react';
+import { Image as ImageIcon, Upload, Plus, Trash2, ArrowLeft, Loader2, Save } from 'lucide-react';
 import { AdminGuard } from '@/components/AdminGuard';
 
 const supabase = createClient(
@@ -250,25 +250,24 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
                                value={t.capacity} onChange={e => handleTicketChange(index, 'capacity', e.target.value)} />
                         </div>
 
-                        {/* Tramos Horarios */}
+                        {/* Configuración de Venta por Fechas */}
                         <div className="md:col-span-12 pt-4 mt-2 border-t border-zinc-900/50">
                           <div className="flex flex-col md:flex-row gap-6">
                             <div className="flex-1 space-y-2">
-                               <label className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">Horario Fin de Venta</label>
-                               <input type="datetime-local" className="w-full bg-black/40 rounded-lg py-3 px-4 text-xs text-zinc-400 outline-none border border-zinc-800 focus:border-red-500" 
+                               <label className="text-[10px] text-zinc-300 uppercase tracking-widest font-black">📅 Fecha y Hora de APERTURA</label>
+                               <input type="datetime-local" className="w-full bg-black/40 rounded-xl py-4 px-5 text-sm text-white outline-none border border-zinc-700 hover:border-blue-500 focus:border-blue-500 transition-all font-mono" 
+                                  value={t.sale_start || ''} onChange={e => handleTicketChange(index, 'sale_start', e.target.value)} />
+                               <p className="text-[9px] text-zinc-600 font-bold uppercase px-1">La fase empieza a venderse en este momento.</p>
+                            </div>
+                            <div className="flex-1 space-y-2">
+                               <label className="text-[10px] text-zinc-300 uppercase tracking-widest font-black">🔴 Fecha y Hora de CIERRE</label>
+                               <input type="datetime-local" className="w-full bg-black/40 rounded-xl py-4 px-5 text-sm text-white outline-none border border-zinc-700 hover:border-red-500 focus:border-red-500 transition-all font-mono" 
                                   value={t.sale_end || ''} onChange={e => handleTicketChange(index, 'sale_end', e.target.value)} />
 
                                <div className="flex gap-2 pt-2">
-                                  <button onClick={() => setHourlyPreset(index, '23:00')} className="bg-zinc-900 hover:bg-zinc-700 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-widest border border-zinc-800">Cierra 11 PM</button>
-                                  <button onClick={() => setHourlyPreset(index, '01:00', true)} className="bg-zinc-900 hover:bg-zinc-700 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-widest border border-zinc-800">Cierra 1 AM</button>
-                                  <button onClick={() => setHourlyPreset(index, '03:00', true)} className="bg-zinc-900 hover:bg-zinc-700 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-widest border border-zinc-800">Cierra 3 AM</button>
+                                  <button onClick={() => setHourlyPreset(index, '23:00')} className="bg-zinc-800 hover:bg-zinc-600 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-zinc-700">Set 11 PM</button>
+                                  <button onClick={() => setHourlyPreset(index, '01:00', true)} className="bg-zinc-800 hover:bg-zinc-600 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-zinc-700">Set 1 AM</button>
                                </div>
-                            </div>
-                            <div className="flex-1 space-y-2">
-                               <label className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">Horario Inicio Venta</label>
-                               <input type="datetime-local" className="w-full bg-black/40 rounded-lg py-3 px-4 text-xs text-zinc-400 outline-none border border-zinc-800 focus:border-blue-500" 
-                                  value={t.sale_start || ''} onChange={e => handleTicketChange(index, 'sale_start', e.target.value)} />
-                               <p className="text-[9px] text-zinc-600 font-bold uppercase px-1">Opcional: Solo si esta fase inicia después</p>
                             </div>
                           </div>
                         </div>
