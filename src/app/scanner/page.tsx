@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { CheckCircle, XCircle, ArrowLeft, Loader2, UserCheck, ShieldAlert, DoorOpen, QrCode, Check, Users, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import { StaffGuard } from '@/components/StaffGuard';
@@ -69,50 +69,47 @@ export default function ScannerPage() {
     fetchSummary();
   }, [selectedEventId, taqSuccess]);
 
-  // ── QR Scanner ────────────────────────────────────────────────
-  const scannerDivRef = useCallback((node: HTMLDivElement | null) => {
-    if (!node || scannerRef.current) return;
-
-    import('html5-qrcode')
-      .then(({ Html5QrcodeScanner }) => {
-        const scanner = new Html5QrcodeScanner(
-          'qr-reader',
-          {
-            fps: 12,
-            qrbox: { width: 260, height: 260 },
-            rememberLastUsedCamera: false,
-            supportedScanTypes: [0], // solo cámara
-            facingMode: 'environment',  // 👈 cámara trasera forzada por defecto
-            showTorchButtonIfSupported: true,  // linterna si el móvil la soporta
-          },
-          false
-        );
-        scannerRef.current = scanner;
-        scanner.render(
-          (decodedText: string) => {
-            if (cooldownRef.current) return;
-            cooldownRef.current = true;
-            const token = decodedText.includes('/ticket/')
-              ? decodedText.split('/ticket/')[1]?.split('?')[0]?.trim()
-              : decodedText.trim();
-            handleScan(token).finally(() => {
-              setTimeout(() => { cooldownRef.current = false; setStatus({ type: 'idle' }); }, 4000);
-            });
-          },
-          () => {}
-        );
-      })
-      .catch(err => console.error('Error cargando html5-qrcode:', err));
-  }, []);
+  // ── QR Scanner (Html5Qrcode low-level — cámara trasera automática) ──────
+  const qrDivId = 'qr-reader-custom';
 
   useEffect(() => {
+    if (mode !== 'qr') return;
+
+    let html5Qrcode: any = null;
+
+    import('html5-qrcode').then(({ Html5Qrcode }) => {
+      html5Qrcode = new Html5Qrcode(qrDivId);
+      scannerRef.current = html5Qrcode;
+
+      html5Qrcode.start(
+        { facingMode: { ideal: 'environment' } }, // cámara trasera automática
+        { fps: 12, qrbox: { width: 240, height: 240 } },
+        (decodedText: string) => {
+          if (cooldownRef.current) return;
+          cooldownRef.current = true;
+          const token = decodedText.includes('/ticket/')
+            ? decodedText.split('/ticket/')[1]?.split('?')[0]?.trim()
+            : decodedText.trim();
+          handleScan(token).finally(() => {
+            setTimeout(() => {
+              cooldownRef.current = false;
+              setStatus({ type: 'idle' });
+            }, 4000);
+          });
+        },
+        () => {} // ignorar errores de frame vacío
+      ).catch((err: any) => console.error('Error iniciando cámara:', err));
+    }).catch(console.error);
+
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.clear().catch(() => {});
-        scannerRef.current = null;
+        scannerRef.current.stop().then(() => {
+          scannerRef.current?.clear();
+          scannerRef.current = null;
+        }).catch(() => {});
       }
     };
-  }, []);
+  }, [mode]); // se inicia/detiene según el modo activo
 
   const handleScan = async (token: string) => {
     setStatus({ type: 'loading' });
@@ -203,12 +200,14 @@ export default function ScannerPage() {
             <h1 className="text-2xl font-black uppercase tracking-widest text-white mb-1 text-center">Escáner QR</h1>
             <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-6 text-center">Apunta el lente al código del asistente</p>
 
-            <div className="w-full rounded-2xl overflow-hidden border-2 border-zinc-800 shadow-[0_0_50px_rgba(0,0,0,0.9)] bg-black relative">
-              <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-neon-green rounded-tl z-10 pointer-events-none" />
-              <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-neon-green rounded-tr z-10 pointer-events-none" />
-              <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-neon-green rounded-bl z-10 pointer-events-none" />
-              <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-neon-green rounded-br z-10 pointer-events-none" />
-              <div id="qr-reader" ref={scannerDivRef} className="w-full" />
+            {/* Viewfinder — la cámara trasera se inicia automáticamente */}
+            <div className="w-full rounded-2xl overflow-hidden border-2 border-zinc-800 shadow-[0_0_50px_rgba(0,0,0,0.9)] bg-black relative aspect-square">
+              <div className="absolute top-3 left-3 w-8 h-8 border-t-2 border-l-2 border-neon-green rounded-tl z-10 pointer-events-none" />
+              <div className="absolute top-3 right-3 w-8 h-8 border-t-2 border-r-2 border-neon-green rounded-tr z-10 pointer-events-none" />
+              <div className="absolute bottom-3 left-3 w-8 h-8 border-b-2 border-l-2 border-neon-green rounded-bl z-10 pointer-events-none" />
+              <div className="absolute bottom-3 right-3 w-8 h-8 border-b-2 border-r-2 border-neon-green rounded-br z-10 pointer-events-none" />
+              {/* Html5Qrcode renderiza aquí internamente sin controls propios */}
+              <div id="qr-reader-custom" className="w-full h-full" style={{minHeight: '300px'}} />
             </div>
 
             <div className="mt-6 w-full">
