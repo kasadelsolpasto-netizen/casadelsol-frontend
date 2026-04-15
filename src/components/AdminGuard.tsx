@@ -13,6 +13,28 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const rawUser = localStorage.getItem('kasa_user');
+
+    // Si no hay sesión activa de OWNER → mandar al home, no mostrar formulario admin
+    if (!rawUser) {
+      setChecking(false);
+      return;
+    }
+
+    try {
+      const user = JSON.parse(rawUser);
+      if (user.role !== 'OWNER') {
+        // Usuario normal/staff que llegó aquí por error → home
+        window.location.href = '/';
+        return;
+      }
+    } catch {
+      localStorage.removeItem('kasa_user');
+      setChecking(false);
+      return;
+    }
+
+    // Es OWNER → verificar si ya desbloqueó la sesión
     const isUnlocked = sessionStorage.getItem('supremo_unlocked');
     if (isUnlocked === 'true') {
       setUnlocked(true);

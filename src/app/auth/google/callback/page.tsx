@@ -19,6 +19,9 @@ function CallbackContent() {
     try {
       const user = JSON.parse(decodeURIComponent(userRaw));
 
+      // Limpiar residuos de sesión de admin anterior
+      sessionStorage.removeItem('supremo_unlocked');
+
       // Guardar igual que el login normal
       document.cookie = `kasa_auth_token=${token}; path=/; max-age=86400;`;
       localStorage.setItem('kasa_user', JSON.stringify(user));

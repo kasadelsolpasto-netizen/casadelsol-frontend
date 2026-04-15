@@ -7,8 +7,9 @@ export default function AdminLogoutButton() {
 
   const handleLogout = () => {
     localStorage.removeItem('kasa_user');
+    sessionStorage.removeItem('supremo_unlocked');
     document.cookie = 'kasa_auth_token=; path=/; max-age=0;';
-    router.push('/admin/login');
+    router.push('/');
   };
 
   return (

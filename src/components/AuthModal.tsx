@@ -43,7 +43,10 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       if (!resLogin.ok) throw new Error('Credenciales inválidas o error de conexión');
 
       const data = await resLogin.json();
-      
+
+      // Limpiar residuos de sesión de admin anterior
+      sessionStorage.removeItem('supremo_unlocked');
+
       document.cookie = `kasa_auth_token=${data.access_token}; path=/; max-age=86400;`;
       localStorage.setItem('kasa_user', JSON.stringify(data.user));
 

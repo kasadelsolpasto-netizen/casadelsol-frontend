@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ShieldAlert, KeyRound, Server } from 'lucide-react';
 
 export default function AdminLoginPage() {
@@ -10,6 +10,24 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Si ya hay sesión activa, redirigir al lugar correcto
+  useEffect(() => {
+    const rawUser = localStorage.getItem('kasa_user');
+    if (rawUser) {
+      try {
+        const user = JSON.parse(rawUser);
+        if (user.role === 'OWNER') {
+          router.replace('/admin');
+        } else {
+          // Usuario normal/staff que llegó aquí → mandarlo al home
+          router.replace('/');
+        }
+      } catch {
+        localStorage.removeItem('kasa_user');
+      }
+    }
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -21,6 +21,7 @@ export function Navbar() {
 
   const logout = () => {
     localStorage.removeItem('kasa_user');
+    sessionStorage.removeItem('supremo_unlocked');
     document.cookie = 'kasa_auth_token=; path=/; max-age=0;';
     setUser(null);
     router.push('/login');

@@ -16,20 +16,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     const rawUser = localStorage.getItem('kasa_user');
     if (!rawUser) {
-      router.push('/admin/login');
+      // Sin sesión local → el usuario no es admin, mandar al home público
+      router.push('/');
       return;
     }
 
     try {
       const user = JSON.parse(rawUser);
-      // HARD CLIENT-SIDE GUARD: BLOCK EVERYONE EXCEPT OWNER
+      // HARD CLIENT-SIDE GUARD: SOLO OWNER puede entrar al /admin
       if (user.role !== 'OWNER') {
         router.push('/');
         return;
       }
       setIsAuthorized(true);
     } catch {
-      router.push('/admin/login');
+      // Token corrupto → limpiar y mandar al home
+      localStorage.removeItem('kasa_user');
+      router.push('/');
     }
   }, [router, pathname]);
 

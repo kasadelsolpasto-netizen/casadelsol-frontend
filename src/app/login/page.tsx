@@ -30,7 +30,10 @@ export default function LoginPage() {
       }
 
       const data = await res.json();
-      
+
+      // Limpiar cualquier residuo de sesión de admin anterior
+      sessionStorage.removeItem('supremo_unlocked');
+
       document.cookie = `kasa_auth_token=${data.access_token}; path=/; max-age=86400;`;
       localStorage.setItem('kasa_user', JSON.stringify(data.user));
 
@@ -39,7 +42,8 @@ export default function LoginPage() {
       } else if (data.user?.role === 'STAFF') {
         setPendingStaffData(data.user);
       } else {
-        router.push('/');
+        // Usuario normal → su perfil personal
+        router.push(`/profile/${data.user.id}`);
       }
     } catch (err: any) {
       setError(err.message);
