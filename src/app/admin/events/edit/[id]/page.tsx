@@ -322,5 +322,3 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
     </AdminGuard>
   );
 }
-  );
-}

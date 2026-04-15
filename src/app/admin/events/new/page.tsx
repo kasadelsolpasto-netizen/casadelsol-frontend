@@ -317,7 +317,5 @@ export default function NewEventPage() {
         </div>
       </div>
     </AdminGuard>
-
-    </AdminGuard>
   );
 }
