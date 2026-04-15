@@ -22,8 +22,8 @@ export default function AdminDashboard() {
             <Link href="/admin" className="flex items-center gap-3 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white font-bold tracking-wider text-sm neon-border-primary">
               <Activity className="w-4 h-4 text-neon-green" /> Vista General
             </Link>
-            <Link href="/admin/events/new" className="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-lg tracking-wider text-sm transition-all group">
-              <CalendarPlus className="w-4 h-4 group-hover:text-neon-purple transition-all" /> Crear Evento
+            <Link href="/admin/events" className="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-lg tracking-wider text-sm transition-all group">
+              <CalendarPlus className="w-4 h-4 group-hover:text-neon-purple transition-all" /> Gestión de Eventos
             </Link>
             <Link href="#" className="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-lg tracking-wider text-sm transition-all group">
               <Ticket className="w-4 h-4 group-hover:text-neon-green transition-all" /> Estadísticas Ventas
