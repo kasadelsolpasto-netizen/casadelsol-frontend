@@ -11,12 +11,20 @@ export function Navbar() {
 
   useEffect(() => {
     setMounted(true);
-    const stored = localStorage.getItem('kasa_user');
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch(e) {}
-    }
+    const syncUser = () => {
+      const stored = localStorage.getItem('kasa_user');
+      if (stored) {
+        try {
+          setUser(JSON.parse(stored));
+        } catch(e) {}
+      } else {
+        setUser(null);
+      }
+    };
+    syncUser();
+
+    window.addEventListener('storage', syncUser);
+    return () => window.removeEventListener('storage', syncUser);
   }, []);
 
   const logout = () => {

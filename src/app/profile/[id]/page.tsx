@@ -53,7 +53,22 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
-          setProfile(await res.json());
+          const data = await res.json();
+          setProfile(data);
+          
+          // Sincronizar el rol en duro para que el Navbar reaccione si lo degradaron
+          const localStr = localStorage.getItem('kasa_user');
+          if (localStr) {
+            try {
+              const localUser = JSON.parse(localStr);
+              if (localUser.role !== data.role || localUser.name !== data.name) {
+                localUser.role = data.role;
+                localUser.name = data.name;
+                localStorage.setItem('kasa_user', JSON.stringify(localUser));
+                window.dispatchEvent(new Event('storage'));
+              }
+            } catch(e) {}
+          }
         } else {
           router.push('/login');
         }
