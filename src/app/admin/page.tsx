@@ -1,8 +1,32 @@
+"use client";
 import Link from 'next/link';
-import { QrCode, CalendarPlus } from 'lucide-react';
+import { QrCode, CalendarPlus, Loader2 } from 'lucide-react';
 import { AdminGuard } from '@/components/AdminGuard';
+import { useEffect, useState } from 'react';
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
+        const authToken = tokenRow ? tokenRow.split('=')[1] : null;
+
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/events/admin/dashboard-stats`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (res.ok) setStats(await res.json());
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
   return (
     <AdminGuard>
       <div className="p-6 md:p-8 max-w-6xl mx-auto">
@@ -19,20 +43,28 @@ export default function AdminDashboard() {
         </header>
 
         {/* Dash metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="glass-panel bg-black/40 p-6 rounded-2xl border border-zinc-800 border-t-2 border-t-neon-green shadow-sm hover:border-zinc-700 transition-colors">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Ingresos Locales</h3>
-            <p className="text-4xl font-black text-white">$1,450 <span className="text-xs font-black uppercase text-neon-green neon-text-primary ml-2">+12%</span></p>
+        {loading ? (
+          <div className="flex justify-center p-12 mb-12"><Loader2 className="w-10 h-10 animate-spin text-neon-green" /></div>
+        ) : stats ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div className="glass-panel bg-black/40 p-6 rounded-2xl border border-zinc-800 border-t-2 border-t-neon-green shadow-sm hover:border-zinc-700 transition-colors">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Ingresos (Últ. 30 días)</h3>
+              <p className="text-3xl lg:text-4xl font-black text-white">${stats.revenue.total.toLocaleString()} <span className="text-[10px] font-black uppercase text-zinc-500 ml-1">COP</span></p>
+            </div>
+            <div className="glass-panel bg-black/40 p-6 rounded-2xl border border-zinc-800 border-t-2 border-t-neon-purple shadow-sm hover:border-zinc-700 transition-colors">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Auditorio Acumulado (QRs)</h3>
+              <p className="text-3xl lg:text-4xl font-black text-white">{stats.qrs.scanned} <span className="text-xs font-black uppercase text-zinc-500 ml-1">/ {stats.qrs.total} tickets</span></p>
+            </div>
+            <div className="glass-panel bg-black/40 p-6 rounded-2xl border border-zinc-800 border-t-2 border-t-[#00ffff] shadow-sm hover:border-zinc-700 transition-colors">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Ecosistema</h3>
+              <p className="text-3xl lg:text-4xl font-black text-white">{stats.events.active} <span className="text-xs font-black uppercase text-zinc-500 ml-1">Eventos Activos</span></p>
+            </div>
           </div>
-          <div className="glass-panel bg-black/40 p-6 rounded-2xl border border-zinc-800 border-t-2 border-t-neon-purple shadow-sm hover:border-zinc-700 transition-colors">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">QRs Autorizados</h3>
-            <p className="text-4xl font-black text-white">45 / 300 <span className="text-xs font-black uppercase text-zinc-500 ml-2">tickets</span></p>
+        ) : (
+          <div className="p-10 mb-12 border border-zinc-800 border-dashed rounded-2xl text-center text-zinc-500 text-sm font-bold uppercase tracking-widest">
+            Sin conexión al servidor de la bóveda
           </div>
-          <div className="glass-panel bg-black/40 p-6 rounded-2xl border border-zinc-800 border-t-2 border-t-[#00ffff] shadow-sm hover:border-zinc-700 transition-colors">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Eventos Publicados</h3>
-            <p className="text-4xl font-black text-white">2 <span className="text-xs font-black uppercase text-zinc-500 ml-2">activos</span></p>
-          </div>
-        </div>
+        )}
 
         {/* Quick action section */}
         <div>
@@ -55,8 +87,8 @@ export default function AdminDashboard() {
                  <QrCode className="w-8 h-8 text-neon-green" />
                </div>
                <div>
-                  <h3 className="font-black uppercase tracking-widest text-white mb-2 group-hover:neon-text-primary transition-all">Lanzar Escáner QR</h3>
-                  <p className="text-xs text-zinc-400 font-bold max-w-xs">Activa la cámara nativa para validar asistentes en la entrada.</p>
+                  <h3 className="font-black uppercase tracking-widest text-white mb-2 group-hover:neon-text-primary transition-all">Punto de Control</h3>
+                  <p className="text-xs text-zinc-400 font-bold max-w-xs">Activa la cámara nativa para validar escáner o registrar asistentes libres en taquilla.</p>
                </div>
             </Link>
           </div>

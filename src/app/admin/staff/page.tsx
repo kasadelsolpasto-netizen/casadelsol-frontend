@@ -72,14 +72,15 @@ export default function StaffManagementPage() {
     }
   };
 
-  const handleRevoke = async (staffId: string) => {
-    if (!confirm('¿Estás seguro de revocar el acceso a este miembro? Perderá sus funciones especiales inmediatamente.')) return;
+  const handleToggle = async (staffId: string, currentRole: string) => {
+    const action = currentRole === 'STAFF' ? 'APAGAR' : 'ACTIVAR';
+    if (!confirm(`¿Seguro que quieres ${action} el modo de trabajo para este miembro?`)) return;
     try {
       const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
       const token = tokenRow ? tokenRow.split('=')[1] : null;
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/admin/staff/${staffId}`, {
-        method: 'DELETE',
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/admin/staff/${staffId}/toggle`, {
+        method: 'PUT',
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -194,7 +195,7 @@ export default function StaffManagementPage() {
                       <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-zinc-500">ID Operativo</th>
                       <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-zinc-500">Tipo</th>
                       <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-zinc-500">Módulo</th>
-                      <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-zinc-500 text-right">Extorsión</th>
+                      <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-zinc-500 text-right">Estado Operativo</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800/50">
@@ -229,10 +230,15 @@ export default function StaffManagementPage() {
                           </td>
                           <td className="py-4 px-6 text-right">
                              <button 
-                               onClick={() => handleRevoke(st.id)}
-                               className="text-xs font-bold uppercase tracking-widest text-red-700 hover:text-red-400 border border-red-900/50 hover:bg-red-900/20 px-3 py-1.5 rounded transition-all"
+                               onClick={() => handleToggle(st.id, st.role)}
+                               className={`text-[10px] font-black uppercase tracking-widest px-4 py-2 border rounded-full transition-all flex items-center justify-center min-w-[105px] ml-auto ${
+                                 st.role === 'STAFF' 
+                                   ? 'text-neon-green border-neon-green/40 hover:border-neon-green hover:bg-neon-green/10' 
+                                   : 'text-zinc-500 border-zinc-700 bg-zinc-900/50 hover:bg-zinc-800'
+                               }`}
                              >
-                               Revocar
+                               <div className={`w-2 h-2 rounded-full mr-2 ${st.role === 'STAFF' ? 'bg-neon-green shadow-[0_0_8px_#39ff14]' : 'bg-zinc-600'}`}></div>
+                               {st.role === 'STAFF' ? 'Trabajando' : 'Descansando'}
                              </button>
                           </td>
                         </tr>
