@@ -17,6 +17,7 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
   const [formData, setFormData] = useState({
     title: '', description: '', date: '', venue: '', status: 'PUBLISHED'
   });
+  const [ticketTypes, setTicketTypes] = useState<any[]>([]);
   const [flyerUrl, setFlyerUrl] = useState<string>('');
   const [uploading, setUploading] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -31,11 +32,16 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
           setFormData({
             title: event.title,
             description: event.description || '',
-            date: new Date(event.date).toISOString().slice(0, 16), // datetime-local format
+            date: new Date(event.date).toISOString().slice(0, 16),
             venue: event.venue,
             status: event.status
           });
           setFlyerUrl(event.flyer_url || '');
+          setTicketTypes(event.ticket_types.map((t: any) => ({
+             ...t,
+             sale_start: t.sale_start ? new Date(t.sale_start).toISOString().slice(0, 16) : '',
+             sale_end: t.sale_end ? new Date(t.sale_end).toISOString().slice(0, 16) : ''
+          })));
         } else {
           setSubmitError('Evento no encontrado');
         }
@@ -69,9 +75,33 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
     setUploading(false);
   };
 
+  const handleTicketChange = (index: number, field: string, value: any) => {
+    const newTickets = [...ticketTypes];
+    newTickets[index] = { ...newTickets[index], [field]: value };
+    setTicketTypes(newTickets);
+  };
+
+  const setHourlyPreset = (index: number, timeStr: string, nextDay: boolean = false) => {
+    if (!formData.date) return;
+    const eventDate = new Date(formData.date);
+    if (nextDay) eventDate.setDate(eventDate.getDate() + 1);
+    
+    const [hours, minutes] = timeStr.split(':');
+    eventDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    
+    // Format to YYYY-MM-DDTHH:mm
+    const year = eventDate.getFullYear();
+    const month = String(eventDate.getMonth() + 1).padStart(2, '0');
+    const day = String(eventDate.getDate()).padStart(2, '0');
+    const hh = String(eventDate.getHours()).padStart(2, '0');
+    const mm = String(eventDate.getMinutes()).padStart(2, '0');
+    
+    handleTicketChange(index, 'sale_end', `${year}-${month}-${day}T${hh}:${mm}`);
+  };
+
   const actualizarEvento = async () => {
     if (!formData.title || !formData.date) {
-       return alert("⚠️ Faltan datos esenciales (Título o Fecha).");
+       return alert("⚠️ Faltan datos esenciales.");
     }
     
     setPublishing(true);
@@ -88,7 +118,8 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
         },
         body: JSON.stringify({
            ...formData,
-           flyer_url: flyerUrl
+           flyer_url: flyerUrl,
+           ticket_types: ticketTypes
         })
       });
 
@@ -105,90 +136,191 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
     }
   }
 
-  if (loading) return <div className="min-h-screen bg-[#070000] flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-blue-500" /></div>;
+  if (loading) return <div className="min-h-screen bg-[#030303] flex justify-center items-center"><Loader2 className="w-10 h-10 animate-spin text-neon-purple" /></div>;
 
   return (
     <AdminGuard>
-      <div className="min-h-screen bg-[#070000] text-white p-6 relative overflow-hidden flex flex-col md:flex-row">
-        {/* LADO IZQUIERDO: CONTROLES */}
-        <div className="w-full md:w-1/2 p-6 md:p-12 overflow-y-auto h-screen custom-scrollbar relative z-10 border-r border-zinc-900 bg-black">
-          <Link href="/admin/events" className="inline-flex items-center gap-2 text-zinc-500 hover:text-blue-500 transition-colors mb-8 uppercase font-bold tracking-widest text-xs">
-            <ArrowLeft className="w-4 h-4" /> Volver al Manager
-          </Link>
-          <h1 className="text-3xl font-black uppercase tracking-widest text-white mb-2">Editar Evento</h1>
-          <p className="text-zinc-400 text-sm mb-10">Modifica la información básica. Las boletas, por seguridad contable, no pueden ser editadas por esta vía.</p>
+      <div className="min-h-screen bg-[#030303] text-white p-4 md:p-8 lg:p-12 relative overflow-hidden flex flex-col lg:flex-row gap-8">
+        {/* LADO IZQUIERDO: FORMULARIO (60%) */}
+        <div className="w-full lg:w-[60%] space-y-8 animate-in fade-in slide-in-from-left-4 duration-700">
+          <header>
+            <Link href="/admin/events" className="inline-flex items-center gap-2 text-zinc-500 hover:text-blue-500 transition-all mb-4 uppercase font-bold tracking-widest text-[10px]">
+              <ArrowLeft className="w-4 h-4" /> Volver al Manager
+            </Link>
+            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-white mb-2 leading-none">
+               Editar <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400 text-blue-500">Evento</span>
+            </h1>
+            <p className="text-zinc-500 text-sm uppercase tracking-widest font-bold">Ajustes Técnicos y de Boletería</p>
+          </header>
 
-          <div className="space-y-6">
-            {/* FOTO UPLOAD */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-blue-500 mb-3">Afiche Oficial (Flyer)</label>
-              <div className="w-full relative">
-                 <input type="file" accept="image/*" onChange={handleSubidaImagen} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                 <div className={`glass-panel border-2 border-dashed ${uploading ? 'border-blue-500 animate-pulse' : 'border-zinc-700 hover:border-white'} rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all`}>
-                   {uploading ? (
-                      <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-3" />
-                   ) : (
-                      <Upload className="w-10 h-10 text-zinc-500 mb-3" />
-                   )}
-                   <span className="font-bold text-sm text-zinc-300">{uploading ? 'Transfiriendo...' : 'Haz Clic para Remplazar Imagen'}</span>
-                 </div>
+          <div className="space-y-8 pb-20">
+            {/* SECCIÓN 1: DATOS BÁSICOS */}
+            <section className="glass-panel p-6 rounded-2xl border border-zinc-800 bg-zinc-900/20 space-y-6">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+                  <Save className="w-4 h-4 text-blue-500" />
+                </div>
+                <h2 className="text-sm font-black uppercase tracking-widest text-zinc-300">Configuración Base</h2>
               </div>
-            </div>
 
-            {/* DATOS BÁSICOS */}
-            <div className="space-y-4 pt-4 border-t border-zinc-900">
-               <div>
-                 <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Título del Evento</label>
-                 <input type="text" className="w-full bg-zinc-900/50 border border-zinc-800 rounded py-3 px-4 text-white hover:border-zinc-600 focus:border-blue-500 outline-none transition-colors" 
-                    value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
-               </div>
-               <div>
-                 <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Fecha y Hora</label>
-                 <input type="datetime-local" className="w-full bg-zinc-900/50 border border-zinc-800 rounded py-3 px-4 text-white hover:border-zinc-600 focus:border-blue-500 outline-none transition-colors" 
-                    value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
-               </div>
-               <div>
-                 <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Locación (Venue)</label>
-                 <input type="text" className="w-full bg-zinc-900/50 border border-zinc-800 rounded py-3 px-4 text-white hover:border-zinc-600 focus:border-blue-500 outline-none transition-colors" 
-                    value={formData.venue} onChange={e => setFormData({...formData, venue: e.target.value})} />
-               </div>
-               <div>
-                 <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Descripción</label>
-                 <textarea rows={3} className="w-full bg-zinc-900/50 border border-zinc-800 rounded py-3 px-4 text-white hover:border-zinc-600 focus:border-blue-500 outline-none transition-colors" 
-                    value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
-               </div>
-               <div>
-                 <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Estado</label>
-                 <select className="w-full bg-zinc-900/50 border border-zinc-800 rounded py-3 px-4 text-white hover:border-zinc-600 focus:border-blue-500 outline-none transition-colors"
-                    value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})}>
-                   <option value="PUBLISHED">Publicado (Visible)</option>
-                   <option value="DRAFT">Archivado (Oculto)</option>
-                 </select>
-               </div>
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2 space-y-3">
+                  <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black ml-1">Nombre del Evento</label>
+                  <input type="text" className="w-full bg-black border border-zinc-800 rounded-xl py-4 px-5 text-white hover:border-zinc-500 focus:border-blue-500 outline-none transition-all" 
+                     value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
+                </div>
+                
+                <div className="space-y-3">
+                  <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black ml-1">Venue</label>
+                  <input type="text" className="w-full bg-black border border-zinc-800 rounded-xl py-4 px-5 text-white hover:border-zinc-500 focus:border-blue-500 outline-none transition-all" 
+                     value={formData.venue} onChange={e => setFormData({...formData, venue: e.target.value})} />
+                </div>
 
-            {submitError && <div className="text-red-500 text-xs font-bold uppercase tracking-widest mt-4">{submitError}</div>}
-            <button onClick={actualizarEvento} disabled={uploading || publishing} className="w-full mt-10 bg-blue-600 hover:bg-blue-500 hover:shadow-[0_0_30px_rgba(37,99,235,0.6)] text-white font-black uppercase tracking-widest py-5 rounded-xl transition-all flex justify-center items-center gap-2">
-              {publishing ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Save className="w-5 h-5" /> Guardar Cambios</>}
+                <div className="space-y-3">
+                  <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black ml-1">Fecha</label>
+                  <input type="datetime-local" className="w-full bg-black border border-zinc-800 rounded-xl py-4 px-5 text-white hover:border-zinc-500 focus:border-blue-500 outline-none transition-all" 
+                     value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+                </div>
+
+                <div className="md:col-span-2 space-y-3">
+                  <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black ml-1">Descripción</label>
+                  <textarea rows={3} className="w-full bg-black border border-zinc-800 rounded-xl py-4 px-5 text-white hover:border-zinc-500 focus:border-blue-500 outline-none transition-all resize-none" 
+                     value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                </div>
+
+                <div className="md:col-span-2 space-y-3">
+                  <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black ml-1">Estado de Visibilidad</label>
+                  <select 
+                    className="w-full bg-black border border-zinc-800 rounded-xl py-4 px-5 text-white hover:border-zinc-500 focus:border-blue-500 outline-none transition-all cursor-pointer"
+                    value={formData.status} 
+                    onChange={e => setFormData({...formData, status: e.target.value})}
+                  >
+                     <option value="PUBLISHED">🟢 PUBLICADO</option>
+                     <option value="DRAFT">🔴 BORRADOR (OCULTO)</option>
+                  </select>
+                </div>
+              </div>
+            </section>
+
+            {/* SECCIÓN 2: BOLETERÍA EDITABLE */}
+            <section className="space-y-6">
+               <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-3">
+                     <div className="w-8 h-8 rounded-lg bg-neon-green/20 flex items-center justify-center border border-neon-green/30">
+                       <Plus className="w-4 h-4 text-neon-green" />
+                     </div>
+                     <h2 className="text-sm font-black uppercase tracking-widest text-zinc-300">Gestión de Boletas</h2>
+                   </div>
+                   <button 
+                     onClick={() => setTicketTypes([...ticketTypes, { name: 'Nueva Fase', price: 80000, capacity: 100, sale_start: '', sale_end: '' }])}
+                     className="bg-zinc-800 hover:bg-neon-green hover:text-black px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                   >
+                     + Añadir Fase
+                   </button>
+               </div>
+
+               <div className="grid grid-cols-1 gap-4">
+                 {ticketTypes.map((t: any, index: number) => (
+                    <div key={index} className="glass-panel p-6 rounded-2xl border border-zinc-800 bg-black/40 hover:border-zinc-600 transition-all relative group">
+                      <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <button onClick={() => setTicketTypes(ticketTypes.filter((_, i) => i !== index))} className="text-zinc-600 hover:text-red-500 p-2 transition-colors">
+                            <Trash2 className="w-5 h-5" />
+                         </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                        <div className="md:col-span-4 space-y-2">
+                          <label className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">Nombre</label>
+                          <input type="text" className="w-full bg-transparent text-lg font-black uppercase placeholder:text-zinc-800 outline-none border-b border-zinc-900 focus:border-blue-500" 
+                            value={t.name} onChange={e => handleTicketChange(index, 'name', e.target.value)} />
+                        </div>
+
+                        <div className="md:col-span-4 space-y-2">
+                          <label className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">Precio ($)</label>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl font-black text-neon-green">$</span>
+                            <input type="number" className="w-full bg-zinc-900/50 rounded-xl py-3 px-4 text-xl font-black text-neon-green outline-none border border-zinc-800 focus:border-neon-green shadow-inner" 
+                              value={t.price} onChange={e => handleTicketChange(index, 'price', e.target.value)} />
+                          </div>
+                        </div>
+
+                        <div className="md:col-span-4 space-y-2">
+                          <label className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">Capacidad</label>
+                          <input type="number" className="w-full bg-zinc-900/50 rounded-xl py-3 px-4 text-xl font-black text-white text-center outline-none border border-zinc-800 focus:border-white shadow-inner" 
+                               value={t.capacity} onChange={e => handleTicketChange(index, 'capacity', e.target.value)} />
+                        </div>
+
+                        {/* Tramos Horarios */}
+                        <div className="md:col-span-12 pt-4 mt-2 border-t border-zinc-900/50">
+                          <div className="flex flex-col md:flex-row gap-6">
+                            <div className="flex-1 space-y-2">
+                               <label className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">Horario Fin de Venta</label>
+                               <input type="datetime-local" className="w-full bg-black/40 rounded-lg py-3 px-4 text-xs text-zinc-400 outline-none border border-zinc-800 focus:border-red-500" 
+                                  value={t.sale_end || ''} onChange={e => handleTicketChange(index, 'sale_end', e.target.value)} />
+
+                               <div className="flex gap-2 pt-2">
+                                  <button onClick={() => setHourlyPreset(index, '23:00')} className="bg-zinc-900 hover:bg-zinc-700 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-widest border border-zinc-800">Cierra 11 PM</button>
+                                  <button onClick={() => setHourlyPreset(index, '01:00', true)} className="bg-zinc-900 hover:bg-zinc-700 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-widest border border-zinc-800">Cierra 1 AM</button>
+                                  <button onClick={() => setHourlyPreset(index, '03:00', true)} className="bg-zinc-900 hover:bg-zinc-700 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-widest border border-zinc-800">Cierra 3 AM</button>
+                               </div>
+                            </div>
+                            <div className="flex-1 space-y-2">
+                               <label className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">Horario Inicio Venta</label>
+                               <input type="datetime-local" className="w-full bg-black/40 rounded-lg py-3 px-4 text-xs text-zinc-400 outline-none border border-zinc-800 focus:border-blue-500" 
+                                  value={t.sale_start || ''} onChange={e => handleTicketChange(index, 'sale_start', e.target.value)} />
+                               <p className="text-[9px] text-zinc-600 font-bold uppercase px-1">Opcional: Solo si esta fase inicia después</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                 ))}
+               </div>
+            </section>
+
+            {submitError && <div className="text-red-500 text-xs font-bold uppercase tracking-widest mt-4 bg-red-500/10 p-4 rounded-xl border border-red-500/20">{submitError}</div>}
+            
+            <button 
+              onClick={actualizarEvento} 
+              disabled={uploading || publishing} 
+              className="w-full mt-6 bg-blue-600 hover:bg-white hover:text-black hover:shadow-[0_0_40px_rgba(37,99,235,0.4)] text-white font-black uppercase tracking-[0.2em] text-sm py-6 rounded-2xl transition-all flex justify-center items-center gap-3"
+            >
+              {publishing ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Confirmar Cambios <Save className="w-4 h-4" /></>}
             </button>
           </div>
         </div>
 
-        {/* LADO DERECHO: VISOR GIGANTE */}
-        <div className="hidden md:flex md:w-1/2 h-screen sticky top-0 relative bg-zinc-950 items-center justify-center overflow-hidden">
-           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 z-0"></div>
-
-           {flyerUrl ? (
-              <img src={flyerUrl} alt="Flyer preview" className="w-full h-full object-cover relative z-10 shadow-2xl animate-in fade-in duration-700" />
-           ) : (
-              <div className="relative z-10 flex flex-col items-center opacity-30">
-                 <ImageIcon className="w-32 h-32 text-zinc-700 mb-4" />
-                 <p className="font-black uppercase tracking-widest text-zinc-500 text-2xl text-center px-10">Imagen no disponible</p>
+        {/* LADO DERECHO: VISOR (40%) */}
+        <div className="hidden lg:flex w-full lg:w-[40%] flex-col gap-6 sticky top-12 h-fit">
+           <div className="glass-panel overflow-hidden rounded-[2.5rem] border border-zinc-800 shadow-2xl bg-zinc-900/10 relative p-4 pb-12">
+              <div className="aspect-[4/5] w-full rounded-[2rem] overflow-hidden bg-black flex items-center justify-center relative group">
+                <input type="file" accept="image/*" onChange={handleSubidaImagen} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30" />
+                
+                {flyerUrl ? (
+                    <img src={flyerUrl} alt="Flyer" className="w-full h-full object-cover relative z-10 transition-transform duration-700 group-hover:scale-110" />
+                ) : (
+                  <div className="flex flex-col items-center opacity-30">
+                    <ImageIcon className="w-20 h-20 text-zinc-700 mb-4" />
+                    <h3 className="text-xl font-black uppercase tracking-widest text-zinc-500">Sin Imagen</h3>
+                  </div>
+                )}
+                {uploading && <div className="absolute inset-0 bg-black/60 z-40 flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-blue-500" /></div>}
               </div>
-           )}
+
+              <div className="mt-8 px-4">
+                  <h4 className="text-2xl font-black uppercase tracking-tight text-white">{formData.title}</h4>
+                  <p className="text-xs text-blue-500 font-bold uppercase tracking-widest">{formData.venue}</p>
+              </div>
+           </div>
+           
+           <div className="bg-red-500/5 border border-red-500/20 p-6 rounded-3xl flex items-start gap-4">
+              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse mt-1.5 shrink-0" />
+              <p className="text-xs text-zinc-400 leading-relaxed font-medium capitalize">Estás en modo edición. cualquier cambio afectará la visibilidad real del evento y los precios de venta activos.</p>
+           </div>
         </div>
       </div>
     </AdminGuard>
+  );
+}
   );
 }

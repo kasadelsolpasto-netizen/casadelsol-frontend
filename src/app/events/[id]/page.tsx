@@ -168,25 +168,35 @@ export default function EventDetail({ params }: { params: { id: string } }) {
                   <div
                     key={ticket.id}
                     onClick={() => canBuy && setSelectedTicket(ticket)}
-                    className={`border rounded-xl p-4 transition-all ${
+                    className={`border rounded-xl p-4 transition-all relative overflow-hidden ${
                       canBuy
                         ? `cursor-pointer ${isSelected
-                            ? 'border-neon-green bg-neon-green/10 shadow-[0_0_15px_rgba(57,255,20,0.15)]'
+                            ? 'border-neon-green bg-neon-green/10 shadow-[0_0_20px_rgba(57,255,20,0.2)]'
                             : 'border-zinc-700 hover:border-zinc-500 bg-black/40 hover:bg-black/60'}`
-                        : 'border-zinc-900 bg-zinc-950 opacity-40 cursor-not-allowed'
+                        : 'border-zinc-900 bg-zinc-950 opacity-50 cursor-not-allowed'
                     }`}
                   >
-                    <div className="flex justify-between items-center">
+                    {/* Indicador de Activo Neón */}
+                    {canBuy && !isSelected && (
+                      <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none opacity-20">
+                         <div className="absolute top-0 right-0 w-2 h-2 rounded-full bg-neon-green animate-ping" />
+                      </div>
+                    )}
+
+                    <div className="flex justify-between items-center relative z-10">
                       <div>
                         <div className="flex items-center gap-2">
                           <h4 className={`font-bold uppercase tracking-wider text-sm ${isSelected ? 'text-neon-green' : canBuy ? 'text-zinc-200' : 'text-zinc-600 line-through'}`}>
                             {ticket.name}
                           </h4>
                           {!isStarted && <span className="bg-zinc-800 text-zinc-400 text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-widest">PRÓXIMAMENTE</span>}
-                          {isEnded && <span className="bg-red-900/30 text-red-500 text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-widest border border-red-900">CERRADO</span>}
+                          {isEnded && <span className="bg-red-900/40 text-red-500 text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-widest border border-red-900">CERRADO</span>}
                           {!isAvailable && isStarted && !isEnded && <span className="bg-zinc-800 text-zinc-500 text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-widest">SOLD OUT</span>}
+                          {canBuy && (
+                             <span className="bg-neon-green/10 text-neon-green text-[8px] px-2 py-0.5 rounded font-black uppercase tracking-[0.2em] border border-neon-green/20 animate-pulse">DISPONIBLE AHORA</span>
+                          )}
                         </div>
-                        <p className="text-xs text-zinc-500 mt-0.5">{canBuy ? `${ticket.available} disponibles` : 'No disponible'}</p>
+                        <p className="text-xs text-zinc-500 mt-0.5">{canBuy ? `${ticket.available} disponibles` : 'No disponible para compra'}</p>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className={`font-black text-lg ${canBuy ? 'text-white' : 'text-zinc-600'}`}>
