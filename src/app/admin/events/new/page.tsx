@@ -104,7 +104,8 @@ export default function NewEventPage() {
     }
   }
 
-  r    <AdminGuard>
+  return (
+    <AdminGuard>
       <div className="min-h-screen bg-[#030303] text-white p-4 md:p-8 lg:p-12 relative overflow-hidden flex flex-col lg:flex-row gap-8">
         {/* LADO IZQUIERDO: FORMULARIO ROBUSTO (60%) */}
         <div className="w-full lg:w-[60%] space-y-8 animate-in fade-in slide-in-from-left-4 duration-700">
