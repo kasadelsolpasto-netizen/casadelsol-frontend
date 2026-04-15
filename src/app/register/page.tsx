@@ -10,8 +10,11 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const passwordsMatch = password.length >= 8 && password === confirmPassword;
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,6 +22,11 @@ export default function RegisterPage() {
     
     if (password.length < 8) {
       setError('La contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden.');
       return;
     }
 
@@ -116,7 +124,7 @@ export default function RegisterPage() {
           </div>
           
           <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Password</label>
+            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Contraseña</label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
               <input 
@@ -125,8 +133,27 @@ export default function RegisterPage() {
                 onChange={e => setPassword(e.target.value)}
                 required
                 minLength={8}
-                className="w-full bg-black/50 border border-zinc-800 rounded-lg py-3 pl-10 pr-4 text-white placeholder-zinc-700 outline-none focus:border-neon-purple focus:ring-1 focus:ring-neon-purple transition-all"
+                className={`w-full bg-black/50 border rounded-lg py-3 pl-10 pr-4 text-white placeholder-zinc-700 outline-none transition-all ${passwordsMatch ? 'border-neon-green/50 ring-1 ring-neon-green/30' : 'border-zinc-800 focus:border-neon-purple focus:ring-1 focus:ring-neon-purple'}`}
                 placeholder="Mínimo 8 caracteres"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-500 flex justify-between">
+              Confirmar Contraseña
+              {passwordsMatch && <span className="text-[10px] text-neon-green font-black animate-pulse">✓ COINCIDEN</span>}
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
+              <input 
+                type="password" 
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                required
+                minLength={8}
+                className={`w-full bg-black/50 border rounded-lg py-3 pl-10 pr-4 text-white placeholder-zinc-700 outline-none transition-all ${passwordsMatch ? 'border-neon-green/50 ring-1 ring-neon-green/30 shadow-[0_0_15px_rgba(57,255,20,0.1)]' : 'border-zinc-800 focus:border-neon-purple focus:ring-1 focus:ring-neon-purple'}`}
+                placeholder="Repite tu contraseña"
               />
             </div>
           </div>

@@ -13,15 +13,51 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   const [selectedQr, setSelectedQr] = useState<any>(null);
   const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://casadelsol-frontend.vercel.app';
 
+  const [newName, setNewName] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [profileMsg, setProfileMsg] = useState('');
   const [passMsg, setPassMsg] = useState('');
+
+  const passwordsMatch = newPassword.length >= 8 && newPassword === confirmPassword;
+
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName || newName.length < 3) return setProfileMsg('Nombre muy corto.');
+    setProfileMsg('Guardando...');
+    try {
+      const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
+      const token = tokenRow ? tokenRow.split('=')[1] : null;
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/${params.id}/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: newName })
+      });
+      if (res.ok) {
+        setProfileMsg('Perfil actualizado.');
+        setProfile({ ...profile, name: newName });
+        // Actualizar localstorage para el navbar
+        const localUser = JSON.parse(localStorage.getItem('kasa_user') || '{}');
+        localUser.name = newName;
+        localStorage.setItem('kasa_user', JSON.stringify(localUser));
+        window.dispatchEvent(new Event('storage'));
+      } else {
+        setProfileMsg('Error al guardar.');
+      }
+    } catch (err) {
+      setProfileMsg('Error de red.');
+    }
+  };
   
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPassword || newPassword.length < 3) return setPassMsg('La contraseña es muy corta.');
+    if (!newPassword || newPassword.length < 8) return setPassMsg('Mínimo 8 caracteres.');
+    if (newPassword !== confirmPassword) return setPassMsg('No coinciden.');
+    
     setPassMsg('Actualizando...');
     try {
-      const token = document.cookie.split('kasa_auth_token=')[1]?.split(';')[0];
+      const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
+      const token = tokenRow ? tokenRow.split('=')[1] : null;
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/${params.id}/password`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -30,6 +66,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
       if (res.ok) {
         setPassMsg('¡Bóveda Asegurada!');
         setNewPassword('');
+        setConfirmPassword('');
       } else {
         setPassMsg('Error al encriptar.');
       }
@@ -55,6 +92,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
         if (res.ok) {
           const data = await res.json();
           setProfile(data);
+          setNewName(data.name);
           
           // Sincronizar el rol en duro para que el Navbar reaccione si lo degradaron
           const localStr = localStorage.getItem('kasa_user');
@@ -259,26 +297,55 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                   <h3 className="text-base font-bold uppercase tracking-widest text-zinc-200 mb-6 flex items-center gap-2">
                     Seguridad de Cuenta
                   </h3>
-                  <form onSubmit={handlePasswordChange} className="space-y-4">
+                  <form onSubmit={handleProfileUpdate} className="space-y-4 mb-8">
                      <div className="space-y-2">
-                       <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">Nombre Actual</label>
-                       <input type="text" readOnly defaultValue={profile?.name} className="w-full bg-zinc-900 border border-zinc-800 rounded py-2 px-3 text-zinc-400 text-sm outline-none cursor-not-allowed opacity-70" />
+                       <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex justify-between">
+                         Nombre de Raver 
+                         {profileMsg && <span className="text-neon-purple lowercase tracking-normal">{profileMsg}</span>}
+                       </label>
+                       <input 
+                         type="text" 
+                         value={newName} 
+                         onChange={e => setNewName(e.target.value)}
+                         className="w-full bg-zinc-900 border border-zinc-800 rounded py-2 px-3 text-white text-sm outline-none focus:border-neon-purple transition-colors" 
+                       />
                      </div>
+                     <button type="submit" className="text-[10px] bg-zinc-800 hover:bg-neon-purple text-white font-bold uppercase py-1 px-3 rounded transition-all">
+                       Guardar Nombre
+                     </button>
+                  </form>
+                  <div className="space-y-2 pt-2 border-t border-zinc-800/50 mb-6">
+                     <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">Email (Identidad)</label>
+                     <input type="text" readOnly defaultValue={profile?.email} className="w-full bg-black/30 border border-zinc-900 rounded py-2 px-3 text-zinc-500 text-xs outline-none cursor-not-allowed" />
+                  </div>
                      <div className="space-y-2 pt-2 border-t border-zinc-800/50">
                        <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex justify-between">
-                         Cambiar Contraseña 
-                         {passMsg && <span className={`lowercase tracking-normal ${passMsg.includes('Error') ? 'text-red-500' : 'text-neon-green'}`}>{passMsg}</span>}
+                         Nueva Contraseña 
                        </label>
                        <input 
                          type="password" 
                          placeholder="Ingresa nueva llave secreta" 
                          value={newPassword}
                          onChange={e => setNewPassword(e.target.value)}
-                         className="w-full bg-black/50 border border-zinc-800 rounded py-2 px-3 text-white text-sm focus:border-neon-purple focus:ring-1 focus:ring-neon-purple outline-none transition-colors font-mono tracking-widest placeholder:tracking-normal placeholder:font-sans" 
+                         className={`w-full bg-black/50 border rounded py-2 px-3 text-white text-sm outline-none transition-all font-mono tracking-widest placeholder:tracking-normal placeholder:font-sans ${passwordsMatch ? 'border-neon-green/50 ring-1 ring-neon-green/20' : 'border-zinc-800 focus:border-neon-purple'}`} 
                        />
                      </div>
-                     <button type="submit" className="w-full mt-2 bg-transparent border border-zinc-700 hover:border-neon-purple hover:bg-neon-purple/10 text-white font-bold uppercase tracking-widest text-xs py-3 rounded transition-all">
-                       Encriptar Nueva Llave
+                     <div className="space-y-2 pt-2">
+                       <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex justify-between">
+                         Confirmar Contraseña
+                         {passwordsMatch && <span className="text-neon-green lowercase tracking-normal animate-pulse">✓ coinciden</span>}
+                         {passMsg && <span className={`lowercase tracking-normal ${passMsg.includes('Error') || passMsg.includes('No coincide') ? 'text-red-500' : 'text-neon-green'}`}>{passMsg}</span>}
+                       </label>
+                       <input 
+                         type="password" 
+                         placeholder="Repite la nueva llave" 
+                         value={confirmPassword}
+                         onChange={e => setConfirmPassword(e.target.value)}
+                         className={`w-full bg-black/50 border rounded py-2 px-3 text-white text-sm outline-none transition-all font-mono tracking-widest placeholder:tracking-normal placeholder:font-sans ${passwordsMatch ? 'border-neon-green/50 ring-1 ring-neon-green/20 shadow-[0_0_15px_rgba(57,255,20,0.05)]' : 'border-zinc-800 focus:border-neon-purple'}`} 
+                       />
+                     </div>
+                     <button type="submit" disabled={!passwordsMatch && newPassword.length > 0} className="w-full mt-2 bg-transparent border border-zinc-700 hover:border-neon-purple hover:bg-neon-purple/10 text-white font-bold uppercase tracking-widest text-xs py-3 rounded transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                       Actualizar Contraseña
                      </button>
                   </form>
                 </section>

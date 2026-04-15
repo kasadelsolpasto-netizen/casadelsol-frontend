@@ -82,6 +82,8 @@ function ResetPasswordForm() {
     );
   }
 
+  const passwordsMatch = password.length >= 8 && password === confirmPassword;
+
   return (
     <div className="animate-in fade-in duration-300">
       <h2 className="text-2xl font-bold mb-2 text-white uppercase tracking-widest">Nueva Contraseña</h2>
@@ -106,14 +108,17 @@ function ResetPasswordForm() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-black/50 border border-zinc-800 rounded-lg py-3 pl-10 pr-4 text-white placeholder-zinc-700 outline-none focus:border-neon-purple focus:ring-1 focus:ring-neon-purple transition-all"
+              className={`w-full bg-black/50 border rounded-lg py-3 pl-10 pr-4 text-white placeholder-zinc-700 outline-none transition-all ${passwordsMatch ? 'border-neon-green/50 ring-1 ring-neon-green/20' : 'border-zinc-800 focus:border-neon-purple'}`}
               placeholder="Mínimo 8 caracteres"
             />
           </div>
         </div>
 
         <div className="space-y-2 !mb-8">
-          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Confirmar Contraseña</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex justify-between">
+            Confirmar Contraseña
+            {passwordsMatch && <span className="text-neon-green lowercase tracking-normal animate-pulse">✓ coinciden</span>}
+          </label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
             <input
@@ -122,7 +127,7 @@ function ResetPasswordForm() {
               minLength={8}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full bg-black/50 border border-zinc-800 rounded-lg py-3 pl-10 pr-4 text-white placeholder-zinc-700 outline-none focus:border-neon-purple focus:ring-1 focus:ring-neon-purple transition-all"
+              className={`w-full bg-black/50 border rounded-lg py-3 pl-10 pr-4 text-white placeholder-zinc-700 outline-none transition-all ${passwordsMatch ? 'border-neon-green/50 ring-1 ring-neon-green/20 shadow-[0_0_15px_rgba(57,255,20,0.1)]' : 'border-zinc-800 focus:border-neon-purple'}`}
               placeholder="Repite la contraseña"
             />
           </div>
