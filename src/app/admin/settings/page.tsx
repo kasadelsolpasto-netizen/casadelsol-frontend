@@ -303,13 +303,22 @@ export default function SettingsPage() {
                           <div className="mt-4 flex flex-col sm:flex-row items-center gap-3 pt-3 border-t border-neon-purple/20">
                             <LinkIcon className="w-4 h-4 text-zinc-400" />
                             <div className="flex-1 w-full flex items-center bg-black rounded border border-zinc-800 overflow-hidden">
-                              <span className="text-zinc-500 text-xs px-3 font-mono py-2 truncate flex-1 block">
-                                https://tudominio.com/api/webhooks/wompi
+                              <span className="text-neon-purple text-xs px-3 font-mono py-2 truncate flex-1 block">
+                                https://casadelsol-backend.onrender.com/orders/webhook-wompi
                               </span>
-                              <button type="button" className="bg-zinc-800 text-white font-bold text-[10px] uppercase px-4 py-2.5 hover:bg-zinc-700 transition-colors">Copiar Endpoint</button>
+                              <button 
+                                type="button" 
+                                onClick={() => {
+                                  navigator.clipboard.writeText('https://casadelsol-backend.onrender.com/orders/webhook-wompi');
+                                  alert('URL copiada al portapapeles');
+                                }}
+                                className="bg-zinc-800 text-white font-bold text-[10px] uppercase px-4 py-2.5 hover:bg-zinc-700 transition-colors"
+                              >
+                                Copiar
+                              </button>
                             </div>
                           </div>
-                          <p className="text-[10px] text-zinc-500 mt-2 block w-full text-center sm:text-left">Copia la URL superior y pégala en URLs de Eventos en Wompi.</p>
+                          <p className="text-[10px] text-zinc-500 mt-2 block w-full text-center sm:text-left">Copia la URL superior y pégala en <b>URL de Eventos (Webhook)</b> dentro del panel de Wompi.</p>
                         </div>
 
                         <div className="md:col-span-2 space-y-2 bg-zinc-900/50 p-5 rounded-lg border border-zinc-800 mt-2">
