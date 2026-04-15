@@ -71,7 +71,17 @@ export default function ScannerPage() {
 
   // ── QR Scanner ────────────────────────────────────────────────
   const scannerDivRef = useCallback((node: HTMLDivElement | null) => {
-    if (!node || scannerRef.current) return;
+    // Cuando el div se desmonta (usuario cambia a modo taquilla), limpiamos la cámara.
+    if (!node) {
+      if (scannerRef.current) {
+        scannerRef.current.clear().catch(() => {});
+        scannerRef.current = null;
+      }
+      return;
+    }
+
+    // Si ya existe una instancia, no la recreamos
+    if (scannerRef.current) return;
 
     import('html5-qrcode')
       .then(({ Html5QrcodeScanner }) => {
@@ -97,12 +107,13 @@ export default function ScannerPage() {
               setTimeout(() => { cooldownRef.current = false; setStatus({ type: 'idle' }); }, 4000);
             });
           },
-          () => {}
+          () => {} // Ignorar errores de "no QR"
         );
       })
       .catch(err => console.error('Error cargando html5-qrcode:', err));
   }, []);
 
+  // Limpieza al salir de la ruta por completo
   useEffect(() => {
     return () => {
       if (scannerRef.current) {
