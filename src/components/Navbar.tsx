@@ -53,10 +53,14 @@ export function Navbar() {
               </button>
               
               <div className="absolute right-0 top-full w-56 glass-panel rounded-xl border border-zinc-800 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all flex flex-col py-2 z-50 shadow-2xl translate-y-2 group-hover/menu:translate-y-0">
-                {/* Perfil para todos los usuarios incluyendo STAFF */}
-                {(user.role === 'USER' || user.role === 'STAFF') && (
-                  <Link href={`/profile/${user.id}`} className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-zinc-300 hover:text-neon-green hover:bg-zinc-900/50 transition-colors">
-                    {user.role === 'STAFF' ? 'Bóveda de Trabajo' : 'Mi Perfil & Bóveda'}
+                {/* Perfil para todos los usuarios */}
+                <Link href={`/profile/${user.id}`} className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-zinc-300 hover:text-neon-green hover:bg-zinc-900/50 transition-colors">
+                  Mi Perfil & Bóveda
+                </Link>
+                {/* Herramientas exclusivas por rol */}
+                {user.role === 'STAFF' && (
+                  <Link href="/scanner" className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 transition-colors border-y border-orange-500/20">
+                    Modo Trabajador
                   </Link>
                 )}
                 {user.role === 'OWNER' && (
