@@ -77,7 +77,14 @@ export default function ScannerPage() {
       .then(({ Html5QrcodeScanner }) => {
         const scanner = new Html5QrcodeScanner(
           'qr-reader',
-          { fps: 10, qrbox: { width: 250, height: 250 }, rememberLastUsedCamera: true, supportedScanTypes: [0] },
+          {
+            fps: 12,
+            qrbox: { width: 260, height: 260 },
+            rememberLastUsedCamera: false,
+            supportedScanTypes: [0], // solo cámara
+            facingMode: 'environment',  // 👈 cámara trasera forzada por defecto
+            showTorchButtonIfSupported: true,  // linterna si el móvil la soporta
+          },
           false
         );
         scannerRef.current = scanner;
