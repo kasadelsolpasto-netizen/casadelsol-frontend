@@ -5,7 +5,41 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
-  }
+  },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: `
+              default-src 'self';
+              script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://checkout.wompi.co https://cdn.wompi.co https://wompi.co;
+              style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+              img-src 'self' data: blob: https://lh3.googleusercontent.com https://res.cloudinary.com https://grainy-gradients.vercel.app;
+              font-src 'self' https://fonts.gstatic.com;
+              connect-src 'self' http://localhost:3001 https://casadelsol-backend.onrender.com https://snbqdxtrlvymswgqhxky.supabase.co https://accounts.google.com https://www.googleapis.com;
+              frame-src 'self' https://accounts.google.com https://checkout.wompi.co;
+              upgrade-insecure-requests;
+            `.replace(/\s{2,}/g, ' ').trim(),
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
