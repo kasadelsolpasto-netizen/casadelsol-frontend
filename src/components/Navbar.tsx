@@ -53,20 +53,15 @@ export function Navbar() {
               </button>
               
               <div className="absolute right-0 top-full w-56 glass-panel rounded-xl border border-zinc-800 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all flex flex-col py-2 z-50 shadow-2xl translate-y-2 group-hover/menu:translate-y-0">
-                {/* Perfil solo para usuarios normales */}
-                {user.role === 'USER' && (
+                {/* Perfil para todos los usuarios incluyendo STAFF */}
+                {(user.role === 'USER' || user.role === 'STAFF') && (
                   <Link href={`/profile/${user.id}`} className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-zinc-300 hover:text-neon-green hover:bg-zinc-900/50 transition-colors">
-                    Mi Perfil & Bóveda
+                    {user.role === 'STAFF' ? 'Bóveda de Trabajo' : 'Mi Perfil & Bóveda'}
                   </Link>
                 )}
                 {user.role === 'OWNER' && (
                   <Link href="/admin" className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-neon-purple hover:bg-neon-purple/10 transition-colors">
                     Dashboard Supremo
-                  </Link>
-                )}
-                {user.role === 'STAFF' && (
-                  <Link href="/scanner" className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-neon-green bg-neon-green/10 hover:bg-neon-green/20 transition-colors border-y border-neon-green/20">
-                    [ Lanzar Escáner QR ]
                   </Link>
                 )}
                 <div className="h-px bg-zinc-800/80 my-1 mx-2" />

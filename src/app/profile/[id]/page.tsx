@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Ticket, QrCode, User, Star, MapPin, Calendar, CheckCircle, X, Lock, Share2 } from 'lucide-react';
+import { Ticket, QrCode, User, Star, MapPin, Calendar, CheckCircle, X, Lock, Share2, DoorOpen, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { InstallAppButton } from '@/components/InstallAppButton';
@@ -117,6 +117,31 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen pb-20">
+      {/* ── BARRA DE NAV EXCLUSIVA PARA STAFF ──────────────────── */}
+      {isStaff && (
+        <div className="sticky top-0 z-30 bg-black/95 backdrop-blur border-b border-zinc-800">
+          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-neon-green">Staff Activo</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <a href="/scanner"
+                className="flex items-center gap-2 bg-neon-green/10 border border-neon-green/40 hover:bg-neon-green/20 hover:border-neon-green text-neon-green font-black uppercase tracking-widest text-[10px] py-2 px-3 rounded-lg transition-all">
+                <QrCode className="w-3.5 h-3.5" /> Scanner QR
+              </a>
+              <a href="/scanner"
+                className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/40 hover:bg-orange-500/20 hover:border-orange-500 text-orange-400 font-black uppercase tracking-widest text-[10px] py-2 px-3 rounded-lg transition-all">
+                <DoorOpen className="w-3.5 h-3.5" /> Taquilla
+              </a>
+            </div>
+            <div className="flex items-center gap-2 text-zinc-400">
+              <ShieldCheck className="w-4 h-4 text-neon-purple" />
+              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">{staffType || 'Staff'}</span>
+            </div>
+          </div>
+        </div>
+      )}
       <main className="max-w-6xl mx-auto px-6 py-12">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-zinc-800 pb-8 relative">
           <div className="flex items-center gap-6">
