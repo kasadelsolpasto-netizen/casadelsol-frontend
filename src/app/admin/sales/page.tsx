@@ -29,10 +29,16 @@ export default function AdminSalesPage() {
         const res = await fetch(`${API}/shop/orders/admin/metrics`, {
           headers: { 'Authorization': `Bearer ${authToken}` }
         });
-        if (res.ok) setShopMetrics(await res.json());
+        if (res.ok) {
+          setShopMetrics(await res.json());
+        } else {
+          console.error(`Error fetching shop metrics: ${res.status}`);
+          const errData = await res.json().catch(() => ({}));
+          console.error('Error details:', errData);
+        }
       }
     } catch (e) {
-      console.error(e);
+      console.error('Fetch operation failed:', e);
     } finally {
       setLoading(false);
     }
