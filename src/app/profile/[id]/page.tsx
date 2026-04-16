@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { 
   Ticket, QrCode, User, Star, MapPin, Calendar, CheckCircle, 
   X, Lock, Share2, DoorOpen, ShieldCheck, Gift, Zap, 
-  TicketPercent, Loader2, ShoppingBag 
+  TicketPercent, Loader2, ShoppingBag, MessageCircle 
 } from 'lucide-react';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
@@ -158,6 +158,15 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
       setProfileMsg('¡Link copiado!');
       setTimeout(() => setProfileMsg(''), 2000);
     }
+  };
+
+  const shareWhatsApp = (e: React.MouseEvent, qrToken: string, eventTitle: string, attendeeName: string) => {
+    e.stopPropagation();
+    const url = `${BASE_URL}/ticket/${qrToken}`;
+    const text = encodeURIComponent(
+      `🎶 *Entrada Kasa del Sol*\n\n*${eventTitle}*\nAsistente: ${attendeeName}\n\nPresenta este link en la puerta:\n${url}`
+    );
+    window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
   if (loading) return (
@@ -342,13 +351,23 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                       </div>
                                       
                                       {!isBurned && (
-                                         <button 
-                                            onClick={(e) => handleShare(e, qr.token_hash, order?.order_items?.[0]?.ticket_type?.event?.title)}
-                                            className="absolute -top-2 -right-2 w-8 h-8 bg-black border border-zinc-800 rounded-full flex items-center justify-center text-white hover:bg-neon-green hover:text-black transition-all shadow-lg scale-0 group-hover:scale-100"
-                                         >
-                                            <Share2 className="w-3.5 h-3.5" />
-                                         </button>
-                                      )}
+                                          <div className="absolute -top-2 -right-2 flex gap-1 scale-0 group-hover:scale-100 transition-all duration-300">
+                                             <button 
+                                                onClick={(e) => handleShare(e, qr.token_hash, order?.order_items?.[0]?.ticket_type?.event?.title)}
+                                                className="w-8 h-8 bg-black border border-zinc-800 rounded-full flex items-center justify-center text-white hover:bg-neon-green hover:text-black transition-all shadow-lg"
+                                                title="Compartir"
+                                             >
+                                                <Share2 className="w-3.5 h-3.5" />
+                                             </button>
+                                             <button 
+                                                onClick={(e) => shareWhatsApp(e, qr.token_hash, order?.order_items?.[0]?.ticket_type?.event?.title, qr.attendee_name || profile?.name)}
+                                                className="w-8 h-8 bg-[#25D366] border border-white/20 rounded-full flex items-center justify-center text-white hover:scale-110 transition-all shadow-lg"
+                                                title="Compartir por WhatsApp"
+                                             >
+                                                <MessageCircle className="w-4 h-4" />
+                                             </button>
+                                          </div>
+                                       )}
                                    </div>
                                 );
                              })}
