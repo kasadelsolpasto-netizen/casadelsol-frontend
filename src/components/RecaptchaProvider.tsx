@@ -4,11 +4,14 @@ import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 export default function RecaptchaProvider({ children }: { children: React.ReactNode }) {
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '';
   
+  if (!siteKey) {
+    console.warn('⚠️ [reCAPTCHA] NEXT_PUBLIC_RECAPTCHA_SITE_KEY is missing');
+  }
+
   return (
     <GoogleReCaptchaProvider 
       reCaptchaKey={siteKey}
       language="es"
-      useRecaptchaNet
     >
       {children}
     </GoogleReCaptchaProvider>

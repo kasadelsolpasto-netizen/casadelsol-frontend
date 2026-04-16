@@ -24,7 +24,7 @@ export default function LoginPage() {
     
     try {
       if (!executeRecaptcha) {
-        setError('Error de seguridad (reCAPTCHA no listo).');
+        setError('El sistema de seguridad se está cargando. Por favor espera un momento...');
         setLoading(false);
         return;
       }
@@ -168,11 +168,11 @@ export default function LoginPage() {
 
           <button 
             type="submit" 
-            disabled={loading}
+            disabled={loading || !executeRecaptcha}
             className="w-full mt-8 bg-white text-black font-bold uppercase tracking-wider py-3.5 rounded-lg hover:bg-neon-green hover:shadow-[0_0_20px_rgba(57,255,20,0.4)] disabled:opacity-50 transition-all flex justify-center items-center gap-2 group"
           >
-            {loading ? 'Entrando...' : 'Entrar'}
-            {!loading && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+            {!executeRecaptcha ? 'Cargando Seguridad...' : loading ? 'Entrando...' : 'Entrar'}
+            {!loading && executeRecaptcha && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
           </button>
         </form>
 

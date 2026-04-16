@@ -39,7 +39,7 @@ export default function RegisterPage() {
 
     try {
       if (!executeRecaptcha) {
-        setError('Error de seguridad (reCAPTCHA no listo).');
+        setError('El sistema de seguridad se está cargando. Por favor espera un momento...');
         setLoading(false);
         return;
       }
@@ -209,11 +209,11 @@ export default function RegisterPage() {
 
           <button 
             type="submit" 
-            disabled={loading}
+            disabled={loading || !executeRecaptcha}
             className="w-full mt-8 bg-white text-black font-bold uppercase tracking-wider py-3.5 rounded-lg hover:bg-neon-purple hover:shadow-[0_0_20px_rgba(191,0,255,0.4)] hover:text-white disabled:opacity-50 transition-all flex justify-center items-center gap-2 group"
           >
-            {loading ? 'Registrando...' : 'Registrarme'}
-            {!loading && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+            {!executeRecaptcha ? 'Cargando Seguridad...' : loading ? 'Registrando...' : 'Registrarme'}
+            {!loading && executeRecaptcha && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
           </button>
         </form>
 

@@ -17,7 +17,9 @@ export default function ForgotPasswordPage() {
 
     try {
       if (!executeRecaptcha) {
-        throw new Error('Error de seguridad (reCAPTCHA no listo).');
+        setError('El sistema de seguridad se está cargando. Por favor, espera un momento.');
+        setStatus('idle');
+        return;
       }
       const recaptchaToken = await executeRecaptcha('forgot_password');
 
@@ -97,10 +99,10 @@ export default function ForgotPasswordPage() {
 
               <button
                 type="submit"
-                disabled={status === 'loading'}
+                disabled={status === 'loading' || !executeRecaptcha}
                 className="w-full bg-white text-black font-bold uppercase tracking-wider py-3.5 rounded-lg hover:bg-neon-green hover:shadow-[0_0_20px_rgba(57,255,20,0.4)] disabled:opacity-50 transition-all flex justify-center items-center gap-2"
               >
-                {status === 'loading' ? 'Enviando...' : 'Enviar Enlace Mágico'}
+                {!executeRecaptcha ? 'Cargando Seguridad...' : status === 'loading' ? 'Enviando...' : 'Enviar Enlace Mágico'}
               </button>
             </form>
 
