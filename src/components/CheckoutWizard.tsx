@@ -27,6 +27,16 @@ export default function CheckoutWizard({
 }: CheckoutWizardProps) {
   const [step, setStep] = useState<Step>('auth');
   const { executeRecaptcha } = useGoogleReCaptcha();
+  const hasSiteKey = !!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+
+  useEffect(() => {
+    console.log('🔍 [DEBUG-AUTH] CheckoutWizard State:', {
+      step,
+      hasSiteKey,
+      siteKeyPrefix: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.substring(0, 6),
+      isRecaptchaReady: !!executeRecaptcha
+    });
+  }, [executeRecaptcha, hasSiteKey, step]);
 
   // Auth
   const [authMode, setAuthMode] = useState<AuthMode>('LOGIN');
@@ -308,10 +318,10 @@ export default function CheckoutWizard({
                     )}
                   </div>
                 )}
-                <button type="submit" disabled={authLoading || !executeRecaptcha}
+                <button type="submit" disabled={authLoading || !executeRecaptcha || !hasSiteKey}
                   className="w-full bg-white hover:bg-neon-green text-black font-black uppercase tracking-widest py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 group disabled:opacity-50 mt-2">
-                  {!executeRecaptcha ? 'Cargando Seguridad...' : authLoading ? 'Verificando...' : authMode === 'LOGIN' ? 'Entrar y Comprar' : 'Crear cuenta y Comprar'}
-                  {!authLoading && executeRecaptcha && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+                  {!hasSiteKey ? 'Error: Falta Site Key' : !executeRecaptcha ? 'Cargando Seguridad...' : authLoading ? 'Verificando...' : authMode === 'LOGIN' ? 'Entrar y Comprar' : 'Crear cuenta y Comprar'}
+                  {!authLoading && executeRecaptcha && hasSiteKey && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
                 </button>
               </form>
             </div>

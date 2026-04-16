@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Lock, Mail, User, Eye, EyeOff } from 'lucide-react';
@@ -15,6 +15,16 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { executeRecaptcha } = useGoogleReCaptcha();
+  const hasSiteKey = !!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+
+  useEffect(() => {
+    console.log('🔍 [DEBUG-AUTH] RegisterPage State:', {
+      hasSiteKey,
+      siteKeyPrefix: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.substring(0, 6),
+      isRecaptchaReady: !!executeRecaptcha
+    });
+  }, [executeRecaptcha, hasSiteKey]);
+
   const [hp, setHp] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -209,11 +219,11 @@ export default function RegisterPage() {
 
           <button 
             type="submit" 
-            disabled={loading || !executeRecaptcha}
+            disabled={loading || !executeRecaptcha || !hasSiteKey}
             className="w-full mt-8 bg-white text-black font-bold uppercase tracking-wider py-3.5 rounded-lg hover:bg-neon-purple hover:shadow-[0_0_20px_rgba(191,0,255,0.4)] hover:text-white disabled:opacity-50 transition-all flex justify-center items-center gap-2 group"
           >
-            {!executeRecaptcha ? 'Cargando Seguridad...' : loading ? 'Registrando...' : 'Registrarme'}
-            {!loading && executeRecaptcha && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+            {!hasSiteKey ? 'Error: Falta Site Key' : !executeRecaptcha ? 'Cargando Seguridad...' : loading ? 'Registrando...' : 'Registrarme'}
+            {!loading && executeRecaptcha && hasSiteKey && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
           </button>
         </form>
 

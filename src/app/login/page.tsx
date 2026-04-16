@@ -14,6 +14,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [pendingStaffData, setPendingStaffData] = useState<any>(null);
   const { executeRecaptcha } = useGoogleReCaptcha();
+  const hasSiteKey = !!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+
+  useEffect(() => {
+    console.log('🔍 [DEBUG-AUTH] LoginPage State:', {
+      hasSiteKey,
+      siteKeyPrefix: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.substring(0, 6),
+      isRecaptchaReady: !!executeRecaptcha
+    });
+  }, [executeRecaptcha, hasSiteKey]);
+
   const [hp, setHp] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -168,11 +178,11 @@ export default function LoginPage() {
 
           <button 
             type="submit" 
-            disabled={loading || !executeRecaptcha}
+            disabled={loading || !executeRecaptcha || !hasSiteKey}
             className="w-full mt-8 bg-white text-black font-bold uppercase tracking-wider py-3.5 rounded-lg hover:bg-neon-green hover:shadow-[0_0_20px_rgba(57,255,20,0.4)] disabled:opacity-50 transition-all flex justify-center items-center gap-2 group"
           >
-            {!executeRecaptcha ? 'Cargando Seguridad...' : loading ? 'Entrando...' : 'Entrar'}
-            {!loading && executeRecaptcha && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+            {!hasSiteKey ? 'Error: Falta Site Key' : !executeRecaptcha ? 'Cargando Seguridad...' : loading ? 'Entrando...' : 'Entrar'}
+            {!loading && executeRecaptcha && hasSiteKey && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
           </button>
         </form>
 

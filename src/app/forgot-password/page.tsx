@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
@@ -9,6 +9,15 @@ export default function ForgotPasswordPage() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [error, setError] = useState('');
   const { executeRecaptcha } = useGoogleReCaptcha();
+  const hasSiteKey = !!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+
+  useEffect(() => {
+    console.log('🔍 [DEBUG-AUTH] ForgotPassword State:', {
+      hasSiteKey,
+      siteKeyPrefix: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.substring(0, 6),
+      isRecaptchaReady: !!executeRecaptcha
+    });
+  }, [executeRecaptcha, hasSiteKey]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,10 +108,10 @@ export default function ForgotPasswordPage() {
 
               <button
                 type="submit"
-                disabled={status === 'loading' || !executeRecaptcha}
+                disabled={status === 'loading' || !executeRecaptcha || !hasSiteKey}
                 className="w-full bg-white text-black font-bold uppercase tracking-wider py-3.5 rounded-lg hover:bg-neon-green hover:shadow-[0_0_20px_rgba(57,255,20,0.4)] disabled:opacity-50 transition-all flex justify-center items-center gap-2"
               >
-                {!executeRecaptcha ? 'Cargando Seguridad...' : status === 'loading' ? 'Enviando...' : 'Enviar Enlace Mágico'}
+                {!hasSiteKey ? 'Error: Falta Site Key' : !executeRecaptcha ? 'Cargando Seguridad...' : status === 'loading' ? 'Enviando...' : 'Enviar Enlace Mágico'}
               </button>
             </form>
 
