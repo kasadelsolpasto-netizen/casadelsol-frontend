@@ -1,3 +1,7 @@
+"use client";
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowRight, Lock, Mail, User, Eye, EyeOff } from 'lucide-react';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';

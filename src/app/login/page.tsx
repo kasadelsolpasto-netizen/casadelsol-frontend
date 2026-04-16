@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { ArrowRight, Lock, Mail, Briefcase, Music, Eye, EyeOff } from 'lucide-react';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
 export default function LoginPage() {
   const router = useRouter();
