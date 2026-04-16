@@ -20,6 +20,7 @@ export function Navbar() {
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
+  const [brandLogo, setBrandLogo] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -33,7 +34,19 @@ export function Navbar() {
         setUser(null);
       }
     };
+
+    const fetchBrand = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/settings/brand`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.logoBase64) setBrandLogo(data.logoBase64);
+        }
+      } catch(e) {}
+    };
+
     syncUser();
+    fetchBrand();
     window.addEventListener('storage', syncUser);
     return () => window.removeEventListener('storage', syncUser);
   }, []);
@@ -55,9 +68,15 @@ export function Navbar() {
       {/* NIVEL 1: BRANDING & PROFILE */}
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between border-b border-zinc-900/50">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-green to-neon-purple flex items-center justify-center p-1.5 shadow-[0_0_15px_rgba(57,255,20,0.3)] group-hover:shadow-neon-green/50 transition-all duration-500">
-             <div className="w-full h-full bg-black rounded-sm flex items-center justify-center text-[10px] font-black text-white">K</div>
-          </div>
+          {brandLogo ? (
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(255,255,255,0.1)] group-hover:shadow-neon-green/30 transition-all duration-500">
+               <img src={brandLogo} alt="Logo" className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-green to-neon-purple flex items-center justify-center p-1.5 shadow-[0_0_15px_rgba(57,255,20,0.3)] group-hover:shadow-neon-green/50 transition-all duration-500">
+               <div className="w-full h-full bg-black rounded-sm flex items-center justify-center text-[10px] font-black text-white">K</div>
+            </div>
+          )}
           <span className="font-black uppercase tracking-[0.2em] text-sm text-white group-hover:text-neon-green transition-colors">
             Kasa del Sol
           </span>
@@ -90,10 +109,16 @@ export function Navbar() {
                   </div>
                   
                   {user.role === 'OWNER' && (
-                    <Link href="/admin" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item">
-                       <LayoutDashboard className="w-4 h-4 text-neon-purple group-hover/item:scale-110 transition-transform" />
-                       <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Dashboard Supremo</span>
-                    </Link>
+                    <>
+                      <Link href="/admin" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item">
+                         <LayoutDashboard className="w-4 h-4 text-neon-purple group-hover/item:scale-110 transition-transform" />
+                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Dashboard Supremo</span>
+                      </Link>
+                      <Link href="/admin/shop" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item border-t border-zinc-900">
+                         <ShoppingBag className="w-4 h-4 text-orange-500 group-hover/item:scale-110 transition-transform" />
+                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Inventario Barra</span>
+                      </Link>
+                    </>
                   )}
 
                   {user.role === 'STAFF' && (

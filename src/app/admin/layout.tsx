@@ -74,9 +74,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin/sales" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group ${pathname.startsWith('/admin/sales') ? 'bg-zinc-900 border border-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
             <Ticket className={`w-4 h-4 ${pathname.startsWith('/admin/sales') ? 'text-neon-green' : 'group-hover:text-neon-green'} transition-all`} /> Ventas & Métricas
           </Link>
-          <Link href="/admin/taquilla" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group ${pathname.startsWith('/admin/taquilla') ? 'bg-zinc-900 border border-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
-            <DoorOpen className={`w-4 h-4 ${pathname.startsWith('/admin/taquilla') ? 'text-orange-400' : 'group-hover:text-orange-400'} transition-all`} /> Taquilla en Puerta
-          </Link>
+
           <Link href="/admin/staff" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group ${pathname.startsWith('/admin/staff') ? 'bg-zinc-900 border border-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
             <Users className="w-4 h-4 group-hover:text-neon-purple transition-all" /> Equipo & Staff
           </Link>
