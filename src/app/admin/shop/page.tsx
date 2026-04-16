@@ -15,7 +15,7 @@ import { QRCodeSVG } from 'qrcode.react';
 
 export default function ShopInventoryPage() {
   const [products, setProducts] = useState<any[]>([]);
-  // ... (rest of states)
+  const [stats, setStats] = useState({ totalProducts: 0, totalSales: 0, recentSales: 0 });
   const [showVenueQr, setShowVenueQr] = useState(false);
 
   // ... (rest of component logic)
@@ -82,13 +82,15 @@ export default function ShopInventoryPage() {
       const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       const token = getToken();
       
-      const [pRes, cRes] = await Promise.all([
+      const [pRes, cRes, sRes] = await Promise.all([
         fetch(`${API}/shop/products/admin/all`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API}/shop/products/categories`, { headers: { 'Authorization': `Bearer ${token}` } })
+        fetch(`${API}/shop/products/categories`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API}/shop/orders/admin/stats`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
 
       if (pRes.ok) setProducts(await pRes.json());
       if (cRes.ok) setCategories(await cRes.json());
+      if (sRes.ok) setStats(await sRes.json());
     } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
@@ -177,9 +179,81 @@ export default function ShopInventoryPage() {
   return (
     <AdminGuard>
       <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen pb-20">
-        {/* ... (header and modals) */}
-        
-        {/* ... (VENUE QR MODAL) */}
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+          <div className="flex items-center gap-4">
+             <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center">
+                <ShoppingBag className="w-6 h-6 text-orange-500" />
+             </div>
+             <div>
+                <h1 className="text-3xl font-black uppercase tracking-tight text-white mb-1">Inventario Shop</h1>
+                <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em]">Gestión de Productos y Stock</p>
+             </div>
+          </div>
+          
+          <div className="flex gap-3 w-full md:w-auto">
+             <button 
+               onClick={() => setShowVenueQr(true)}
+               className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-zinc-900 border border-zinc-800 text-orange-500 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-500/10 transition-all border-dashed"
+             >
+               <QrCode className="w-4 h-4" /> Sincronizar Mesas
+             </button>
+             <button onClick={() => setShowCategoryModal(true)} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-zinc-900 border border-zinc-800 text-zinc-300 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all">
+               <Layers className="w-4 h-4" /> Categorías
+             </button>
+             <button onClick={openNewFicha} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-orange-500 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:shadow-[0_0_20px_rgba(249,115,22,0.4)] transition-all">
+               <Plus className="w-4 h-4" /> Nuevo Producto
+             </button>
+          </div>
+        </header>
+
+        {/* PREMIM STATS CARDS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+           <div className="bg-zinc-950/40 border border-zinc-900 border-t-2 border-t-orange-500 p-8 rounded-3xl group hover:bg-zinc-900/40 transition-all">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-2">Total Productos</h3>
+              <p className="text-3xl font-black text-white">{stats.totalProducts} <span className="text-[8px] text-zinc-600">ITEMS ACTIVOS</span></p>
+           </div>
+           <div className="bg-zinc-950/40 border border-zinc-900 border-t-2 border-t-neon-green p-8 rounded-3xl group hover:bg-zinc-900/40 transition-all">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-2">Ventas (8 días)</h3>
+              <p className="text-3xl font-black text-white">{stats.recentSales} <span className="text-[8px] text-zinc-600">PEDIDOS RECIENTES</span></p>
+           </div>
+           <div className="bg-zinc-950/40 border border-zinc-900 border-t-2 border-t-neon-purple p-8 rounded-3xl group hover:bg-zinc-900/40 transition-all">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-2">Ventas Totales</h3>
+              <p className="text-3xl font-black text-white">{stats.totalSales} <span className="text-[8px] text-zinc-600">ORDENES EXITOSAS</span></p>
+           </div>
+        </div>
+
+        {/* VENUE QR MODAL */}
+        {showVenueQr && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/95 backdrop-blur-md animate-in zoom-in-95 duration-200">
+             <div className="bg-zinc-950 border border-zinc-800 w-full max-w-sm rounded-[3rem] p-10 flex flex-col items-center shadow-2xl">
+                <div className="w-full flex justify-between items-center mb-10">
+                   <div className="flex items-center gap-2 text-orange-500">
+                      <QrCode className="w-5 h-5" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">QR del Local</span>
+                   </div>
+                   <button onClick={() => setShowVenueQr(false)} className="text-zinc-600 hover:text-white"><XCircle className="w-6 h-6" /></button>
+                </div>
+
+                <div className="bg-white p-6 rounded-3xl mb-8 shadow-inner relative group">
+                   <QRCodeSVG 
+                      id="venue-qr-svg"
+                      value={`${window.location.origin}/shop`}
+                      size={200}
+                      level="H"
+                   />
+                </div>
+
+                <p className="text-center text-xs font-bold text-zinc-500 mb-8 leading-relaxed">Este QR llevará a los clientes directamente a la shop. Imprímelo y ponlo en las mesas.</p>
+
+                <button 
+                  onClick={downloadVenueQr}
+                  className="w-full bg-white text-black py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-orange-500 hover:text-white transition-all shadow-xl"
+                >
+                  <Download className="w-5 h-5" /> Descargar PNG
+                </button>
+             </div>
+          </div>
+        )}
 
         <div className="mb-8 relative max-w-xl group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-orange-500 transition-colors" />
