@@ -1,3 +1,6 @@
+import type { Metadata, Viewport } from "next";
+import { Outfit } from "next/font/google";
+import "./globals.css";
 import { NavbarWrapper } from "@/components/NavbarWrapper";
 import RecaptchaProvider from "@/components/RecaptchaProvider";
 
