@@ -40,7 +40,13 @@ export default function PublicShopPage() {
   useEffect(() => {
     if (orderResult) {
       const timer = setTimeout(() => {
-        router.push('/profile');
+        const userData = localStorage.getItem('kasa_user');
+        if (userData) {
+          const user = JSON.parse(userData);
+          router.push(`/profile/${user.id}`);
+        } else {
+          router.push('/');
+        }
       }, 4000); 
       return () => clearTimeout(timer);
     }
@@ -105,22 +111,25 @@ export default function PublicShopPage() {
         const result = await res.json();
         
         if (paymentType === 'VIRTUAL' && result.wompiData) {
-           const checkout = new (window as any).WidgetCheckout({
-             currency: 'COP',
-             amountInCents: result.wompiData.amountInCents,
-             reference: result.wompiData.reference,
-             publicKey: result.wompiData.publicKey,
-             signature: { integrity: result.wompiData.signature },
-             redirectUrl: `${window.location.origin}/profile`
-           });
-           checkout.open((result: any) => {
-             const transaction = result.transaction;
-             if (transaction.status === 'APPROVED') {
-                setOrderResult({ ...result, status: 'PAID' });
-                setCart([]);
-                setShowCart(false);
-             }
-           });
+            const userData = localStorage.getItem('kasa_user');
+            const user = userData ? JSON.parse(userData) : null;
+            
+            const checkout = new (window as any).WidgetCheckout({
+              currency: 'COP',
+              amountInCents: result.wompiData.amountInCents,
+              reference: result.wompiData.reference,
+              publicKey: result.wompiData.publicKey,
+              signature: { integrity: result.wompiData.signature },
+              redirectUrl: user ? `${window.location.origin}/profile/${user.id}` : `${window.location.origin}/`
+            });
+            checkout.open((result: any) => {
+              const transaction = result.transaction;
+              if (transaction.status === 'APPROVED') {
+                 setOrderResult({ ...result, status: 'PAID' });
+                 setCart([]);
+                 setShowCart(false);
+              }
+            });
         } else {
            setOrderResult(result);
            setCart([]);
@@ -166,9 +175,20 @@ export default function PublicShopPage() {
          </div>
 
          <div className="flex flex-col gap-3 w-full max-w-sm">
-            <Link href="/profile" className="w-full bg-white text-black font-black uppercase tracking-widest py-5 rounded-2xl hover:bg-neon-green transition-all shadow-xl">
+            <button 
+                onClick={() => {
+                    const userData = localStorage.getItem('kasa_user');
+                    if (userData) {
+                        const user = JSON.parse(userData);
+                        router.push(`/profile/${user.id}`);
+                    } else {
+                        router.push('/');
+                    }
+                }}
+                className="w-full bg-white text-black font-black uppercase tracking-widest py-5 rounded-2xl hover:bg-neon-green transition-all shadow-xl"
+            >
                  Ir a mi Bóveda
-            </Link>
+            </button>
          </div>
 
          <style jsx>{`

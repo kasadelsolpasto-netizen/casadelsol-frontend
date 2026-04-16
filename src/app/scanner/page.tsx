@@ -130,19 +130,29 @@ export default function ScannerPage() {
       if (!authToken) throw new Error('Sin sesión activa');
 
       // ── DETECTAR QR DE TIENDA ───────────────────────────────────
+      // Formato esperado: KASA_SHOP_PAY:ID:TOKEN or KASA_SHOP_DELIVER:ID:TOKEN
       if (token.startsWith('KASA_SHOP_PAY:') || token.startsWith('KASA_SHOP_DELIVER:')) {
-        const isPay = token.startsWith('KASA_SHOP_PAY:');
-        const orderId = isPay ? token.replace('KASA_SHOP_PAY:', '') : token.replace('KASA_SHOP_DELIVER:', '');
+        const parts = token.split(':');
+        const prefix = parts[0];
+        const orderId = parts[1];
+        const verificationToken = parts[2]; // Puede ser opcional para compatibilidad inmediata
         
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/shop/orders/admin/${orderId}`, {
            headers: { Authorization: `Bearer ${authToken}` }
         });
+        
         if (res.ok) {
            const orderData = await res.json();
+
+           // Validar Token de Seguridad si está presente en el QR
+           if (verificationToken && orderData.verification_token && verificationToken !== orderData.verification_token) {
+              throw new Error('¡TOKEN DE SEGURIDAD INVÁLIDO! Posible fraude detectado.');
+           }
+
            setStatus({ 
              type: 'shop_order', 
              order: orderData, 
-             intent: isPay ? 'PAY' : 'DELIVER' 
+             intent: prefix.includes('PAY') ? 'PAY' : 'DELIVER' 
            });
            return;
         }
@@ -169,7 +179,7 @@ export default function ScannerPage() {
     }
   };
 
-  const confirmShopPayment = async (orderId: string) => {
+  const updateShopStatus = async (orderId: string, status: string) => {
     try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/shop/orders/${orderId}/status`, {
             method: 'PUT',
@@ -177,11 +187,11 @@ export default function ScannerPage() {
                 'Content-Type': 'application/json', 
                 'Authorization': `Bearer ${getToken()}` 
             },
-            body: JSON.stringify({ status: 'PAID' })
+            body: JSON.stringify({ status })
         });
         if (res.ok) {
             setStatus({ type: 'idle' });
-            alert("Pago de tienda confirmado con éxito.");
+            alert(status === 'PAID' ? "Pago confirmado con éxito." : "Pedido entregado y quemado correctamente.");
         }
     } catch(e) { console.error(e); }
   };

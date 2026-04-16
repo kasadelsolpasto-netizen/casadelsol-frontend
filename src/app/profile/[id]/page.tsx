@@ -240,12 +240,19 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                   </span>
                                </div>
                                <div className="flex items-center gap-6">
-                                  <div onClick={() => setSelectedShopQr(order)} className={`w-24 h-24 p-3 bg-white rounded-3xl cursor-pointer hover:scale-105 transition-all ${isReady ? 'ring-4 ring-neon-green' : ''}`}>
-                                     <QRCodeSVG 
-                                       value={isPaid ? `KASA_SHOP_DELIVER:${order.id}` : `KASA_SHOP_PAY:${order.id}`}
-                                       size={72}
-                                     />
-                                  </div>
+                                   {order.status === 'DELIVERED' ? (
+                                      <div className="w-24 h-24 rounded-3xl bg-zinc-900 flex flex-col items-center justify-center border-2 border-zinc-800">
+                                         <CheckCircle className="w-8 h-8 text-zinc-700 mb-1" />
+                                         <span className="text-[7px] font-black text-zinc-700 uppercase">Entregado</span>
+                                      </div>
+                                   ) : (
+                                      <div onClick={() => setSelectedShopQr(order)} className={`w-24 h-24 p-3 bg-white rounded-3xl cursor-pointer hover:scale-105 transition-all ${isReady ? 'ring-4 ring-neon-green' : ''}`}>
+                                         <QRCodeSVG 
+                                           value={isPaid ? `KASA_SHOP_DELIVER:${order.id}:${order.verification_token}` : `KASA_SHOP_PAY:${order.id}:${order.verification_token}`}
+                                           size={72}
+                                         />
+                                      </div>
+                                   )}
                                   <div>
                                      <p className="text-xs font-bold text-zinc-400 mb-1">
                                         {isReady ? '¡TU PEDIDO ESTÁ LISTO!' : 'Preparando...'}
@@ -335,7 +342,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
          <div className="fixed inset-0 z-[150] bg-black/98 flex flex-col items-center justify-center p-6" onClick={() => setSelectedShopQr(null)}>
             <div className="bg-white p-8 rounded-[3.5rem] mb-12 shadow-[0_0_100px_rgba(57,255,20,0.4)]">
                <QRCodeSVG 
-                  value={(['PAID','READY'].includes(selectedShopQr.status)) ? `KASA_SHOP_DELIVER:${selectedShopQr.id}` : `KASA_SHOP_PAY:${selectedShopQr.id}`} 
+                  value={(['PAID','READY'].includes(selectedShopQr.status)) ? `KASA_SHOP_DELIVER:${selectedShopQr.id}:${selectedShopQr.verification_token}` : `KASA_SHOP_PAY:${selectedShopQr.id}:${selectedShopQr.verification_token}`} 
                   size={250} 
                   level="H" 
                />
