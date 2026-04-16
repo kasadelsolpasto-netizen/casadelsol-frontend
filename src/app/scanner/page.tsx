@@ -128,6 +128,22 @@ export default function ScannerPage() {
     try {
       const authToken = getToken();
       if (!authToken) throw new Error('Sin sesión activa');
+
+      // ── DETECTAR QR DE TIENDA ───────────────────────────────────
+      if (token.startsWith('KASA_SHOP_ORDER:')) {
+        const orderId = token.replace('KASA_SHOP_ORDER:', '');
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/shop/orders/admin/${orderId}`, {
+           headers: { Authorization: `Bearer ${authToken}` }
+        });
+        if (res.ok) {
+           const orderData = await res.json();
+           setStatus({ type: 'shop_order', order: orderData });
+           return;
+        }
+        throw new Error('Pedido de tienda no encontrado');
+      }
+
+      // ── FLUJO NORMAL DE TICKETS ────────────────────────────────
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/qrs/scan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
@@ -145,6 +161,23 @@ export default function ScannerPage() {
     } catch (err: any) {
       setStatus({ type: 'invalid', message: err.message || 'Error de red' });
     }
+  };
+
+  const confirmShopPayment = async (orderId: string) => {
+    try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/shop/orders/${orderId}/status`, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${getToken()}` 
+            },
+            body: JSON.stringify({ status: 'PAID' })
+        });
+        if (res.ok) {
+            setStatus({ type: 'idle' });
+            alert("Pago de tienda confirmado con éxito.");
+        }
+    } catch(e) { console.error(e); }
   };
 
   const handleTaquillaSubmit = async (e: React.FormEvent) => {
@@ -242,6 +275,52 @@ export default function ScannerPage() {
                   <p className="text-white font-black text-xl uppercase tracking-wide">{status.name}</p>
                   <p className="text-neon-green/70 text-xs font-bold uppercase tracking-widest">{status.ticket}</p>
                   <p className="text-zinc-500 text-[10px] uppercase tracking-widest">{status.time}</p>
+                </div>
+              )}
+               {status.type === 'shop_order' && (
+                <div className="w-full p-5 rounded-3xl border-2 border-orange-500 bg-orange-500/5 shadow-[0_0_40px_rgba(249,115,22,0.2)] flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200">
+                  <div className="w-16 h-16 rounded-full bg-orange-500/20 border-2 border-orange-500 flex items-center justify-center">
+                    <ShoppingBag className="w-8 h-8 text-orange-500" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-black uppercase tracking-widest text-orange-500 text-sm mb-1">Pedido de Tienda</p>
+                    <p className="text-white font-black text-xl uppercase truncate max-w-[200px]">{status.order.user?.name || 'Invitado'}</p>
+                    {status.order.user?.tags?.length > 0 && (
+                      <div className="flex justify-center gap-1 mt-1">
+                        {status.order.user.tags.map((t:string) => (
+                          <span key={t} className="px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-500 text-[7px] font-black border border-orange-500/30">{t}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="w-full bg-black/40 rounded-2xl p-4 border border-zinc-800/50">
+                    <div className="space-y-2 mb-4">
+                      {status.order.items.map((item: any) => (
+                        <div key={item.id} className="flex justify-between text-[10px] font-bold">
+                          <span className="text-zinc-400"><span className="text-orange-500">{item.quantity}x</span> {item.product.name}</span>
+                          <span className="text-white">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(item.unit_price * item.quantity)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-between pt-2 border-t border-zinc-800">
+                      <span className="text-[10px] font-black uppercase text-zinc-500">Total a cobrar</span>
+                      <span className="text-sm font-black text-orange-500">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(status.order.total)}</span>
+                    </div>
+                  </div>
+
+                  {status.order.status === 'PENDING' ? (
+                    <button 
+                      onClick={() => confirmShopPayment(status.order.id)}
+                      className="w-full bg-neon-green text-black font-black uppercase tracking-widest py-4 rounded-2xl hover:brightness-110 active:scale-95 transition-all shadow-[0_10px_20px_rgba(57,255,20,0.2)]"
+                    >
+                      ✓ Confirmar Pago Efectivo
+                    </button>
+                  ) : (
+                    <div className="w-full py-3 rounded-2xl border border-zinc-800 text-zinc-600 text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2">
+                       <CheckCircle className="w-4 h-4" /> Ya pagado ({status.order.status})
+                    </div>
+                  )}
                 </div>
               )}
               {status.type === 'already_used' && (

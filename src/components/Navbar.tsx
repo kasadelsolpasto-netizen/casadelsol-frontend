@@ -1,11 +1,23 @@
 "use client";
 import Link from 'next/link';
-import { User, LogOut } from 'lucide-react';
+import { 
+  Home, 
+  Ticket, 
+  ShoppingBag, 
+  Tag, 
+  Shield, 
+  User, 
+  LogOut, 
+  LayoutDashboard,
+  Settings,
+  ChevronDown
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 export function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -22,7 +34,6 @@ export function Navbar() {
       }
     };
     syncUser();
-
     window.addEventListener('storage', syncUser);
     return () => window.removeEventListener('storage', syncUser);
   }, []);
@@ -35,56 +46,107 @@ export function Navbar() {
     router.push('/login');
   };
 
-  if (!mounted) return <header className="h-20 w-full bg-black/50 border-b border-zinc-800/50"></header>;
+  const isActive = (path: string) => pathname === path;
+
+  if (!mounted) return <header className="h-28 w-full bg-black/50 border-b border-zinc-800/50"></header>;
 
   return (
-    <header className="w-full relative z-20 border-b border-zinc-800/50 bg-black/50 backdrop-blur">
-      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        <Link href="/" className="font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-br from-neon-green to-neon-purple hover:animate-glow transition-all">
-          Kasa del Sol
+    <header className="w-full relative z-[100] border-b border-zinc-900 bg-[#050505]/80 backdrop-blur-xl">
+      {/* NIVEL 1: BRANDING & PROFILE */}
+      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between border-b border-zinc-900/50">
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-green to-neon-purple flex items-center justify-center p-1.5 shadow-[0_0_15px_rgba(57,255,20,0.3)] group-hover:shadow-neon-green/50 transition-all duration-500">
+             <div className="w-full h-full bg-black rounded-sm flex items-center justify-center text-[10px] font-black text-white">K</div>
+          </div>
+          <span className="font-black uppercase tracking-[0.2em] text-sm text-white group-hover:text-neon-green transition-colors">
+            Kasa del Sol
+          </span>
         </Link>
+
         <div className="flex items-center gap-4">
           {!user ? (
-            <>
-              <Link href="/login" className="text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-white transition-colors">
-                Iniciar Sesión
-              </Link>
-              <Link href="/register" className="hidden md:flex items-center gap-2 bg-neon-purple text-white px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest hover:shadow-[0_0_15px_rgba(191,0,255,0.4)] transition-all">
-                Registrarse
-              </Link>
-            </>
+            <div className="flex items-center gap-6">
+               <Link href="/login" className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-all">
+                  Login
+               </Link>
+               <Link href="/register" className="bg-white text-black px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-neon-green transition-all shadow-xl">
+                  Unirse
+               </Link>
+            </div>
           ) : (
-            <div className="relative group/menu py-4"> {/* py-4 to increase hover catch area */}
-              <button className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-neon-green hover:text-white transition-colors cursor-pointer">
-                <User className="w-5 h-5" />
-                {user.name?.split(' ')[0]}
-              </button>
-              
-              <div className="absolute right-0 top-full w-56 glass-panel rounded-xl border border-zinc-800 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all flex flex-col py-2 z-50 shadow-2xl translate-y-2 group-hover/menu:translate-y-0">
-                {/* Perfil para todos los usuarios */}
-                <Link href={`/profile/${user.id}`} className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-zinc-300 hover:text-neon-green hover:bg-zinc-900/50 transition-colors">
-                  Mi Perfil & Bóveda
-                </Link>
-                {/* Herramientas exclusivas por rol */}
-                {user.role === 'STAFF' && (
-                  <Link href="/scanner" className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 transition-colors border-y border-orange-500/20">
-                    Modo Trabajador
-                  </Link>
-                )}
-                {user.role === 'OWNER' && (
-                  <Link href="/admin" className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-neon-purple hover:bg-neon-purple/10 transition-colors">
-                    Dashboard Supremo
-                  </Link>
-                )}
-                <div className="h-px bg-zinc-800/80 my-1 mx-2" />
-                <button onClick={logout} className="w-full px-5 py-3 text-xs font-bold uppercase tracking-widest text-red-500 hover:bg-zinc-900/50 transition-colors text-left flex items-center gap-2">
-                  <LogOut className="w-4 h-4" /> Cerrar Sesión
-                </button>
-              </div>
+            <div className="relative group/user py-4">
+               <button className="flex items-center gap-3 bg-zinc-900/50 hover:bg-zinc-900 border border-zinc-800 pl-4 pr-3 py-2 rounded-full transition-all">
+                  <span className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">{user.name?.split(' ')[0]}</span>
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-900 flex items-center justify-center overflow-hidden border border-zinc-700">
+                     <User className="w-3 h-3 text-zinc-400" />
+                  </div>
+                  <ChevronDown className="w-3 h-3 text-zinc-600 group-hover/user:rotate-180 transition-transform duration-300" />
+               </button>
+
+               <div className="absolute right-0 top-full mt-1 w-64 bg-black border border-zinc-800 rounded-3xl opacity-0 invisible group-hover/user:opacity-100 group-hover/user:visible transition-all duration-300 shadow-2xl overflow-hidden py-3 z-[110]">
+                  <div className="px-5 py-4 border-b border-zinc-900 mb-2">
+                     <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Nombre de Raver</p>
+                     <p className="text-sm font-black text-white">{user.name}</p>
+                  </div>
+                  
+                  {user.role === 'OWNER' && (
+                    <Link href="/admin" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item">
+                       <LayoutDashboard className="w-4 h-4 text-neon-purple group-hover/item:scale-110 transition-transform" />
+                       <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Dashboard Supremo</span>
+                    </Link>
+                  )}
+
+                  {user.role === 'STAFF' && (
+                    <Link href="/scanner" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item">
+                       <Settings className="w-4 h-4 text-orange-500 group-hover/item:scale-110 transition-transform" />
+                       <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Modo Trabajador</span>
+                    </Link>
+                  )}
+
+                  <button onClick={logout} className="w-full flex items-center gap-3 px-5 py-4 hover:bg-red-500/10 transition-colors group/item text-left">
+                     <LogOut className="w-4 h-4 text-red-500 group-hover/item:scale-110 transition-transform" />
+                     <span className="text-[10px] font-black uppercase tracking-widest text-red-500">Cerrar Sesión</span>
+                  </button>
+               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* NIVEL 2: ICONIC NAVIGATION (ACCIONES TÁCTICAS) */}
+      <nav className="h-16 max-w-2xl mx-auto flex items-center justify-around px-4">
+         <Link href="/" className={`flex flex-col items-center gap-1 group relative ${isActive('/') ? 'text-neon-green' : 'text-zinc-600 hover:text-zinc-300'}`}>
+            <Home className={`w-6 h-6 transition-all ${isActive('/') ? 'drop-shadow-[0_0_8px_rgba(57,255,20,0.5)]' : 'group-hover:scale-110'}`} />
+            <span className="text-[8px] font-black uppercase tracking-wider">Inicio</span>
+            {isActive('/') && <div className="absolute -bottom-2 w-1 h-1 rounded-full bg-neon-green shadow-[0_0_10px_#39FF14]" />}
+         </Link>
+
+         <Link href="/#eventos" className={`flex flex-col items-center gap-1 group relative ${pathname === '/events' ? 'text-white' : 'text-zinc-600 hover:text-zinc-300'}`}>
+            <Ticket className="w-6 h-6 transition-all group-hover:scale-110" />
+            <span className="text-[8px] font-black uppercase tracking-wider">Eventos</span>
+         </Link>
+
+         <Link href="/shop" className={`flex flex-col items-center gap-1 group relative ${isActive('/shop') ? 'text-orange-500' : 'text-zinc-600 hover:text-zinc-300'}`}>
+            <ShoppingBag className={`w-6 h-6 transition-all ${isActive('/shop') ? 'drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'group-hover:scale-110'}`} />
+            <span className="text-[8px] font-black uppercase tracking-wider">Tienda</span>
+            {isActive('/shop') && <div className="absolute -bottom-2 w-1 h-1 rounded-full bg-orange-500 shadow-[0_0_10px_#f97316]" />}
+         </Link>
+
+         {user && (
+           <>
+              <Link href={`/profile/${user.id}`} className={`flex flex-col items-center gap-1 group relative ${pathname?.includes('promos') ? 'text-pink-500' : 'text-zinc-600 hover:text-zinc-300'}`}>
+                 <Tag className="w-6 h-6 transition-all group-hover:scale-110" />
+                 <span className="text-[8px] font-black uppercase tracking-wider">Promos</span>
+              </Link>
+
+              <Link href={`/profile/${user.id}`} className={`flex flex-col items-center gap-1 group relative ${pathname?.includes(user.id) && !pathname?.includes('promos') ? 'text-neon-purple' : 'text-zinc-600 hover:text-zinc-300'}`}>
+                 <Shield className={`w-6 h-6 transition-all ${isActive(`/profile/${user.id}`) ? 'drop-shadow-[0_0_8px_rgba(191,0,255,0.5)]' : 'group-hover:scale-110'}`} />
+                 <span className="text-[8px] font-black uppercase tracking-wider">Bóveda</span>
+                 {isActive(`/profile/${user.id}`) && <div className="absolute -bottom-2 w-1 h-1 rounded-full bg-neon-purple shadow-[0_0_10px_#bf00ff]" />}
+              </Link>
+           </>
+         )}
+      </nav>
     </header>
   );
 }
