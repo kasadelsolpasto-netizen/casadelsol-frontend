@@ -36,18 +36,23 @@ export default function PublicShopPage() {
 
   useEffect(() => { fetchData(); }, []);
 
-  // ── REDIRIGIR AUTOMÁTICAMENTE DESPUÉS DE LA COMPRA ──────────────
+  // ── REDIRIGIR AUTOMÁTICAMENTE DESPUÉS DE LA COMPRA (3 SEGUNDOS) ─
   useEffect(() => {
     if (orderResult) {
       const timer = setTimeout(() => {
         const userData = localStorage.getItem('kasa_user');
         if (userData) {
           const user = JSON.parse(userData);
-          router.push(`/profile/${user.id}`);
+          const userId = user.id || user.uuid; // Blindaje por si el ID cambia de nombre
+          if (userId) {
+            router.push(`/profile/${userId}`);
+          } else {
+            router.push('/');
+          }
         } else {
           router.push('/');
         }
-      }, 4000); 
+      }, 3000); 
       return () => clearTimeout(timer);
     }
   }, [orderResult, router]);
