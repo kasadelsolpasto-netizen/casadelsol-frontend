@@ -80,6 +80,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin/staff" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group ${pathname.startsWith('/admin/staff') ? 'bg-zinc-900 border border-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
             <Users className="w-4 h-4 group-hover:text-neon-purple transition-all" /> Equipo & Staff
           </Link>
+          <Link href="/admin/users" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group ${pathname.startsWith('/admin/users') ? 'bg-zinc-900 border border-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
+            <Users className={`w-4 h-4 ${pathname.startsWith('/admin/users') ? 'text-neon-green' : 'group-hover:text-neon-green'} transition-all`} /> Comunidad (Ratings)
+          </Link>
           <Link href="/admin/settings" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group border border-dashed hover:border-solid hover:border-neon-purple ${pathname.startsWith('/admin/settings') ? 'bg-zinc-900 border-neon-purple text-white font-bold' : 'border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
             <Activity className="w-4 h-4 group-hover:text-neon-purple transition-all" /> Configuraciones
           </Link>

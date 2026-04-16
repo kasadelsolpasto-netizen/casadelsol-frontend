@@ -91,6 +91,17 @@ export default function AdminDashboard() {
                   <p className="text-xs text-zinc-400 font-bold max-w-xs">Activa la cámara nativa para validar escáner o registrar asistentes libres en taquilla.</p>
                </div>
             </Link>
+
+            <Link href="/admin/users" className="group glass-panel bg-black p-8 rounded-2xl hover:border-[#00ffff] transition-all flex flex-col items-center justify-center text-center gap-4 relative overflow-hidden border border-zinc-800">
+               <div className="absolute inset-x-0 bottom-0 h-1 bg-[#00ffff] transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+               <div className="w-16 h-16 rounded-full bg-[#00ffff]/10 flex items-center justify-center group-hover:bg-[#00ffff]/20 transition-all">
+                 <Users className="w-8 h-8 text-[#00ffff]" />
+               </div>
+               <div>
+                  <h3 className="font-black uppercase tracking-widest text-white mb-2 group-hover:neon-text-cyan transition-all">Gestión Comunidad</h3>
+                  <p className="text-xs text-zinc-400 font-bold max-w-xs">Administra la base de datos de usuarios y asigna calificaciones internas de comportamiento.</p>
+               </div>
+            </Link>
           </div>
         </div>
       </div>

@@ -1,14 +1,14 @@
 "use client";
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, UserPlus, Loader2, Check, DollarSign, Users, Trash2 } from 'lucide-react';
+import { ArrowLeft, UserPlus, Loader2, Check, DollarSign, Users, Trash2, Star } from 'lucide-react';
 
 export default function TaquillaEventPage({ params }: { params: { id: string } }) {
   const [event, setEvent] = useState<any>(null);
   const [sales, setSales] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [form, setForm] = useState({ name: '', cedula: '', email: '', amount: '' });
+  const [form, setForm] = useState({ name: '', cedula: '', email: '', amount: '', rating: 0, rating_comment: '' });
   const [error, setError] = useState('');
 
   const getToken = () => {
@@ -50,14 +50,16 @@ export default function TaquillaEventPage({ params }: { params: { id: string } }
           name: form.name || undefined,
           cedula: form.cedula || undefined,
           email: form.email || undefined,
-          amount: Number(form.amount)
+          amount: Number(form.amount),
+          rating: form.rating > 0 ? form.rating : undefined,
+          rating_comment: form.rating_comment || undefined
         })
       });
 
       if (res.ok) {
         const newSale = await res.json();
         setSales(prev => [newSale, ...prev]);
-        setForm({ name: '', cedula: '', email: '', amount: '' });
+        setForm({ name: '', cedula: '', email: '', amount: '', rating: 0, rating_comment: '' });
         setSuccess(true);
         setTimeout(() => setSuccess(false), 2500);
       } else {
@@ -142,6 +144,29 @@ export default function TaquillaEventPage({ params }: { params: { id: string } }
               className="w-full bg-zinc-900/60 border border-zinc-800 rounded-lg py-3 px-4 text-white hover:border-zinc-600 focus:border-orange-500 outline-none transition-colors text-sm" />
           </div>
 
+          <div className="pt-2 border-t border-zinc-800 mt-2">
+            <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black block mb-2">Calificación del Asistente (Interno)</label>
+            <div className="flex gap-2 mb-3">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setForm({ ...form, rating: star })}
+                  className={`p-1 transition-all ${form.rating >= star ? 'text-orange-400 scale-110' : 'text-zinc-700 hover:text-orange-900'}`}
+                >
+                  <Star className="w-6 h-6" fill={form.rating >= star ? "currentColor" : "none"} />
+                </button>
+              ))}
+            </div>
+            
+            <textarea
+              placeholder="Comentarios internos sobre el comportamiento/calidad (opcional)"
+              value={form.rating_comment}
+              onChange={e => setForm({ ...form, rating_comment: e.target.value })}
+              className="w-full bg-zinc-900/40 border border-zinc-800 rounded-lg py-2 px-3 text-white text-xs hover:border-zinc-700 focus:border-orange-500/50 outline-none transition-colors h-20 resize-none"
+            />
+          </div>
+
           {error && <p className="text-red-400 text-xs font-bold uppercase tracking-widest">{error}</p>}
 
           <button type="submit" disabled={saving}
@@ -177,6 +202,14 @@ export default function TaquillaEventPage({ params }: { params: { id: string } }
                       {sale.email && <span className="text-[10px] text-zinc-500 font-bold">{sale.email}</span>}
                       {!sale.cedula && !sale.email && <span className="text-[10px] text-zinc-600 italic">Sin datos adicionales</span>}
                     </div>
+                    {sale.rating && (
+                      <div className="flex items-center gap-0.5 mt-1.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} className={`w-2.5 h-2.5 ${s <= sale.rating ? 'text-orange-400' : 'text-zinc-800'}`} fill={s <= sale.rating ? "currentColor" : "none"} />
+                        ))}
+                        {sale.rating_comment && <span className="ml-2 text-[9px] text-zinc-500 italic max-w-[200px] truncate">"{sale.rating_comment}"</span>}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="text-right shrink-0">
