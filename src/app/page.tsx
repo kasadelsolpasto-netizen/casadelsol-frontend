@@ -1,4 +1,5 @@
 import Link from 'next/link';
+export const dynamic = 'force-dynamic';
 import { ArrowLeft, ArrowRight, Calendar, MapPin, Tag } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { InstallAppButton } from '@/components/InstallAppButton';

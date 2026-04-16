@@ -3,6 +3,7 @@ import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, ArrowRight, CheckCircle, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -15,6 +16,16 @@ function ResetPasswordForm() {
   const [errorMsg, setErrorMsg] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const { executeRecaptcha } = useGoogleReCaptcha();
+  const hasSiteKey = !!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+
+  useEffect(() => {
+    console.log('🔍 [DEBUG-AUTH] ResetPassword State:', {
+      hasSiteKey,
+      siteKeyPrefix: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.substring(0, 6),
+      isRecaptchaReady: !!executeRecaptcha
+    });
+  }, [executeRecaptcha, hasSiteKey]);
 
   if (!token) {
     return (
@@ -48,9 +59,19 @@ function ResetPasswordForm() {
     setStatus('loading');
 
     try {
+      if (!executeRecaptcha) {
+        setErrorMsg('El sistema de seguridad se está cargando. Por favor, espera un momento.');
+        setStatus('idle');
+        return;
+      }
+      const recaptchaToken = await executeRecaptcha('reset_password');
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/reset-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'recaptcha-token': recaptchaToken
+        },
         body: JSON.stringify({ token, password }),
       });
 
@@ -157,11 +178,11 @@ function ResetPasswordForm() {
 
         <button
           type="submit"
-          disabled={status === 'loading'}
+          disabled={status === 'loading' || !executeRecaptcha || !hasSiteKey}
           className="w-full bg-white text-black font-bold uppercase tracking-wider py-3.5 rounded-lg hover:bg-neon-green hover:shadow-[0_0_20px_rgba(57,255,20,0.4)] disabled:opacity-50 transition-all flex justify-center items-center gap-2 group"
         >
-          {status === 'loading' ? 'Guardando...' : 'Cambiar Contraseña'}
-          {status !== 'loading' && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+          {!hasSiteKey ? 'Error: Falta Site Key' : !executeRecaptcha ? 'Cargando Seguridad...' : status === 'loading' ? 'Guardando...' : 'Cambiar Contraseña'}
+          {status !== 'loading' && executeRecaptcha && hasSiteKey && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
         </button>
       </form>
     </div>
