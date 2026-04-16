@@ -154,9 +154,9 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen pb-20 bg-[#050505] overflow-x-hidden">
       {/* ── ALERTA DESESPERADA (NUEVA) ─────────────────────────── */}
-      {profile?.shop_orders?.some((o: any) => o.status === 'READY') && (
+      {profile?.shop_orders?.some((o: any) => o?.status === 'READY') && (
         <div className="fixed inset-x-0 bottom-32 z-[250] flex flex-col items-center pointer-events-none px-6">
-           <div className="bg-red-600 text-white p-8 rounded-[3rem] shadow-[0_30px_90px_rgba(220,38,38,0.8)] border-[6px] border-white animate-[shake_0.5s_infinite] flex flex-col items-center gap-4 pointer-events-auto max-w-sm w-full cursor-pointer hover:scale-110 transition-transform" onClick={() => router.push('/profile')}>
+           <div className="bg-red-600 text-white p-8 rounded-[3rem] shadow-[0_30px_90px_rgba(220,38,38,0.8)] border-[6px] border-white animate-[shake_0.5s_infinite] flex flex-col items-center gap-4 pointer-events-auto max-w-sm w-full cursor-pointer hover:scale-110 transition-transform" onClick={() => router.push(`/profile/${params.id}`)}>
               <div className="flex items-center gap-4">
                  <Zap className="w-10 h-10 animate-ping" />
                  <h2 className="text-3xl font-black uppercase italic leading-none text-shadow-lg">¡¡YAAAAAAAA!!</h2>
@@ -180,7 +180,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
               </div>
               <div className="flex-1 text-black">
                  <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-0.5">¡Aviso de Bar!</p>
-                 <p className="font-black uppercase text-sm leading-tight">{userAlert.message}</p>
+                 <p className="font-black uppercase text-sm leading-tight">{userAlert?.message}</p>
               </div>
               <button onClick={() => setUserAlert(null)} className="text-black/40 hover:text-black">
                  <X className="w-5 h-5" />
@@ -210,8 +210,8 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
               </div>
            </div>
            <div className="text-center md:text-left">
-              <h1 className="text-4xl md:text-5xl font-black uppercase text-white mb-2">{profile.name}</h1>
-              <p className="text-zinc-500 font-bold">{profile.email}</p>
+              <h1 className="text-4xl md:text-5xl font-black uppercase text-white mb-2">{profile?.name}</h1>
+              <p className="text-zinc-500 font-bold">{profile?.email}</p>
               <div className="mt-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-neon-purple/10 border border-neon-purple/30 text-neon-purple text-[10px] font-black uppercase tracking-widest">
                  <Star className="w-3 h-3" /> Raver VIP
               </div>
@@ -226,21 +226,21 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                  <h2 className="text-xl font-black uppercase tracking-widest text-white flex items-center gap-3 mb-8">
                     <ShoppingBag className="w-6 h-6 text-orange-500" /> Pedidos de Tienda
                  </h2>
-                 {profile.shop_orders?.length > 0 ? (
+                 {profile?.shop_orders?.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                       {profile.shop_orders.map((order: any) => {
-                          const isReady = order.status === 'READY';
-                          const isPaid = ['PAID', 'READY', 'DELIVERED'].includes(order.status);
+                       {profile?.shop_orders?.map((order: any) => {
+                          const isReady = order?.status === 'READY';
+                          const isPaid = ['PAID', 'READY', 'DELIVERED'].includes(order?.status);
                           return (
-                            <div key={order.id} className={`p-8 rounded-[2.5rem] border-2 transition-all ${isReady ? 'bg-neon-green/10 border-neon-green shadow-neon-green/20' : 'bg-zinc-950 border-zinc-900'}`}>
+                            <div key={order?.id} className={`p-8 rounded-[2.5rem] border-2 transition-all ${isReady ? 'bg-neon-green/10 border-neon-green shadow-neon-green/20' : 'bg-zinc-950 border-zinc-900'}`}>
                                <div className="flex justify-between items-start mb-6">
-                                  <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">ORDEN #{order.id.slice(0,6)}</span>
+                                  <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">ORDEN #{order?.id?.slice(0,6)}</span>
                                   <span className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${isReady ? 'bg-neon-green text-black border-neon-green' : 'text-zinc-500 border-zinc-800'}`}>
-                                     {order.status}
+                                     {order?.status}
                                   </span>
                                </div>
                                <div className="flex items-center gap-6">
-                                   {order.status === 'DELIVERED' ? (
+                                   {order?.status === 'DELIVERED' ? (
                                       <div className="w-24 h-24 rounded-3xl bg-zinc-900 flex flex-col items-center justify-center border-2 border-zinc-800">
                                          <CheckCircle className="w-8 h-8 text-zinc-700 mb-1" />
                                          <span className="text-[7px] font-black text-zinc-700 uppercase">Entregado</span>
@@ -248,7 +248,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                    ) : (
                                       <div onClick={() => setSelectedShopQr(order)} className={`w-24 h-24 p-3 bg-white rounded-3xl cursor-pointer hover:scale-105 transition-all ${isReady ? 'ring-4 ring-neon-green' : ''}`}>
                                          <QRCodeSVG 
-                                           value={isPaid ? `KASA_SHOP_DELIVER:${order.id}:${order.verification_token}` : `KASA_SHOP_PAY:${order.id}:${order.verification_token}`}
+                                           value={isPaid ? `KASA_SHOP_DELIVER:${order?.id}:${order?.verification_token || 'legacy'}` : `KASA_SHOP_PAY:${order?.id}:${order?.verification_token || 'legacy'}`}
                                            size={72}
                                          />
                                       </div>
@@ -257,7 +257,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                      <p className="text-xs font-bold text-zinc-400 mb-1">
                                         {isReady ? '¡TU PEDIDO ESTÁ LISTO!' : 'Preparando...'}
                                      </p>
-                                     <p className="text-2xl font-black text-white">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(order.total)}</p>
+                                     <p className="text-2xl font-black text-white">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(order?.total)}</p>
                                   </div>
                                </div>
                             </div>
@@ -278,16 +278,16 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                     <Ticket className="w-6 h-6 text-neon-green" /> Boletas de Eventos
                  </h2>
                  <div className="space-y-4">
-                    {profile.orders?.map((order: any) => (
-                       <div key={order.id} className="p-6 bg-zinc-950 border border-zinc-900 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-6">
+                    {profile?.orders?.map((order: any) => (
+                       <div key={order?.id} className="p-6 bg-zinc-950 border border-zinc-900 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-6">
                           <div>
-                             <p className="text-white font-black uppercase text-xl">{order.order_items[0]?.ticket_type?.event?.title || 'Evento Kasa'}</p>
-                             <p className="text-neon-green font-bold text-sm tracking-widest uppercase">{order.order_items[0]?.ticket_type?.name}</p>
+                             <p className="text-white font-black uppercase text-xl">{order?.order_items?.[0]?.ticket_type?.event?.title || 'Evento Kasa'}</p>
+                             <p className="text-neon-green font-bold text-sm tracking-widest uppercase">{order?.order_items?.[0]?.ticket_type?.name}</p>
                           </div>
                           <div className="flex gap-4">
-                             {order.qr_codes?.map((qr: any) => (
-                                <div key={qr.id} onClick={() => setSelectedQr(qr)} className="w-20 h-20 bg-white p-2 rounded-xl cursor-pointer hover:bg-neon-green transition-colors">
-                                   <QRCodeSVG value={`${BASE_URL}/ticket/${qr.token_hash}`} size={64} />
+                             {order?.qr_codes?.map((qr: any) => (
+                                <div key={qr?.id} onClick={() => setSelectedQr(qr)} className="w-20 h-20 bg-white p-2 rounded-xl cursor-pointer hover:bg-neon-green transition-colors">
+                                   <QRCodeSVG value={`${BASE_URL}/ticket/${qr?.token_hash}`} size={64} />
                                 </div>
                              ))}
                           </div>
@@ -330,10 +330,10 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
       {selectedQr && (
          <div className="fixed inset-0 z-[150] bg-black/95 flex flex-col items-center justify-center p-6" onClick={() => setSelectedQr(null)}>
             <div className="bg-white p-6 rounded-[2.5rem] mb-12 shadow-[0_0_100px_rgba(57,255,20,0.3)]">
-               <QRCodeSVG value={`${BASE_URL}/ticket/${selectedQr.token_hash}`} size={280} level="H" />
+               <QRCodeSVG value={`${BASE_URL}/ticket/${selectedQr?.token_hash}`} size={280} level="H" />
             </div>
-            <p className="text-neon-green font-black uppercase tracking-widest text-2xl mb-2">{selectedQr.attendee_name || profile.name}</p>
-            <p className="text-zinc-500 font-bold uppercase tracking-widest text-xs">C.C. {selectedQr.attendee_dni || 'REGISTRADO'}</p>
+            <p className="text-neon-green font-black uppercase tracking-widest text-2xl mb-2">{selectedQr?.attendee_name || profile?.name}</p>
+            <p className="text-zinc-500 font-bold uppercase tracking-widest text-xs">C.C. {selectedQr?.attendee_dni || 'REGISTRADO'}</p>
          </div>
       )}
 
@@ -342,16 +342,16 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
          <div className="fixed inset-0 z-[150] bg-black/98 flex flex-col items-center justify-center p-6" onClick={() => setSelectedShopQr(null)}>
             <div className="bg-white p-8 rounded-[3.5rem] mb-12 shadow-[0_0_100px_rgba(57,255,20,0.4)]">
                <QRCodeSVG 
-                  value={(['PAID','READY'].includes(selectedShopQr.status)) ? `KASA_SHOP_DELIVER:${selectedShopQr.id}:${selectedShopQr.verification_token}` : `KASA_SHOP_PAY:${selectedShopQr.id}:${selectedShopQr.verification_token}`} 
+                  value={(['PAID','READY'].includes(selectedShopQr?.status)) ? `KASA_SHOP_DELIVER:${selectedShopQr?.id}:${selectedShopQr?.verification_token || 'legacy'}` : `KASA_SHOP_PAY:${selectedShopQr?.id}:${selectedShopQr?.verification_token || 'legacy'}`} 
                   size={250} 
                   level="H" 
                />
             </div>
             <h3 className="text-neon-green font-black uppercase text-3xl mb-4">
-               {(['PAID','READY'].includes(selectedShopQr.status)) ? 'QR DE ENTREGA' : 'QR DE PAGO'}
+               {(['PAID','READY'].includes(selectedShopQr?.status)) ? 'QR DE ENTREGA' : 'QR DE PAGO'}
             </h3>
             <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px] text-center max-w-xs leading-relaxed">
-               {(['PAID','READY'].includes(selectedShopQr.status)) 
+               {(['PAID','READY'].includes(selectedShopQr?.status)) 
                   ? 'Muéstralo en la barra para quemar tu pedido y recibir tus productos.' 
                   : 'Preséntalo en la caja para pagar tu pedido.'}
             </p>
