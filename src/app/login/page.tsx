@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, Suspense } from 'react';
-import { ArrowRight, Lock, Mail, Briefcase, Music, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, Lock, Mail, Briefcase, Music, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
@@ -192,6 +192,8 @@ function LoginContent() {
       </div>
     </div>
   );
+}
+
 export default function LoginPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="animate-spin text-neon-green" /></div>}>
@@ -199,6 +201,3 @@ export default function LoginPage() {
     </Suspense>
   );
 }
-
-// Add simple Loader2 if not imported
-import { Loader2 } from 'lucide-react';
