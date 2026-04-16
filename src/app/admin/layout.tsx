@@ -71,9 +71,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin/events" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group ${pathname.startsWith('/admin/events') ? 'bg-zinc-900 border border-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
             <CalendarPlus className={`w-4 h-4 ${pathname.startsWith('/admin/events') ? 'text-neon-purple' : 'group-hover:text-neon-purple'} transition-all`} /> Gestión Eventos
           </Link>
-          <Link href="/admin/sales" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group ${pathname.startsWith('/admin/sales') ? 'bg-zinc-900 border border-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
-            <Ticket className={`w-4 h-4 ${pathname.startsWith('/admin/sales') ? 'text-neon-green' : 'group-hover:text-neon-green'} transition-all`} /> Ventas & Métricas
+          <Link href="/admin/shop" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group ${pathname.startsWith('/admin/shop') ? 'bg-zinc-900 border border-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
+            <ShoppingBag className={`w-4 h-4 ${pathname.startsWith('/admin/shop') ? 'text-orange-500' : 'group-hover:text-orange-500'} transition-all`} /> Inventario Shop
           </Link>
+          <Link href="/admin/sales" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group ${pathname.startsWith('/admin/sales') ? 'bg-zinc-900 border border-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
+
 
           <Link href="/admin/staff" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group ${pathname.startsWith('/admin/staff') ? 'bg-zinc-900 border border-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
             <Users className="w-4 h-4 group-hover:text-neon-purple transition-all" /> Equipo & Staff

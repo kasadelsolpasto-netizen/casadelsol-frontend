@@ -25,7 +25,11 @@ export default function PublicShopPage() {
     try {
       const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       const res = await fetch(`${API}/shop/products/catalog`);
-      if (res.ok) setProducts(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        const available = data.filter((p: any) => p.stock > 0);
+        setProducts(available);
+      }
     } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
@@ -167,7 +171,7 @@ export default function PublicShopPage() {
             <div className="p-2 bg-orange-500/10 rounded-lg text-orange-500"><Zap className="w-5 h-5" /></div>
             <div>
                <h1 className="text-lg font-black uppercase tracking-tighter text-white">Bar de la Kasa</h1>
-               <span className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-600">Servicio en vivo • {products.length} productos</span>
+               <span className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-600">Servicio en vivo • {products.length} productos disponibles</span>
             </div>
          </div>
          <button onClick={() => setShowCart(true)} className="relative p-3 bg-zinc-900 rounded-xl text-white hover:bg-zinc-800 transition-all shadow-lg active:scale-90">
@@ -195,11 +199,6 @@ export default function PublicShopPage() {
                         <img src={p.image_url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center"><Package className="w-8 h-8 text-zinc-800" /></div>
-                      )}
-                      {p.stock <= 0 && (
-                        <div className="absolute inset-0 bg-black/80 backdrop-blur-[2px] flex items-center justify-center">
-                           <span className="text-[9px] font-black uppercase text-red-500 border border-red-500/30 px-3 py-1 rounded-full">Agotado</span>
-                        </div>
                       )}
                    </div>
                    
