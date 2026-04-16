@@ -1,14 +1,21 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Ticket, QrCode, User, Star, MapPin, Calendar, CheckCircle, X, Lock, Share2, DoorOpen, ShieldCheck } from 'lucide-react';
+import { Ticket, QrCode, User, Star, MapPin, Calendar, CheckCircle, X, Lock, Share2, DoorOpen, ShieldCheck, Gift, Zap, TicketPercent, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { InstallAppButton } from '@/components/InstallAppButton';
 
+const BENEFIT_ICONS: Record<string, any> = {
+  DISCOUNT: TicketPercent,
+  GIFT: Gift,
+  ACCESS: Zap
+};
+
 export default function ProfilePage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
+  const [benefits, setBenefits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedQr, setSelectedQr] = useState<any>(null);
   const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://casadelsol-frontend.vercel.app';
@@ -94,6 +101,16 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
           setProfile(data);
           setNewName(data.name);
           
+          // Fetch Benefits
+          try {
+            const bRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/promotions/my-benefits`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (bRes.ok) {
+              setBenefits(await bRes.json());
+            }
+          } catch(e) { console.error("Error fetching benefits", e); }
+
           // Sincronizar el rol en duro para que el Navbar reaccione si lo degradaron
           const localStr = localStorage.getItem('kasa_user');
           if (localStr) {
@@ -281,15 +298,30 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
               </div>
 
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
-                {!isStaff && (
-                  <section className="bg-gradient-to-br from-neon-purple/20 to-black border border-neon-purple/30 p-6 rounded-2xl relative overflow-hidden">
-                     <div className="absolute -top-10 -right-10 w-24 h-24 bg-neon-purple/20 blur-xl rounded-full"></div>
-                     <h3 className="text-lg font-bold uppercase tracking-widest text-white mb-2">Beneficios Kasa</h3>
-                     <p className="text-sm text-zinc-400 mb-5 relative z-10">Muestra tu QR en barras para redimir beneficios.</p>
-                     <div className="bg-black/60 py-3 px-4 rounded border border-zinc-800 flex justify-between items-center relative z-10">
-                       <span className="text-xs font-bold uppercase tracking-widest text-zinc-300">Merch Oficial</span>
-                       <span className="text-neon-green font-black">15% OFF</span>
-                     </div>
+                {!isStaff && benefits.length > 0 && (
+                  <section className="space-y-4">
+                    <h2 className="text-xl font-bold uppercase tracking-widest text-white flex items-center gap-3">
+                      <Gift className="w-5 h-5 text-neon-purple" /> Beneficios para Ti
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {benefits.map((promo: any) => {
+                        const Icon = BENEFIT_ICONS[promo.type] || Gift;
+                        return (
+                          <div key={promo.id} className="relative group overflow-hidden bg-gradient-to-br from-zinc-900 to-black border border-zinc-800 p-6 rounded-2xl hover:border-neon-purple/50 transition-all">
+                             <div className="absolute -right-4 -top-4 w-20 h-20 bg-neon-purple/5 blur-2xl group-hover:bg-neon-green/5 transition-colors" />
+                             <div className="flex items-start gap-4">
+                                <div className="p-3 bg-zinc-800/50 rounded-xl text-neon-purple group-hover:text-neon-green transition-colors">
+                                   <Icon className="w-6 h-6" />
+                                </div>
+                                <div>
+                                   <h4 className="font-black text-white uppercase tracking-wider text-sm">{promo.title}</h4>
+                                   <p className="text-xs text-zinc-500 mt-1 leading-relaxed">{promo.description}</p>
+                                </div>
+                             </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </section>
                 )}
 
