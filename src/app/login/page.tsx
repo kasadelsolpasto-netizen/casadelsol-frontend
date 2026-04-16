@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ArrowRight, Lock, Mail, Briefcase, Music, Eye, EyeOff } from 'lucide-react';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
@@ -15,14 +15,6 @@ export default function LoginPage() {
   const [pendingStaffData, setPendingStaffData] = useState<any>(null);
   const { executeRecaptcha } = useGoogleReCaptcha();
   const hasSiteKey = !!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-
-  useEffect(() => {
-    console.log('🔍 [DEBUG-AUTH] LoginPage State:', {
-      hasSiteKey,
-      siteKeyPrefix: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.substring(0, 6),
-      isRecaptchaReady: !!executeRecaptcha
-    });
-  }, [executeRecaptcha, hasSiteKey]);
 
   const [hp, setHp] = useState('');
   const [showPassword, setShowPassword] = useState(false);

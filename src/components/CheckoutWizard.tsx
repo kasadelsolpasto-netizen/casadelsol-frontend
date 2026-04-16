@@ -29,14 +29,6 @@ export default function CheckoutWizard({
   const { executeRecaptcha } = useGoogleReCaptcha();
   const hasSiteKey = !!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
-  useEffect(() => {
-    console.log('🔍 [DEBUG-AUTH] CheckoutWizard State:', {
-      step,
-      hasSiteKey,
-      siteKeyPrefix: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.substring(0, 6),
-      isRecaptchaReady: !!executeRecaptcha
-    });
-  }, [executeRecaptcha, hasSiteKey, step]);
 
   // Auth
   const [authMode, setAuthMode] = useState<AuthMode>('LOGIN');

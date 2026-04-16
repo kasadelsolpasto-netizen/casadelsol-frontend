@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
@@ -10,14 +10,6 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState('');
   const { executeRecaptcha } = useGoogleReCaptcha();
   const hasSiteKey = !!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-
-  useEffect(() => {
-    console.log('🔍 [DEBUG-AUTH] ForgotPassword State:', {
-      hasSiteKey,
-      siteKeyPrefix: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.substring(0, 6),
-      isRecaptchaReady: !!executeRecaptcha
-    });
-  }, [executeRecaptcha, hasSiteKey]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

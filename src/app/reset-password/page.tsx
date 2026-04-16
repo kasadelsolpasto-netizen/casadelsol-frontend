@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, ArrowRight, CheckCircle, AlertTriangle, Eye, EyeOff } from 'lucide-react';
@@ -16,16 +16,7 @@ function ResetPasswordForm() {
   const [errorMsg, setErrorMsg] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const { executeRecaptcha } = useGoogleReCaptcha();
   const hasSiteKey = !!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-
-  useEffect(() => {
-    console.log('🔍 [DEBUG-AUTH] ResetPassword State:', {
-      hasSiteKey,
-      siteKeyPrefix: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.substring(0, 6),
-      isRecaptchaReady: !!executeRecaptcha
-    });
-  }, [executeRecaptcha, hasSiteKey]);
 
   if (!token) {
     return (

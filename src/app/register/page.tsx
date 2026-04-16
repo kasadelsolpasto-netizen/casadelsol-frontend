@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Lock, Mail, User, Eye, EyeOff } from 'lucide-react';
@@ -16,14 +16,6 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const { executeRecaptcha } = useGoogleReCaptcha();
   const hasSiteKey = !!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-
-  useEffect(() => {
-    console.log('🔍 [DEBUG-AUTH] RegisterPage State:', {
-      hasSiteKey,
-      siteKeyPrefix: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.substring(0, 6),
-      isRecaptchaReady: !!executeRecaptcha
-    });
-  }, [executeRecaptcha, hasSiteKey]);
 
   const [hp, setHp] = useState('');
   const [showPassword, setShowPassword] = useState(false);
