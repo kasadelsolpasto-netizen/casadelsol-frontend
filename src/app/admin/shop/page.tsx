@@ -71,6 +71,27 @@ export default function ShopInventoryPage() {
 
   const [newCategoryName, setNewCategoryName] = useState('');
 
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategoryName.trim()) return;
+    try {
+      const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const token = getToken();
+      const res = await fetch(`${API}/shop/products/categories`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ name: newCategoryName })
+      });
+      if (res.ok) {
+        setNewCategoryName('');
+        fetchData();
+      }
+    } catch (err) { console.error(err); }
+  };
+
   const getToken = () => {
     const row = document.cookie.split('; ').find(r => r.startsWith('kasa_auth_token='));
     return row ? row.split('=')[1] : null;
@@ -101,10 +122,10 @@ export default function ShopInventoryPage() {
     setFormData({
       name: product.name,
       description: product.description || '',
-      price: product.price,
-      stock: product.stock,
+      price: product.price.toString(),
+      stock: product.stock.toString(),
       image_url: product.image_url || '',
-      category_id: product.category_id,
+      category_id: product.category_id || '',
       is_active: product.is_active
     });
     setShowProductModal(true);
@@ -115,10 +136,10 @@ export default function ShopInventoryPage() {
     setFormData({
       name: '',
       description: '',
-      price: 0,
-      stock: 0,
+      price: '',
+      stock: '',
       image_url: '',
-      category_id: categories[0]?.id || '',
+      category_id: '',
       is_active: true
     });
     setShowProductModal(true);
@@ -149,7 +170,12 @@ export default function ShopInventoryPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          price: Number(formData.price) || 0,
+          stock: Number(formData.stock) || 0,
+          category_id: formData.category_id || null
+        })
       });
 
       if (res.ok) {
@@ -400,8 +426,7 @@ export default function ShopInventoryPage() {
                           className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 text-white font-bold outline-none focus:border-orange-500 transition-all h-14"
                           placeholder="Ej: Mezcal Unión Joven"
                         />
-                      </div>
-                      <div className="space-y-2">
+                                   <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Precio (COP)</label>
                         <div className="relative">
                            <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 font-bold" />
@@ -409,8 +434,9 @@ export default function ShopInventoryPage() {
                               required
                               type="number" 
                               value={formData.price}
-                              onChange={e => setFormData({...formData, price: Number(e.target.value)})}
+                              onChange={e => setFormData({...formData, price: e.target.value})}
                               className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl pl-12 pr-5 py-4 text-white font-black outline-none focus:border-orange-500 transition-all h-14 no-spinner"
+                              placeholder="0"
                            />
                         </div>
                       </div>
@@ -422,23 +448,24 @@ export default function ShopInventoryPage() {
                             required
                             type="number" 
                             value={formData.stock}
-                            onChange={e => setFormData({...formData, stock: Number(e.target.value)})}
-                            className={`w-full bg-zinc-900 border border-zinc-800 rounded-2xl pl-12 pr-5 py-4 text-white font-black outline-none focus:border-orange-500 transition-all h-14 no-spinner ${formData.stock <= 0 ? 'text-red-500' : ''}`}
+                            onChange={e => setFormData({...formData, stock: e.target.value})}
+                            className={`w-full bg-zinc-900 border border-zinc-800 rounded-2xl pl-12 pr-5 py-4 text-white font-black outline-none focus:border-orange-500 transition-all h-14 no-spinner ${Number(formData.stock) <= 0 ? 'text-red-500' : ''}`}
+                            placeholder="0"
                           />
                         </div>
                       </div>
                       <div className="col-span-1 md:col-span-2 space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Categoría del Menú</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Categoría del Menú (Opcional)</label>
                         <select 
-                          required
                           value={formData.category_id}
                           onChange={e => setFormData({...formData, category_id: e.target.value})}
                           className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 text-white font-bold outline-none focus:border-orange-500 transition-all h-14 appearance-none"
                         >
-                          <option value="">Seleccionar...</option>
+                          <option value="">Sin Categoría</option>
                           {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                       </div>
+            </div>
                       <div className="col-span-1 md:col-span-2 space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Detalles / Notas de Venta</label>
                         <textarea 
