@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { QrCode, CalendarPlus, Users, Activity, Ticket, ArrowLeft, DoorOpen, ShoppingBag } from 'lucide-react';
 import AdminLogoutButton from '@/components/AdminLogoutButton';
+import AdminNotifications from '@/components/admin/AdminNotifications';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -97,6 +98,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <main className="md:ml-64 flex-1 w-full bg-[#050505]">
         {children}
       </main>
+      <AdminNotifications />
     </div>
   );
 }

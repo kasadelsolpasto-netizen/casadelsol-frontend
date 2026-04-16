@@ -130,14 +130,20 @@ export default function ScannerPage() {
       if (!authToken) throw new Error('Sin sesión activa');
 
       // ── DETECTAR QR DE TIENDA ───────────────────────────────────
-      if (token.startsWith('KASA_SHOP_ORDER:')) {
-        const orderId = token.replace('KASA_SHOP_ORDER:', '');
+      if (token.startsWith('KASA_SHOP_PAY:') || token.startsWith('KASA_SHOP_DELIVER:')) {
+        const isPay = token.startsWith('KASA_SHOP_PAY:');
+        const orderId = isPay ? token.replace('KASA_SHOP_PAY:', '') : token.replace('KASA_SHOP_DELIVER:', '');
+        
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/shop/orders/admin/${orderId}`, {
            headers: { Authorization: `Bearer ${authToken}` }
         });
         if (res.ok) {
            const orderData = await res.json();
-           setStatus({ type: 'shop_order', order: orderData });
+           setStatus({ 
+             type: 'shop_order', 
+             order: orderData, 
+             intent: isPay ? 'PAY' : 'DELIVER' 
+           });
            return;
         }
         throw new Error('Pedido de tienda no encontrado');
@@ -278,48 +284,74 @@ export default function ScannerPage() {
                 </div>
               )}
                {status.type === 'shop_order' && (
-                <div className="w-full p-5 rounded-3xl border-2 border-orange-500 bg-orange-500/5 shadow-[0_0_40px_rgba(249,115,22,0.2)] flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200">
-                  <div className="w-16 h-16 rounded-full bg-orange-500/20 border-2 border-orange-500 flex items-center justify-center">
-                    <ShoppingBag className="w-8 h-8 text-orange-500" />
+                <div className={`w-full p-5 rounded-3xl border-2 bg-black/80 shadow-2xl flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200 ${status.intent === 'PAY' ? 'border-orange-500 shadow-orange-500/20' : 'border-neon-green shadow-neon-green/20'}`}>
+                  <div className={`w-16 h-16 rounded-full border-2 flex items-center justify-center ${status.intent === 'PAY' ? 'bg-orange-500/20 border-orange-500' : 'bg-neon-green/20 border-neon-green'}`}>
+                    {status.intent === 'PAY' ? <DollarSign className="w-8 h-8 text-orange-500" /> : <Package className="w-8 h-8 text-neon-green" />}
                   </div>
+                  
                   <div className="text-center">
-                    <p className="font-black uppercase tracking-widest text-orange-500 text-sm mb-1">Pedido de Tienda</p>
+                    <p className={`font-black uppercase tracking-widest text-[10px] mb-1 ${status.intent === 'PAY' ? 'text-orange-500' : 'text-neon-green'}`}>
+                        {status.intent === 'PAY' ? 'Cobro en Efectivo' : 'Entrega de Productos'}
+                    </p>
                     <p className="text-white font-black text-xl uppercase truncate max-w-[200px]">{status.order.user?.name || 'Invitado'}</p>
                     {status.order.user?.tags?.length > 0 && (
                       <div className="flex justify-center gap-1 mt-1">
                         {status.order.user.tags.map((t:string) => (
-                          <span key={t} className="px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-500 text-[7px] font-black border border-orange-500/30">{t}</span>
+                          <span key={t} className={`px-1.5 py-0.5 rounded text-[7px] font-black border ${status.intent === 'PAY' ? 'bg-orange-500/20 text-orange-500 border-orange-500/30' : 'bg-neon-green/20 text-neon-green border-neon-green/30'}`}>{t}</span>
                         ))}
                       </div>
                     )}
                   </div>
 
-                  <div className="w-full bg-black/40 rounded-2xl p-4 border border-zinc-800/50">
+                  <div className="w-full bg-black/40 rounded-2xl p-4 border border-zinc-900">
                     <div className="space-y-2 mb-4">
                       {status.order.items.map((item: any) => (
-                        <div key={item.id} className="flex justify-between text-[10px] font-bold">
-                          <span className="text-zinc-400"><span className="text-orange-500">{item.quantity}x</span> {item.product.name}</span>
-                          <span className="text-white">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(item.unit_price * item.quantity)}</span>
+                        <div key={item.id} className="flex justify-between text-[11px] font-bold">
+                          <span className="text-zinc-400 group-hover:text-white transition-colors">
+                             <span className={status.intent === 'PAY' ? 'text-orange-500' : 'text-neon-green'}>{item.quantity}x</span> {item.product.name}
+                          </span>
+                          <span className="text-white font-black">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(item.unit_price * item.quantity)}</span>
                         </div>
                       ))}
                     </div>
-                    <div className="flex justify-between pt-2 border-t border-zinc-800">
-                      <span className="text-[10px] font-black uppercase text-zinc-500">Total a cobrar</span>
-                      <span className="text-sm font-black text-orange-500">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(status.order.total)}</span>
+                    <div className="flex justify-between pt-3 border-t border-zinc-900 items-center">
+                      <span className="text-[9px] font-black uppercase text-zinc-600">Total Orden</span>
+                      <span className={`text-lg font-black ${status.intent === 'PAY' ? 'text-orange-500' : 'text-neon-green'}`}>
+                        {Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(status.order.total)}
+                      </span>
                     </div>
                   </div>
 
-                  {status.order.status === 'PENDING' ? (
-                    <button 
-                      onClick={() => confirmShopPayment(status.order.id)}
-                      className="w-full bg-neon-green text-black font-black uppercase tracking-widest py-4 rounded-2xl hover:brightness-110 active:scale-95 transition-all shadow-[0_10px_20px_rgba(57,255,20,0.2)]"
-                    >
-                      ✓ Confirmar Pago Efectivo
-                    </button>
+                  {status.intent === 'PAY' ? (
+                     status.order.status === 'PENDING' ? (
+                        <button 
+                          onClick={() => updateShopStatus(status.order.id, 'PAID')}
+                          className="w-full bg-orange-500 text-white font-black uppercase tracking-widest py-4 rounded-2xl hover:brightness-110 active:scale-95 transition-all shadow-[0_10px_20px_rgba(249,115,22,0.2)] flex items-center justify-center gap-2"
+                        >
+                          <DollarSign className="w-5 h-5" /> Confirmar Cobro Caja
+                        </button>
+                     ) : (
+                        <div className="w-full py-4 rounded-2xl border border-zinc-800 text-orange-500/50 text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 bg-orange-500/5">
+                           <CheckCircle className="w-4 h-4" /> Ya pagado ({status.order.status})
+                        </div>
+                     )
                   ) : (
-                    <div className="w-full py-3 rounded-2xl border border-zinc-800 text-zinc-600 text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2">
-                       <CheckCircle className="w-4 h-4" /> Ya pagado ({status.order.status})
-                    </div>
+                     status.order.status === 'PAID' ? (
+                        <button 
+                          onClick={() => updateShopStatus(status.order.id, 'DELIVERED')}
+                          className="w-full bg-neon-green text-black font-black uppercase tracking-widest py-4 rounded-2xl hover:brightness-110 active:scale-95 transition-all shadow-[0_10px_20px_rgba(57,255,20,0.2)] flex items-center justify-center gap-2"
+                        >
+                          <Package className="w-5 h-5" /> Quemar / Entregar Pedido
+                        </button>
+                     ) : status.order.status === 'DELIVERED' ? (
+                        <div className="w-full py-4 rounded-2xl border border-neon-green/30 text-neon-green/50 text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 bg-neon-green/5">
+                           <CheckCircle className="w-4 h-4" /> Ya entregado
+                        </div>
+                     ) : (
+                        <div className="w-full py-4 rounded-2xl border border-red-500/30 text-red-500/50 text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 bg-red-500/5">
+                           <XCircle className="w-4 h-4" /> Pago Pendiente
+                        </div>
+                     )
                   )}
                 </div>
               )}

@@ -123,40 +123,69 @@ export default function PublicShopPage() {
     } catch (err) { console.error(err); } finally { setIsCheckingOut(false); }
   };
 
+import { useRouter } from 'next/navigation';
+
+export default function PublicShopPage() {
+  const router = useRouter();
+  const [products, setProducts] = useState<any[]>([]);
+  ... (rest of states) ...
+
+  ... (after handleCheckout success) ...
+
+  // ── REDIRIGIR AUTOMÁTICAMENTE DESPUÉS DE LA COMPRA ──────────────
+  useEffect(() => {
+    if (orderResult) {
+      const timer = setTimeout(() => {
+        router.push('/profile');
+      }, 4000); // 4 segundos para que lean bien el mensaje
+      return () => clearTimeout(timer);
+    }
+  }, [orderResult, router]);
+
   if (orderResult) {
+    const isPaid = orderResult.status === 'PAID' || orderResult.paymentType === 'VIRTUAL';
+
     return (
       <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 text-center animate-in zoom-in duration-500">
-         <div className="w-24 h-24 rounded-full bg-neon-green/10 flex items-center justify-center mb-8 border border-neon-green/20">
-            <CheckCircle2 className="w-12 h-12 text-neon-green" />
+         <div className={`w-28 h-28 rounded-full flex items-center justify-center mb-8 border-4 animate-bounce ${isPaid ? 'bg-neon-green/10 border-neon-green' : 'bg-orange-500/10 border-orange-500'}`}>
+            {isPaid ? <CheckCircle2 className="w-14 h-14 text-neon-green" /> : <DollarSign className="w-14 h-14 text-orange-500" />}
          </div>
-         <h1 className="text-3xl font-black uppercase tracking-tighter text-white mb-2">¡Orden Recibida!</h1>
-         <p className="text-zinc-500 font-bold uppercase text-[10px] tracking-widest mb-10 max-w-xs">Orden #{orderResult.orderId.slice(-6)}</p>
          
-         <div className="bg-zinc-900/40 border border-zinc-800 p-8 rounded-[2.5rem] w-full max-w-sm mb-12 shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-orange-500/20 to-transparent" />
-            {orderResult.paymentType === 'CASH' ? (
-              <>
-                <p className="text-white font-bold text-sm mb-6 leading-relaxed">Presenta este QR en la barra para pagar y recibir tu pedido:</p>
-                <div className="bg-white p-6 rounded-3xl mx-auto shadow-[0_0_50px_rgba(255,255,255,0.05)] mb-6 w-fit group-hover:scale-105 transition-transform duration-500">
-                    <QRCodeSVG 
-                        value={`KASA_SHOP_ORDER:${orderResult.orderId}`}
-                        size={180}
-                        fgColor="#000000"
-                        level="H"
-                    />
-                </div>
-                <div className="text-3xl font-black text-white bg-black/50 py-4 rounded-2xl border border-zinc-800 tracking-widest uppercase">
-                   {orderResult.orderId.slice(-4)}
-                </div>
-              </>
-            ) : (
-              <p className="text-white font-bold text-sm mb-4 leading-relaxed">Tu pago virtual ha sido procesado. El staff está preparando tu pedido.</p>
-            )}
+         <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-6">
+            ¡GRACIAS POR TU COMPRA!
+         </h1>
+         
+         <div className="bg-zinc-900/40 border border-zinc-800 p-10 rounded-[3.5rem] w-full max-w-sm mb-12 shadow-2xl relative overflow-hidden group">
+            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${isPaid ? 'from-neon-green/50 to-transparent' : 'from-orange-500/50 to-transparent'}`} />
+            
+            <p className="text-white font-black text-lg leading-tight uppercase mb-6">
+                Apenas esté listo tu pedido acércate a la barra a recibirlo.
+            </p>
+            
+            <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] mb-8">
+               ESTADO: {isPaid ? 'PAGADO' : 'PENDIENTE DE COBRO'}
+            </p>
+
+            <div className="w-full h-1 bg-zinc-800 rounded-full overflow-hidden mb-4">
+               <div className="h-full bg-orange-500 animate-[progress_4s_linear]" />
+            </div>
+            <p className="text-zinc-600 text-[8px] font-black uppercase tracking-widest">
+               Redirigiendo a tu Bóveda en 3 segundos...
+            </p>
          </div>
 
-         <Link href="/profile" className="w-full max-w-sm bg-white text-black font-black uppercase tracking-widest py-5 rounded-2xl hover:bg-neon-green transition-all shadow-xl">
-            Ver mis Pedidos
-         </Link>
+         <div className="flex flex-col gap-3 w-full max-w-sm">
+            <Link href="/profile" className="w-full bg-white text-black font-black uppercase tracking-widest py-5 rounded-2xl hover:bg-neon-green transition-all shadow-xl">
+                 Ir a mi Bóveda
+            </Link>
+         </div>
+
+         <style jsx>{`
+            @keyframes progress {
+               from { width: 0%; }
+               to { width: 100%; }
+            }
+         `}</style>
       </div>
     );
   }
