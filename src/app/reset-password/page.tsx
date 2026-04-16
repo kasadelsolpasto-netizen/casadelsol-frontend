@@ -1,8 +1,4 @@
-"use client";
-import { useState, Suspense } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Lock, ArrowRight, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Lock, ArrowRight, CheckCircle, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -13,6 +9,8 @@ function ResetPasswordForm() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   if (!token) {
     return (
@@ -103,33 +101,53 @@ function ResetPasswordForm() {
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               required
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={`w-full bg-black/50 border rounded-lg py-3 pl-10 pr-4 text-white placeholder-zinc-700 outline-none transition-all ${passwordsMatch ? 'border-neon-green/50 ring-1 ring-neon-green/20' : 'border-zinc-800 focus:border-neon-purple'}`}
+              className={`w-full bg-black/50 border rounded-lg py-3 pl-10 pr-12 text-white placeholder-zinc-700 outline-none transition-all ${
+                password.length > 0
+                  ? password.length >= 8 ? 'border-neon-green/50 ring-1 ring-neon-green/20' : 'border-red-500/50 ring-1 ring-red-500/20'
+                  : 'border-zinc-800'
+              }`}
               placeholder="Mínimo 8 caracteres"
             />
+            <button type="button" onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white transition-colors">
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 
         <div className="space-y-2 !mb-8">
           <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex justify-between">
             Confirmar Contraseña
-            {passwordsMatch && <span className="text-neon-green lowercase tracking-normal animate-pulse">✓ coinciden</span>}
+            {password.length >= 8 && confirmPassword.length > 0 && (
+              passwordsMatch 
+                ? <span className="text-neon-green lowercase tracking-normal animate-pulse">✓ coinciden</span>
+                : <span className="text-red-500 lowercase tracking-normal">✗ no coinciden</span>
+            )}
           </label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
             <input
-              type="password"
+              type={showConfirm ? "text" : "password"}
               required
               minLength={8}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className={`w-full bg-black/50 border rounded-lg py-3 pl-10 pr-4 text-white placeholder-zinc-700 outline-none transition-all ${passwordsMatch ? 'border-neon-green/50 ring-1 ring-neon-green/20 shadow-[0_0_15px_rgba(57,255,20,0.1)]' : 'border-zinc-800 focus:border-neon-purple'}`}
+              className={`w-full bg-black/50 border rounded-lg py-3 pl-10 pr-12 text-white placeholder-zinc-700 outline-none transition-all ${
+                confirmPassword.length > 0
+                  ? passwordsMatch ? 'border-neon-green/50 ring-1 ring-neon-green/20 shadow-[0_0_15px_rgba(57,255,20,0.1)]' : 'border-red-500/50 ring-1 ring-red-500/20'
+                  : 'border-zinc-800'
+              }`}
               placeholder="Repite la contraseña"
             />
+            <button type="button" onClick={() => setShowConfirm(!showConfirm)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white transition-colors">
+              {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 

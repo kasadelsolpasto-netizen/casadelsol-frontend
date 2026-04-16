@@ -1,9 +1,6 @@
-"use client";
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { ArrowRight, Lock, Mail, User } from 'lucide-react';
+import { ArrowRight, Lock, Mail, User, Eye, EyeOff } from 'lucide-react';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -13,6 +10,10 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { executeRecaptcha } = useGoogleReCaptcha();
+  const [hp, setHp] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const passwordsMatch = password.length >= 8 && password === confirmPassword;
 
@@ -33,10 +34,20 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      if (!executeRecaptcha) {
+        setError('Error de seguridad (reCAPTCHA no listo).');
+        setLoading(false);
+        return;
+      }
+      const recaptchaToken = await executeRecaptcha('register');
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/register`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password_hash: password })
+        headers: { 
+          'Content-Type': 'application/json',
+          'recaptcha-token': recaptchaToken
+        },
+        body: JSON.stringify({ name, email, password_hash: password, hp })
       });
 
       if (!res.ok) {
@@ -45,8 +56,11 @@ export default function RegisterPage() {
       
       const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        headers: { 
+          'Content-Type': 'application/json',
+          'recaptcha-token': recaptchaToken
+        },
+        body: JSON.stringify({ email, password, hp })
       });
 
       if (loginRes.ok) {
@@ -93,6 +107,9 @@ export default function RegisterPage() {
         </div>
 
         <form onSubmit={handleRegister} className="space-y-6">
+          {/* Honeypot */}
+          <input type="text" name="hp" value={hp} onChange={e => setHp(e.target.value)} className="hidden" tabIndex={-1} autoComplete="off" />
+
           <div className="space-y-2">
             <label className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Nombre Completo</label>
             <div className="relative">
@@ -128,33 +145,61 @@ export default function RegisterPage() {
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
               <input 
-                type="password" 
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
                 minLength={8}
-                className={`w-full bg-black/50 border rounded-lg py-3 pl-10 pr-4 text-white placeholder-zinc-700 outline-none transition-all ${passwordsMatch ? 'border-neon-green/50 ring-1 ring-neon-green/30' : 'border-zinc-800 focus:border-neon-purple focus:ring-1 focus:ring-neon-purple'}`}
+                className={`w-full bg-black/50 border rounded-lg py-3 pl-10 pr-12 text-white placeholder-zinc-700 outline-none transition-all ${
+                  password.length > 0
+                    ? password.length >= 8 ? 'border-neon-green/50 ring-1 ring-neon-green/20' : 'border-red-500/50 ring-1 ring-red-500/20'
+                    : 'border-zinc-800'
+                }`}
                 placeholder="Mínimo 8 caracteres"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
-
+          
           <div className="space-y-2">
             <label className="text-xs font-semibold uppercase tracking-wider text-zinc-500 flex justify-between">
               Confirmar Contraseña
-              {passwordsMatch && <span className="text-[10px] text-neon-green font-black animate-pulse">✓ COINCIDEN</span>}
+              {password.length >= 8 && confirmPassword.length > 0 && (
+                passwordsMatch 
+                  ? <span className="text-[10px] text-neon-green font-black animate-pulse">✓ COINCIDEN</span>
+                  : <span className="text-[10px] text-red-500 font-black">✗ NO COINCIDEN</span>
+              )}
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
               <input 
-                type="password" 
+                type={showConfirm ? "text" : "password"}
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
                 required
                 minLength={8}
-                className={`w-full bg-black/50 border rounded-lg py-3 pl-10 pr-4 text-white placeholder-zinc-700 outline-none transition-all ${passwordsMatch ? 'border-neon-green/50 ring-1 ring-neon-green/30 shadow-[0_0_15px_rgba(57,255,20,0.1)]' : 'border-zinc-800 focus:border-neon-purple focus:ring-1 focus:ring-neon-purple'}`}
+                className={`w-full bg-black/50 border rounded-lg py-3 pl-10 pr-12 text-white placeholder-zinc-700 outline-none transition-all ${
+                  confirmPassword.length > 0
+                    ? passwordsMatch ? 'border-neon-green/50 ring-1 ring-neon-green/20 shadow-[0_0_15px_rgba(57,255,20,0.1)]' : 'border-red-500/50 ring-1 ring-red-500/20'
+                    : 'border-zinc-800'
+                }`}
                 placeholder="Repite tu contraseña"
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white transition-colors"
+                tabIndex={-1}
+              >
+                {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 

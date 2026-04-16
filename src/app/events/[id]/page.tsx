@@ -40,7 +40,7 @@ export default function EventDetail({ params }: { params: { id: string } }) {
     );
   }
 
-  const handleLaunchWompi = async (attendees: any[]) => {
+  const handleLaunchWompi = async (attendees: any[], hp: string, recaptchaToken: string) => {
     setWizardError('');
     setWizardLoading(true);
     try {
@@ -55,8 +55,12 @@ export default function EventDetail({ params }: { params: { id: string } }) {
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/orders/checkout-wompi`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ attendees: payloadAttendees })
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}`,
+          'recaptcha-token': recaptchaToken
+        },
+        body: JSON.stringify({ attendees: payloadAttendees, hp })
       });
 
       if (!res.ok) {

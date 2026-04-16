@@ -2,11 +2,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [error, setError] = useState('');
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -14,9 +16,17 @@ export default function ForgotPasswordPage() {
     setStatus('loading');
 
     try {
+      if (!executeRecaptcha) {
+        throw new Error('Error de seguridad (reCAPTCHA no listo).');
+      }
+      const recaptchaToken = await executeRecaptcha('forgot_password');
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/forgot-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'recaptcha-token': recaptchaToken
+        },
         body: JSON.stringify({ email }),
       });
 

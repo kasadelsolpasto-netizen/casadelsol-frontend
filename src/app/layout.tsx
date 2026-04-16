@@ -1,7 +1,5 @@
-import type { Metadata, Viewport } from "next";
-import { Outfit } from "next/font/google";
-import "./globals.css";
 import { NavbarWrapper } from "@/components/NavbarWrapper";
+import RecaptchaProvider from "@/components/RecaptchaProvider";
 
 const outfit = Outfit({ subsets: ["latin"] });
 
@@ -26,16 +24,18 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark">
       <body className={`${outfit.className} antialiased bg-black text-zinc-200 selection:bg-neon-purple selection:text-white`}>
-        {/* Ambient glow background */}
-        <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-neon-purple/10 blur-[120px] pointer-events-none -z-10 animate-pulse-slow" />
-        <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-neon-green/10 blur-[120px] pointer-events-none -z-10 animate-pulse-slow" style={{ animationDelay: '1s'}} />
+        <RecaptchaProvider>
+          {/* Ambient glow background */}
+          <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-neon-purple/10 blur-[120px] pointer-events-none -z-10 animate-pulse-slow" />
+          <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-neon-green/10 blur-[120px] pointer-events-none -z-10 animate-pulse-slow" style={{ animationDelay: '1s'}} />
 
-        {/* Global navbar — se auto-oculta en /admin, /login, /register, /scanner */}
-        <NavbarWrapper />
+          {/* Global navbar — se auto-oculta en /admin, /login, /register, /scanner */}
+          <NavbarWrapper />
 
-        <main className="min-h-screen z-10 relative">
-          {children}
-        </main>
+          <main className="min-h-screen z-10 relative">
+            {children}
+          </main>
+        </RecaptchaProvider>
       </body>
     </html>
   );

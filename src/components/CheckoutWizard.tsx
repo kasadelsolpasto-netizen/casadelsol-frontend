@@ -3,15 +3,16 @@ import { useState, useEffect, useRef } from 'react';
 import {
   ArrowRight, ArrowLeft, Lock, Mail, User, X, Ticket,
   CheckCircle, ChevronRight, Users, Trash2, Pencil,
-  ChevronDown, ChevronUp, AlertTriangle, PlusCircle
+  ChevronDown, ChevronUp, AlertTriangle, PlusCircle, Eye, EyeOff
 } from 'lucide-react';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
 interface CheckoutWizardProps {
   isOpen: boolean;
   onClose: () => void;
   ticketType: any;
-  onLaunchWompi: (attendees: any[]) => void;
+  onLaunchWompi: (attendees: any[], hp: string, recaptchaToken: string) => void;
   isLoading: boolean;
   error: string;
 }
@@ -25,14 +26,21 @@ export default function CheckoutWizard({
   isOpen, onClose, ticketType, onLaunchWompi, isLoading, error
 }: CheckoutWizardProps) {
   const [step, setStep] = useState<Step>('auth');
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   // Auth
   const [authMode, setAuthMode] = useState<AuthMode>('LOGIN');
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
+  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [authName, setAuthName] = useState('');
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+  const [hp, setHp] = useState(''); // Honeypot field
+
+  const passwordsMatch = authPassword.length >= 8 && authPassword === authConfirmPassword;
 
   // Quantity + attendees
   const [quantity, setQuantity] = useState(1);
@@ -88,25 +96,42 @@ export default function CheckoutWizard({
     e.preventDefault();
     setAuthError('');
 
-    if (authMode === 'REGISTER' && authPassword.length < 8) {
-      setAuthError('La contraseña debe tener al menos 8 caracteres.');
-      return;
+    if (authMode === 'REGISTER') {
+      if (authPassword.length < 8) {
+        setAuthError('La contraseña debe tener al menos 8 caracteres.');
+        return;
+      }
+      if (authPassword !== authConfirmPassword) {
+        setAuthError('Las contraseñas no coinciden.');
+        return;
+      }
     }
 
-    setAuthLoading(true);
     try {
+      if (!executeRecaptcha) {
+        setAuthError('Error de seguridad (reCAPTCHA no listo). Reinténtalo.');
+        return;
+      }
+      const recaptchaToken = await executeRecaptcha(authMode === 'LOGIN' ? 'login' : 'register');
+
       if (authMode === 'REGISTER') {
         const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/register`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: authName, email: authEmail, password_hash: authPassword })
+          headers: { 
+            'Content-Type': 'application/json',
+            'recaptcha-token': recaptchaToken
+          },
+          body: JSON.stringify({ name: authName, email: authEmail, password_hash: authPassword, hp })
         });
         if (!r.ok) throw new Error('El email ya existe o los datos son inválidos.');
       }
       const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: authEmail, password: authPassword })
+        headers: { 
+          'Content-Type': 'application/json',
+          'recaptcha-token': recaptchaToken
+        },
+        body: JSON.stringify({ email: authEmail, password: authPassword, hp })
       });
       if (!r.ok) throw new Error('Email o contraseña inválidos.');
       const data = await r.json();
@@ -226,6 +251,10 @@ export default function CheckoutWizard({
               </div>
 
               <form onSubmit={handleAuth} className="space-y-3.5">
+                {/* Honeypot perimetral */}
+                <div className="absolute -left-[9999px] -top-[9999px] opacity-0 pointer-events-none">
+                  <input type="text" tabIndex={-1} value={hp} onChange={e => setHp(e.target.value)} placeholder="Confirm Request" />
+                </div>
                 {authMode === 'REGISTER' && (
                   <div className="relative">
                     <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-600 w-4 h-4" />
@@ -242,10 +271,42 @@ export default function CheckoutWizard({
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-600 w-4 h-4" />
-                  <input type="password" required minLength={authMode === 'REGISTER' ? 8 : undefined} value={authPassword} onChange={e => setAuthPassword(e.target.value)}
+                  <input type={showPassword ? "text" : "password"} required minLength={authMode === 'REGISTER' ? 8 : undefined} value={authPassword} onChange={e => setAuthPassword(e.target.value)}
                     placeholder="Contraseña"
-                    className="w-full bg-black border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-white text-sm placeholder-zinc-700 outline-none focus:border-neon-green focus:ring-1 focus:ring-neon-green transition-all" />
+                    className={`w-full bg-black border rounded-xl py-3 pl-10 pr-12 text-white text-sm placeholder-zinc-700 outline-none transition-all ${
+                        authMode === 'REGISTER' && authPassword.length > 0
+                          ? (authPassword.length >= 8 ? 'border-neon-green/30 ring-1 ring-neon-green/10' : 'border-red-500/30 ring-1 ring-red-500/10')
+                          : 'border-zinc-800 focus:border-neon-green focus:ring-1 focus:ring-neon-green'
+                    }`} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white transition-colors">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
+                {authMode === 'REGISTER' && (
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-600 w-4 h-4" />
+                    <input type={showConfirm ? "text" : "password"} required value={authConfirmPassword} onChange={e => setAuthConfirmPassword(e.target.value)}
+                      placeholder="Confirmar contraseña"
+                      className={`w-full bg-black border rounded-xl py-3 pl-10 pr-12 text-white text-sm placeholder-zinc-700 outline-none transition-all ${
+                          authConfirmPassword.length > 0
+                            ? (passwordsMatch ? 'border-neon-green/30 ring-1 ring-neon-green/10' : 'border-red-500/30 ring-1 ring-red-500/10')
+                            : 'border-zinc-800 focus:border-neon-purple focus:ring-1 focus:ring-neon-purple'
+                      }`} />
+                    <button type="button" onClick={() => setShowConfirm(!showConfirm)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white transition-colors">
+                      {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                    {authConfirmPassword.length > 0 && (
+                      <div className="absolute -bottom-5 right-1">
+                        {passwordsMatch 
+                          ? <span className="text-[9px] text-neon-green font-black uppercase tracking-widest animate-pulse">✓ Coinciden</span>
+                          : <span className="text-[9px] text-red-500 font-black uppercase tracking-widest">✗ Diferentes</span>
+                        }
+                      </div>
+                    )}
+                  </div>
+                )}
                 <button type="submit" disabled={authLoading}
                   className="w-full bg-white hover:bg-neon-green text-black font-black uppercase tracking-widest py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 group disabled:opacity-50 mt-2">
                   {authLoading ? 'Verificando...' : authMode === 'LOGIN' ? 'Entrar y Comprar' : 'Crear cuenta y Comprar'}
@@ -531,7 +592,11 @@ export default function CheckoutWizard({
                   <ArrowLeft className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => onLaunchWompi(attendees)}
+                  onClick={async () => {
+                    if (!executeRecaptcha) return;
+                    const token = await executeRecaptcha('checkout');
+                    onLaunchWompi(attendees, hp, token); 
+                  }}
                   disabled={isLoading || !allConfirmValid}
                   className="flex-1 py-4 rounded-xl bg-neon-green text-black font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 hover:shadow-[0_0_25px_rgba(57,255,20,0.45)] disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.98]">
                   {isLoading ? 'Abriendo Wompi...' : `Pagar ${fmt(totalPrice)}`}

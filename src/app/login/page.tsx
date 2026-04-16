@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { ArrowRight, Lock, Mail, Briefcase, Music } from 'lucide-react';
+import { ArrowRight, Lock, Mail, Briefcase, Music, Eye, EyeOff } from 'lucide-react';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 
 export default function LoginPage() {
@@ -12,6 +12,9 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [pendingStaffData, setPendingStaffData] = useState<any>(null);
+  const { executeRecaptcha } = useGoogleReCaptcha();
+  const [hp, setHp] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,10 +22,20 @@ export default function LoginPage() {
     setLoading(true);
     
     try {
+      if (!executeRecaptcha) {
+        setError('Error de seguridad (reCAPTCHA no listo).');
+        setLoading(false);
+        return;
+      }
+      const recaptchaToken = await executeRecaptcha('login');
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }) 
+        headers: { 
+          'Content-Type': 'application/json',
+          'recaptcha-token': recaptchaToken
+        },
+        body: JSON.stringify({ email, password, hp }) 
       });
 
       if (!res.ok) {
@@ -112,6 +125,9 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
+          {/* Honeypot */}
+          <input type="text" name="hp" value={hp} onChange={e => setHp(e.target.value)} className="hidden" tabIndex={-1} autoComplete="off" />
+          
           <div className="space-y-2">
             <label className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Email</label>
             <div className="relative">
@@ -135,13 +151,17 @@ export default function LoginPage() {
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
               <input 
-                type="password" 
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                className="w-full bg-black/50 border border-zinc-800 rounded-lg py-3 pl-10 pr-4 text-white placeholder-zinc-700 outline-none focus:border-neon-purple focus:ring-1 focus:ring-neon-purple transition-all"
+                className="w-full bg-black/50 border border-zinc-800 rounded-lg py-3 pl-10 pr-12 text-white placeholder-zinc-700 outline-none focus:border-neon-purple focus:ring-1 focus:ring-neon-purple transition-all"
                 placeholder="••••••••"
               />
+              <button type="button" onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white transition-colors">
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
