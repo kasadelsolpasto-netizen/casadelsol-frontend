@@ -12,8 +12,11 @@ export async function POST(request: Request) {
       body: JSON.stringify({ email, password })
     });
 
+    console.log(`[AdminAuthProxy] Backend Status: ${backRes.status}`);
+
     if (backRes.ok) {
       const data = await backRes.json();
+      console.log(`[AdminAuthProxy] Login OK. Role: ${data.user?.role}`);
       
       // Verificamos si el backend lo reconoció como el dueño supremo
       if (data.user && data.user.role === 'OWNER') {
@@ -22,6 +25,9 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, message: 'Perfil correcto, pero NO eres el owner.' }, { status: 403 });
       }
     }
+
+    const errorBody = await backRes.text();
+    console.error(`[AdminAuthProxy] Login Failed. Body: ${errorBody}`);
 
     return NextResponse.json({ success: false, message: 'Credenciales de Supremo Inválidas en Backend' }, { status: 401 });
   } catch (err) {
