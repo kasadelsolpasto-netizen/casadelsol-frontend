@@ -64,26 +64,14 @@ export default function RegisterPage() {
         body: JSON.stringify({ name, email, password_hash: password, hp })
       });
 
-      if (!res.ok) {
-        throw new Error('Error al registrar usuario. Verifica tus datos.');
-      }
-      
-      const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/login`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'recaptcha-token': recaptchaToken
-        },
-        body: JSON.stringify({ email, password, hp })
-      });
-
-      if (loginRes.ok) {
-        const data = await loginRes.json();
+      if (res.ok) {
+        const data = await res.json();
         document.cookie = `kasa_auth_token=${data.access_token}; path=/; max-age=86400;`;
         localStorage.setItem('kasa_user', JSON.stringify(data.user));
-        router.push('/');
+        router.push(`/profile/${data.user.id}`);
       } else {
-        router.push('/login');
+        const errData = await res.json().catch(() => ({ message: 'Error al registrar usuario.' }));
+        throw new Error(errData.message || 'Error al registrar usuario. Verifica tus datos.');
       }
 
     } catch (err: any) {

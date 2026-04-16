@@ -41,3 +41,8 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.05);
   }
 }
+
+/* Hide reCAPTCHA badge for a cleaner UI */
+.grecaptcha-badge { 
+  visibility: hidden !important; 
+}
