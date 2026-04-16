@@ -176,14 +176,19 @@ export default function AdminSalesPage() {
                     {shopMetrics?.recentOrders?.map((order: any) => (
                       <tr 
                         key={order.id} 
-                        onClick={() => setSelectedOrder(order)}
-                        className="hover:bg-zinc-900/50 cursor-pointer transition-colors group"
+                        className="hover:bg-zinc-900/50 transition-colors group"
                       >
-                        <td className="px-8 py-6">
+                        <td 
+                          className="px-8 py-6 cursor-pointer"
+                          onClick={() => setSelectedOrder(order)}
+                        >
                            <p className="text-white text-xs font-black">{new Date(order.created_at).toLocaleDateString('es-CO')}</p>
                            <p className="text-[10px] text-zinc-600 font-bold">{new Date(order.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
                         </td>
-                        <td className="px-8 py-6">
+                        <td 
+                          className="px-8 py-6"
+                          onClick={() => setSelectedOrder(order)}
+                        >
                            <div className="flex flex-col gap-1">
                               <span className="text-white font-black text-xs uppercase">{order.user?.name || 'Invitado'}</span>
                               <div className="flex gap-1">
@@ -193,23 +198,45 @@ export default function AdminSalesPage() {
                               </div>
                            </div>
                         </td>
-                        <td className="px-8 py-6">
+                        <td 
+                          className="px-8 py-6"
+                          onClick={() => setSelectedOrder(order)}
+                        >
                            <div className="flex items-center gap-2">
                               {order.payment_type === 'VIRTUAL' ? <CreditCard className="w-4 h-4 text-neon-purple" /> : <DollarSign className="w-4 h-4 text-orange-500" />}
                               <span className="text-[10px] font-black text-zinc-500 uppercase">{order.payment_type}</span>
                            </div>
                         </td>
-                        <td className="px-8 py-6">
-                           <span className={`px-2 py-1 rounded text-[8px] font-black border uppercase tracking-widest ${
-                             order.status === 'PAID' ? 'bg-orange-500/10 text-orange-500 border-orange-500/30' : 
-                             order.status === 'READY' ? 'bg-neon-green/10 text-neon-green border-neon-green/30' : 
-                             order.status === 'DELIVERED' ? 'bg-zinc-900 text-zinc-600 border-zinc-800' : 
-                             'bg-zinc-900 text-zinc-600 border-zinc-800'
-                           }`}>
-                             {order.status}
-                           </span>
+                        <td 
+                          className="px-8 py-6"
+                        >
+                           <div className="flex items-center gap-4">
+                             <span className={`px-2 py-1 rounded text-[8px] font-black border uppercase tracking-widest ${
+                               order.status === 'PAID' ? 'bg-orange-500/10 text-orange-500 border-orange-500/30' : 
+                               order.status === 'READY' ? 'bg-neon-green/10 text-neon-green border-neon-green/30' : 
+                               order.status === 'DELIVERED' ? 'bg-zinc-900 text-zinc-600 border-zinc-800' : 
+                               'bg-zinc-900 text-zinc-600 border-zinc-800'
+                             }`}>
+                               {order.status}
+                             </span>
+
+                             {order.status === 'PAID' && (
+                               <button 
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   markAsReady(order.id);
+                                 }}
+                                 className="px-3 py-1 bg-neon-green text-black font-black uppercase text-[8px] tracking-widest rounded-lg hover:brightness-110 shadow-lg transition-all"
+                               >
+                                 Listo
+                               </button>
+                             )}
+                           </div>
                         </td>
-                        <td className="px-8 py-6 text-right">
+                        <td 
+                          className="px-8 py-6 text-right"
+                          onClick={() => setSelectedOrder(order)}
+                        >
                            <span className="text-white font-black text-sm group-hover:text-orange-500 transition-colors">
                               {Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(order.total)}
                            </span>

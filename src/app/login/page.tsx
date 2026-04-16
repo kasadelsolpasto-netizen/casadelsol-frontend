@@ -1,13 +1,15 @@
 "use client";
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, Suspense } from 'react';
 import { ArrowRight, Lock, Mail, Briefcase, Music, Eye, EyeOff } from 'lucide-react';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get('redirect');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -58,8 +60,12 @@ export default function LoginPage() {
       } else if (data.user?.role === 'STAFF') {
         setPendingStaffData(data.user);
       } else {
-        // Usuario normal → su perfil personal
-        router.push(`/profile/${data.user.id}`);
+        // Usuario normal → su perfil personal o redirect
+        if (redirectPath) {
+          router.push(redirectPath);
+        } else {
+          router.push(`/profile/${data.user.id}`);
+        }
       }
     } catch (err: any) {
       setError(err.message);
@@ -186,4 +192,13 @@ export default function LoginPage() {
       </div>
     </div>
   );
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="animate-spin text-neon-green" /></div>}>
+      <LoginContent />
+    </Suspense>
+  );
 }
+
+// Add simple Loader2 if not imported
+import { Loader2 } from 'lucide-react';

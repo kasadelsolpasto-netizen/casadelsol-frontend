@@ -77,11 +77,12 @@ export default function PublicShopPage() {
     return row ? row.split('=')[1] : null;
   };
 
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   const handleCheckout = async (paymentType: 'VIRTUAL' | 'CASH') => {
     const token = getToken();
     if (!token) {
-        alert("Debes iniciar sesión para realizar compras en el local.");
-        router.push("/login?redirect=/shop");
+        setShowAuthModal(true);
         return;
     }
 
@@ -324,6 +325,55 @@ export default function PublicShopPage() {
                    Procesando con la Central de Pagos...
                  </div>
               )}
+           </div>
+        </div>
+      )}
+
+      {/* AUTH MODAL (FASE FINAL) */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center p-6 bg-black/95 backdrop-blur-md animate-in fade-in duration-300">
+           <div className="bg-zinc-950 border border-zinc-900 w-full max-w-sm rounded-[3rem] p-10 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-neon-green via-neon-purple to-neon-green" />
+              
+              <button 
+                onClick={() => setShowAuthModal(false)}
+                className="absolute top-6 right-6 p-2 bg-zinc-900 rounded-full text-zinc-500 hover:text-white transition-all shadow-xl"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex flex-col items-center text-center">
+                 <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center text-neon-green mb-6 border border-zinc-800 shadow-xl">
+                    <User className="w-8 h-8" />
+                 </div>
+                 
+                 <h2 className="text-xl font-black uppercase text-white mb-2">Bóveda de Identidad</h2>
+                 <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest leading-relaxed mb-10">
+                    Necesitas identificarte como Raver de la Kasa para realizar compras en el local y recibir notificaciones de pedido.
+                 </p>
+
+                 <div className="flex flex-col gap-4 w-full">
+                    <Link 
+                       href="/login?redirect=/shop"
+                       className="w-full py-4 bg-white text-black font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-neon-green transition-all shadow-xl flex items-center justify-center gap-2 group"
+                    >
+                       Identificarme <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                    <Link 
+                       href="/register?redirect=/shop"
+                       className="w-full py-4 bg-zinc-900 border border-zinc-800 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl hover:border-neon-purple/50 transition-all flex items-center justify-center gap-2"
+                    >
+                       Unirme al Ritual
+                    </Link>
+                 </div>
+                 
+                 <button 
+                   onClick={() => setShowAuthModal(false)}
+                   className="mt-8 text-[9px] font-black uppercase tracking-widest text-zinc-700 hover:text-zinc-400 transition-colors"
+                 >
+                   Continuar como Invitado (Solo Ver)
+                 </button>
+              </div>
            </div>
         </div>
       )}

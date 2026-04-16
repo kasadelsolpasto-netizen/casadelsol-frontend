@@ -1,13 +1,16 @@
 "use client";
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowRight, Lock, Mail, User, Eye, EyeOff } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowRight, Lock, Mail, User, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
+import { Suspense } from 'react';
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get('redirect');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -60,7 +63,11 @@ export default function RegisterPage() {
         const data = await res.json();
         document.cookie = `kasa_auth_token=${data.access_token}; path=/; max-age=86400;`;
         localStorage.setItem('kasa_user', JSON.stringify(data.user));
-        router.push(`/profile/${data.user.id}`);
+        if (redirectPath) {
+          router.push(redirectPath);
+        } else {
+          router.push(`/profile/${data.user.id}`);
+        }
       } else {
         const errData = await res.json().catch(() => ({ message: 'Error al registrar usuario.' }));
         throw new Error(errData.message || 'Error al registrar usuario. Verifica tus datos.');
@@ -214,5 +221,11 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="animate-spin text-neon-purple" /></div>}>
+      <RegisterContent />
+    </Suspense>
   );
 }
