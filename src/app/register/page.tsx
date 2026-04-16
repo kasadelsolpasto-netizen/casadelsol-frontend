@@ -222,6 +222,8 @@ function RegisterContent() {
       </div>
     </div>
   );
+}
+
 export default function RegisterPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="animate-spin text-neon-purple" /></div>}>
