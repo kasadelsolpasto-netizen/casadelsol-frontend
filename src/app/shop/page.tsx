@@ -11,9 +11,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Script from 'next/script';
-import { QRCodeSVG } from 'qrcode.react';
+import { useRouter } from 'next/navigation';
 
 export default function PublicShopPage() {
+  const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<{product: any, qty: number}[]>([]);
@@ -34,6 +35,16 @@ export default function PublicShopPage() {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  // ── REDIRIGIR AUTOMÁTICAMENTE DESPUÉS DE LA COMPRA ──────────────
+  useEffect(() => {
+    if (orderResult) {
+      const timer = setTimeout(() => {
+        router.push('/profile');
+      }, 4000); 
+      return () => clearTimeout(timer);
+    }
+  }, [orderResult, router]);
 
   const addToCart = (product: any) => {
     setCart(prev => {
@@ -70,7 +81,7 @@ export default function PublicShopPage() {
     const token = getToken();
     if (!token) {
         alert("Debes iniciar sesión para realizar compras en el local.");
-        window.location.href = "/login?redirect=/shop";
+        router.push("/login?redirect=/shop");
         return;
     }
 
@@ -93,7 +104,6 @@ export default function PublicShopPage() {
         const result = await res.json();
         
         if (paymentType === 'VIRTUAL' && result.wompiData) {
-           // Abrir Wompi Widget
            const checkout = new (window as any).WidgetCheckout({
              currency: 'COP',
              amountInCents: result.wompiData.amountInCents,
@@ -111,7 +121,6 @@ export default function PublicShopPage() {
              }
            });
         } else {
-           // Cash flow
            setOrderResult(result);
            setCart([]);
            setShowCart(false);
@@ -122,25 +131,6 @@ export default function PublicShopPage() {
       }
     } catch (err) { console.error(err); } finally { setIsCheckingOut(false); }
   };
-
-import { useRouter } from 'next/navigation';
-
-export default function PublicShopPage() {
-  const router = useRouter();
-  const [products, setProducts] = useState<any[]>([]);
-  ... (rest of states) ...
-
-  ... (after handleCheckout success) ...
-
-  // ── REDIRIGIR AUTOMÁTICAMENTE DESPUÉS DE LA COMPRA ──────────────
-  useEffect(() => {
-    if (orderResult) {
-      const timer = setTimeout(() => {
-        router.push('/profile');
-      }, 4000); // 4 segundos para que lean bien el mensaje
-      return () => clearTimeout(timer);
-    }
-  }, [orderResult, router]);
 
   if (orderResult) {
     const isPaid = orderResult.status === 'PAID' || orderResult.paymentType === 'VIRTUAL';
@@ -170,7 +160,7 @@ export default function PublicShopPage() {
                <div className="h-full bg-orange-500 animate-[progress_4s_linear]" />
             </div>
             <p className="text-zinc-600 text-[8px] font-black uppercase tracking-widest">
-               Redirigiendo a tu Bóveda en 3 segundos...
+               Redirigiendo a tu Bóveda en 4 segundos...
             </p>
          </div>
 
@@ -332,7 +322,7 @@ export default function PublicShopPage() {
               {isCheckingOut && (
                 <div className="text-center py-2 animate-pulse text-[8px] font-black text-orange-500 uppercase tracking-[0.3em]">
                    Procesando con la Central de Pagos...
-                </div>
+                 </div>
               )}
            </div>
         </div>
