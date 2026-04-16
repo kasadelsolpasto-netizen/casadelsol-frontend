@@ -142,6 +142,24 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
     } catch (err) {}
   };
 
+  const handleShare = async (e: React.MouseEvent, qrToken: string, eventTitle: string) => {
+    e.stopPropagation();
+    const url = `${BASE_URL}/ticket/${qrToken}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Entrada: ${eventTitle}`,
+          text: `¡Aquí tienes mi entrada para ${eventTitle}!`,
+          url: url
+        });
+      } catch (err) {}
+    } else {
+      navigator.clipboard.writeText(url);
+      setProfileMsg('¡Link copiado!');
+      setTimeout(() => setProfileMsg(''), 2000);
+    }
+  };
+
   if (loading) return (
      <div className="min-h-screen bg-black flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-neon-green animate-spin" />
@@ -248,32 +266,37 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                             <div key={order?.id} className={`p-8 rounded-[2.5rem] border-2 transition-all ${isReady ? 'bg-neon-green/10 border-neon-green shadow-neon-green/20' : 'bg-zinc-950 border-zinc-900'}`}>
                                <div className="flex justify-between items-start mb-6">
                                   <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">ORDEN #{order?.id?.slice(0,6)}</span>
-                                  <span className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${isReady ? 'bg-neon-green text-black border-neon-green' : 'text-zinc-500 border-zinc-800'}`}>
-                                     {order?.status}
-                                  </span>
-                               </div>
-                               <div className="flex items-center gap-6">
+                                   <span className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${isReady ? 'bg-neon-green text-black border-neon-green' : 'text-zinc-500 border-zinc-800'}`}>
+                                      {order?.status}
+                                   </span>
+                                </div>
+                                <div className="flex items-center gap-6">
                                    {order?.status === 'DELIVERED' ? (
                                       <div className="w-24 h-24 rounded-3xl bg-zinc-900 flex flex-col items-center justify-center border-2 border-zinc-800">
                                          <CheckCircle className="w-8 h-8 text-zinc-700 mb-1" />
                                          <span className="text-[7px] font-black text-zinc-700 uppercase">Entregado</span>
                                       </div>
-                                   ) : (
+                                   ) : isPaid ? (
                                       <div onClick={() => setSelectedShopQr(order)} className={`w-24 h-24 p-3 bg-white rounded-3xl cursor-pointer hover:scale-105 transition-all ${isReady ? 'ring-4 ring-neon-green' : ''}`}>
                                          <QRCodeSVG 
-                                           value={isPaid ? `KASA_SHOP_DELIVER:${order?.id}:${order?.verification_token || 'legacy'}` : `KASA_SHOP_PAY:${order?.id}:${order?.verification_token || 'legacy'}`}
+                                           value={`KASA_SHOP_DELIVER:${order?.id}:${order?.verification_token || 'legacy'}`}
                                            size={72}
                                          />
                                       </div>
+                                   ) : (
+                                      <div className="w-24 h-24 rounded-3xl bg-orange-500/10 flex flex-col items-center justify-center border-2 border-orange-500/20">
+                                         <DollarSign className="w-8 h-8 text-orange-500 mb-1" />
+                                         <span className="text-[7px] font-black text-orange-500 uppercase">Por Pagar</span>
+                                      </div>
                                    )}
-                                  <div>
-                                     <p className="text-xs font-bold text-zinc-400 mb-1">
-                                        {isReady ? '¡TU PEDIDO ESTÁ LISTO!' : 'Preparando...'}
-                                     </p>
-                                     <p className="text-2xl font-black text-white">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(order?.total)}</p>
-                                  </div>
-                               </div>
-                            </div>
+                                   <div className="flex-1">
+                                      <p className="text-xs font-bold text-zinc-400 mb-1">
+                                         {isReady ? '¡TU PEDIDO ESTÁ LISTO!' : order?.status === 'PENDING' ? 'Paga en la barra' : 'Preparando...'}
+                                      </p>
+                                      <p className="text-2xl font-black text-white">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(order?.total || 0)}</p>
+                                   </div>
+                                </div>
+                             </div>
                           );
                        })}
                     </div>
@@ -298,11 +321,37 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                              <p className="text-neon-green font-bold text-sm tracking-widest uppercase">{order?.order_items?.[0]?.ticket_type?.name}</p>
                           </div>
                           <div className="flex gap-4">
-                             {order?.qr_codes?.map((qr: any) => (
-                                <div key={qr?.id} onClick={() => setSelectedQr(qr)} className="w-20 h-20 bg-white p-2 rounded-xl cursor-pointer hover:bg-neon-green transition-colors">
-                                   <QRCodeSVG value={`${BASE_URL}/ticket/${qr?.token_hash}`} size={64} />
-                                </div>
-                             ))}
+                             {order?.qr_codes?.map((qr: any) => {
+                                const isBurned = !!qr.used_at;
+                                return (
+                                   <div key={qr?.id} className="relative group">
+                                      <div 
+                                         onClick={() => !isBurned && setSelectedQr(qr)} 
+                                         className={`w-20 h-20 bg-white p-2 rounded-xl transition-all duration-500 overflow-hidden ${
+                                            isBurned 
+                                            ? 'opacity-20 grayscale brightness-50 scale-90 translate-y-1' 
+                                            : 'cursor-pointer hover:bg-neon-green group-hover:shadow-[0_0_20px_rgba(57,255,20,0.3)]'
+                                         }`}
+                                      >
+                                         <QRCodeSVG value={`${BASE_URL}/ticket/${qr?.token_hash}`} size={64} />
+                                         {isBurned && (
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                               <div className="bg-red-600 text-[6px] font-black text-white px-1 py-0.5 rounded rotate-[-15deg] border border-white/50">USADO</div>
+                                            </div>
+                                         )}
+                                      </div>
+                                      
+                                      {!isBurned && (
+                                         <button 
+                                            onClick={(e) => handleShare(e, qr.token_hash, order?.order_items?.[0]?.ticket_type?.event?.title)}
+                                            className="absolute -top-2 -right-2 w-8 h-8 bg-black border border-zinc-800 rounded-full flex items-center justify-center text-white hover:bg-neon-green hover:text-black transition-all shadow-lg scale-0 group-hover:scale-100"
+                                         >
+                                            <Share2 className="w-3.5 h-3.5" />
+                                         </button>
+                                      )}
+                                   </div>
+                                );
+                             })}
                           </div>
                        </div>
                     ))}
@@ -355,18 +404,16 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
          <div className="fixed inset-0 z-[150] bg-black/98 flex flex-col items-center justify-center p-6" onClick={() => setSelectedShopQr(null)}>
             <div className="bg-white p-8 rounded-[3.5rem] mb-12 shadow-[0_0_100px_rgba(57,255,20,0.4)]">
                <QRCodeSVG 
-                  value={(['PAID','READY'].includes(selectedShopQr?.status)) ? `KASA_SHOP_DELIVER:${selectedShopQr?.id}:${selectedShopQr?.verification_token || 'legacy'}` : `KASA_SHOP_PAY:${selectedShopQr?.id}:${selectedShopQr?.verification_token || 'legacy'}`} 
+                  value={`KASA_SHOP_DELIVER:${selectedShopQr?.id}:${selectedShopQr?.verification_token || 'legacy'}`} 
                   size={250} 
                   level="H" 
                />
             </div>
             <h3 className="text-neon-green font-black uppercase text-3xl mb-4">
-               {(['PAID','READY'].includes(selectedShopQr?.status)) ? 'QR DE ENTREGA' : 'QR DE PAGO'}
+               QR DE ENTREGA
             </h3>
             <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px] text-center max-w-xs leading-relaxed">
-               {(['PAID','READY'].includes(selectedShopQr?.status)) 
-                  ? 'Muéstralo en la barra para quemar tu pedido y recibir tus productos.' 
-                  : 'Preséntalo en la caja para pagar tu pedido.'}
+               Muéstralo en la barra para quemar tu pedido y recibir tus productos.
             </p>
          </div>
       )}

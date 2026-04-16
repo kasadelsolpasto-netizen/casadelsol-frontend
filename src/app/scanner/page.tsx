@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { CheckCircle, XCircle, ArrowLeft, Loader2, UserCheck, ShieldAlert, DoorOpen, QrCode, Check, Users, DollarSign } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowLeft, Loader2, UserCheck, ShieldAlert, DoorOpen, QrCode, Check, Users, DollarSign, Package } from 'lucide-react';
 import Link from 'next/link';
 import { StaffGuard } from '@/components/StaffGuard';
 
@@ -304,7 +304,7 @@ export default function ScannerPage() {
                         {status.intent === 'PAY' ? 'Cobro en Efectivo' : 'Entrega de Productos'}
                     </p>
                     <p className="text-white font-black text-xl uppercase truncate max-w-[200px]">{status.order.user?.name || 'Invitado'}</p>
-                    {status.order.user?.tags?.length > 0 && (
+                    {status.order.user?.tags && status.order.user?.tags.length > 0 && (
                       <div className="flex justify-center gap-1 mt-1">
                         {status.order.user.tags.map((t:string) => (
                           <span key={t} className={`px-1.5 py-0.5 rounded text-[7px] font-black border ${status.intent === 'PAY' ? 'bg-orange-500/20 text-orange-500 border-orange-500/30' : 'bg-neon-green/20 text-neon-green border-neon-green/30'}`}>{t}</span>
@@ -315,12 +315,12 @@ export default function ScannerPage() {
 
                   <div className="w-full bg-black/40 rounded-2xl p-4 border border-zinc-900">
                     <div className="space-y-2 mb-4">
-                      {status.order.items.map((item: any) => (
+                      {status.order.items?.map((item: any) => (
                         <div key={item.id} className="flex justify-between text-[11px] font-bold">
                           <span className="text-zinc-400 group-hover:text-white transition-colors">
-                             <span className={status.intent === 'PAY' ? 'text-orange-500' : 'text-neon-green'}>{item.quantity}x</span> {item.product.name}
+                             <span className={status.intent === 'PAY' ? 'text-orange-500' : 'text-neon-green'}>{item.quantity}x</span> {item?.product?.name || 'Producto'}
                           </span>
-                          <span className="text-white font-black">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(item.unit_price * item.quantity)}</span>
+                          <span className="text-white font-black">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format((item.unit_price || 0) * (item.quantity || 1))}</span>
                         </div>
                       ))}
                     </div>
@@ -341,8 +341,9 @@ export default function ScannerPage() {
                           <DollarSign className="w-5 h-5" /> Confirmar Cobro Caja
                         </button>
                      ) : (
-                        <div className="w-full py-4 rounded-2xl border border-zinc-800 text-orange-500/50 text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 bg-orange-500/5">
-                           <CheckCircle className="w-4 h-4" /> Ya pagado ({status.order.status})
+                        <div className="w-full py-4 rounded-2xl border-2 border-red-500 text-red-500 text-[11px] font-black uppercase tracking-widest text-center flex flex-col items-center justify-center gap-2 bg-red-500/10 animate-pulse">
+                           <XCircle className="w-6 h-6" />
+                           ¡ERROR! YA FUE COBRADO ({status.order.status})
                         </div>
                      )
                   ) : (
@@ -354,8 +355,9 @@ export default function ScannerPage() {
                           <Package className="w-5 h-5" /> Quemar / Entregar Pedido
                         </button>
                      ) : status.order.status === 'DELIVERED' ? (
-                        <div className="w-full py-4 rounded-2xl border border-neon-green/30 text-neon-green/50 text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 bg-neon-green/5">
-                           <CheckCircle className="w-4 h-4" /> Ya entregado
+                        <div className="w-full py-4 rounded-2xl border-2 border-red-500 text-red-500 text-[11px] font-black uppercase tracking-widest text-center flex flex-col items-center justify-center gap-2 bg-red-500/10 animate-pulse">
+                           <XCircle className="w-6 h-6" />
+                           ¡ALERTA! YA FUE ENTREGADO
                         </div>
                      ) : (
                         <div className="w-full py-4 rounded-2xl border border-red-500/30 text-red-500/50 text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 bg-red-500/5">
