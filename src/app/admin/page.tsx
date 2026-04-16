@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { QrCode, CalendarPlus, Loader2 } from 'lucide-react';
+import { QrCode, CalendarPlus, Loader2, Users } from 'lucide-react';
 import { AdminGuard } from '@/components/AdminGuard';
 import { useEffect, useState } from 'react';
 
