@@ -44,7 +44,7 @@ export default function AdminSalesPage() {
     }
   };
 
-  const markAsReady = async (orderId: string) => {
+  const updateOrderStatus = async (orderId: string, status: string) => {
     try {
         const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
         const authToken = tokenRow ? tokenRow.split('=')[1] : null;
@@ -54,7 +54,7 @@ export default function AdminSalesPage() {
                 'Content-Type': 'application/json', 
                 'Authorization': `Bearer ${authToken}` 
             },
-            body: JSON.stringify({ status: 'READY' })
+            body: JSON.stringify({ status })
         });
         if (res.ok) {
             setSelectedOrder(null);
@@ -226,11 +226,23 @@ export default function AdminSalesPage() {
                                {order.status}
                              </span>
 
+                             {order.status === 'PENDING' && (
+                               <button 
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   updateOrderStatus(order.id, 'PAID');
+                                 }}
+                                 className="px-3 py-1 bg-orange-500 text-black font-black uppercase text-[8px] tracking-widest rounded-lg hover:brightness-110 shadow-lg transition-all"
+                               >
+                                 Confirmar Pago
+                               </button>
+                             )}
+
                              {order.status === 'PAID' && (
                                <button 
                                  onClick={(e) => {
                                    e.stopPropagation();
-                                   markAsReady(order.id);
+                                   updateOrderStatus(order.id, 'READY');
                                  }}
                                  className="px-3 py-1 bg-neon-green text-black font-black uppercase text-[8px] tracking-widest rounded-lg hover:brightness-110 shadow-lg transition-all"
                                >
@@ -325,9 +337,18 @@ export default function AdminSalesPage() {
                        {selectedOrder.status}
                     </span>
 
+                    {selectedOrder.status === 'PENDING' && (
+                       <button 
+                         onClick={() => updateOrderStatus(selectedOrder.id, 'PAID')}
+                         className="px-6 py-2 bg-orange-500 text-black font-black uppercase text-[10px] tracking-widest rounded-xl hover:brightness-110 shadow-[0_10px_20px_rgba(249,115,22,0.2)] transition-all"
+                       >
+                         Confirmar Pago
+                       </button>
+                    )}
+
                     {selectedOrder.status === 'PAID' && (
                        <button 
-                         onClick={() => markAsReady(selectedOrder.id)}
+                         onClick={() => updateOrderStatus(selectedOrder.id, 'READY')}
                          className="px-6 py-2 bg-neon-green text-black font-black uppercase text-[10px] tracking-widest rounded-xl hover:brightness-110 shadow-[0_10px_20px_rgba(57,255,20,0.2)] transition-all"
                        >
                          Pedido Listo
