@@ -142,21 +142,28 @@ export default function ScannerPage() {
            const orderData = await res.json();
 
            if (verificationToken && orderData.verification_token && verificationToken !== orderData.verification_token) {
-              throw new Error('¡TOKEN INVÁLIDO! Posible fraude.');
+              setStatus({ type: 'shop_error', message: '¡TOKEN INVÁLIDO! Posible fraude.' });
+              return;
            }
 
-           // --- COBRO EN CAJA ---
-           if (prefix.includes('PAY')) {
+           // --- COBRO EN CAJA (Botón PAY o QR de cobro) ---
+           if (prefix.includes('PAY') && orderData.status === 'PENDING') {
               setStatus({ type: 'shop_order', order: orderData, intent: 'PAY' });
               return;
            }
 
-           // --- ENTREGA AUTOMÁTICA ---
+           // --- VALIDACIONES DE ENTREGA ---
            if (orderData.status === 'DELIVERED') {
-              setStatus({ type: 'shop_error', message: '¡ALERTA! ESTE PEDIDO YA FUE ENTREGADO' });
+              setStatus({ type: 'shop_error', message: 'ERROR: PEDIDO YA ENTREGADO' });
               return;
            }
 
+           if (orderData.status === 'PENDING') {
+              setStatus({ type: 'shop_error', message: 'ERROR: PAGO PENDIENTE (Cobrar primero)' });
+              return;
+           }
+
+           // --- ENTREGA AUTOMÁTICA (Si está PAID o READY) ---
            if (['PAID', 'READY'].includes(orderData.status)) {
               const updateRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/shop/orders/${orderData.id}/status`, {
                  method: 'PUT',
@@ -170,14 +177,11 @@ export default function ScannerPage() {
               }
            }
 
-           if (orderData.status === 'PENDING') {
-              throw new Error('PAGO PENDIENTE. Cobra en caja primero.');
-           }
-
-           setStatus({ type: 'shop_order', order: orderData, intent: 'DELIVER' });
+           setStatus({ type: 'shop_error', message: 'ESTADO DESCONOCIDO: ' + orderData.status });
            return;
         }
-        throw new Error('Pedido no encontrado');
+        setStatus({ type: 'shop_error', message: 'ERROR: QR NO PERTENECE A LA TIENDA' });
+        return;
       }
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/qrs/scan`, {
@@ -208,7 +212,6 @@ export default function ScannerPage() {
         });
         if (res.ok) {
             setStatus({ type: 'idle' });
-            alert(status === 'PAID' ? "Pago confirmado." : "Pedido entregado.");
         }
     } catch(e) { console.error(e); }
   };
@@ -266,53 +269,48 @@ export default function ScannerPage() {
                 </div>
               )}
               
-              {status.type === 'admitted' && (
-                <div className="w-full p-8 rounded-[3rem] border-4 border-neon-green bg-neon-green/10 shadow-[0_0_60px_rgba(57,255,20,0.3)] flex flex-col items-center gap-4 animate-in zoom-in-95">
-                  <div className="w-20 h-20 rounded-full bg-neon-green border-4 border-black flex items-center justify-center"><CheckCircle className="w-10 h-10 text-black" /></div>
-                  <p className="font-black uppercase text-neon-green text-3xl">✓ ADMITIDO</p>
-                  <p className="text-white font-black text-2xl uppercase text-center leading-tight">{status.name}</p>
-                </div>
-              )}
-
-              {status.type === 'shop_success' && (
-                <div className="w-full p-8 rounded-[3rem] border-4 border-neon-green bg-neon-green/10 shadow-[0_0_60px_rgba(57,255,20,0.3)] flex flex-col items-center gap-4 animate-in zoom-in-95">
-                  <div className="w-20 h-20 rounded-full bg-neon-green border-4 border-black flex items-center justify-center"><Package className="w-10 h-10 text-black" /></div>
-                  <p className="font-black uppercase text-neon-green text-3xl">✓ LISTO</p>
+              {/* EXITOS (VERDE) */}
+              {(status.type === 'admitted' || status.type === 'shop_success') && (
+                <div className="w-full p-10 rounded-[3rem] border-8 border-neon-green bg-neon-green shadow-[0_0_100px_rgba(57,255,20,0.5)] flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200">
+                  <div className="w-24 h-24 rounded-full bg-black flex items-center justify-center">
+                    <CheckCircle className="w-16 h-16 text-neon-green" />
+                  </div>
+                  <h2 className="font-black uppercase tracking-tighter text-black text-6xl italic">LISTO</h2>
                   <div className="text-center">
-                    <p className="text-white font-black text-2xl uppercase leading-tight">{status.name}</p>
-                    <p className="text-neon-green text-xl font-black">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(status.total)}</p>
+                    <p className="text-black font-black text-2xl uppercase leading-tight">
+                      {status.type === 'shop_success' ? status.name : status.name}
+                    </p>
+                    {status.type === 'shop_success' && (
+                       <p className="text-black/60 font-black text-xl">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(status.total)}</p>
+                    )}
                   </div>
                 </div>
               )}
 
-              {status.type === 'shop_error' && (
-                <div className="w-full p-8 rounded-[3rem] border-4 border-red-600 bg-red-600/10 shadow-[0_0_60px_rgba(220,38,38,0.3)] flex flex-col items-center gap-4 animate-in zoom-in-95">
-                  <div className="w-20 h-20 rounded-full bg-red-600 border-4 border-white flex items-center justify-center"><ShieldAlert className="w-10 h-10 text-white animate-pulse" /></div>
-                  <p className="font-black uppercase text-red-500 text-3xl">✗ ERROR</p>
-                  <p className="text-white font-black text-lg uppercase text-center">{status.message}</p>
+              {/* ERRORES (ROJO) */}
+              {(status.type === 'shop_error' || status.type === 'already_used' || status.type === 'invalid') && (
+                <div className="w-full p-10 rounded-[3rem] border-8 border-red-600 bg-red-600 shadow-[0_0_100px_rgba(220,38,38,0.5)] flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200">
+                  <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center">
+                    <ShieldAlert className="w-16 h-16 text-red-600" />
+                  </div>
+                  <h2 className="font-black uppercase tracking-tighter text-white text-4xl italic text-center">
+                     {status.type === 'already_used' ? 'YA ENTREGADO' : (status.type === 'shop_error' ? status.message : status.message)}
+                  </h2>
                 </div>
               )}
 
+              {/* INTERFAZ DE PAGO EN CAJA (NARANJA) */}
               {status.type === 'shop_order' && status.intent === 'PAY' && (
-                <div className="w-full p-6 rounded-[2.5rem] border-2 border-orange-500 bg-orange-500/10 flex flex-col items-center gap-4">
+                <div className="w-full p-6 rounded-[2.5rem] border-4 border-orange-500 bg-orange-500/10 flex flex-col items-center gap-4 animate-in zoom-in-95">
                   <DollarSign className="w-10 h-10 text-orange-500" />
-                  <p className="font-black uppercase text-orange-500">Cobro en Caja</p>
-                  <p className="text-white font-black text-xl">{status.order.user?.name || 'Invitado'}</p>
-                  <button onClick={() => updateShopStatus(status.order.id, 'PAID')} className="w-full bg-orange-500 text-white font-black py-4 rounded-2xl">Confirmar Pago</button>
-                </div>
-              )}
-
-              {status.type === 'already_used' && (
-                <div className="w-full p-8 rounded-[3rem] border-4 border-orange-500 bg-orange-500/10 flex flex-col items-center gap-4">
-                  <ShieldAlert className="w-12 h-12 text-orange-500" />
-                  <p className="font-black uppercase text-orange-500 text-2xl">YA USADO</p>
-                </div>
-              )}
-
-              {status.type === 'invalid' && (
-                <div className="w-full p-8 rounded-[3rem] border-4 border-red-600 bg-red-600/10 flex flex-col items-center gap-4">
-                  <XCircle className="w-12 h-12 text-red-600" />
-                  <p className="text-white font-black text-center">{status.message}</p>
+                  <p className="font-black uppercase text-orange-500 text-xl">COBRO EN CAJA</p>
+                  <div className="text-center">
+                    <p className="text-white font-black text-2xl uppercase">{status.order.user?.name || 'Invitado'}</p>
+                    <p className="text-orange-500 text-3xl font-black">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(status.order.total)}</p>
+                  </div>
+                  <button onClick={() => updateShopStatus(status.order.id, 'PAID')} className="w-full bg-orange-500 text-white font-black py-5 rounded-2xl text-xl shadow-[0_10px_30px_rgba(249,115,22,0.4)]">
+                    CONFIRMAR PAGO
+                  </button>
                 </div>
               )}
             </div>

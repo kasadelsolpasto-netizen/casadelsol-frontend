@@ -180,30 +180,6 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen pb-20 bg-[#050505] overflow-x-hidden">
-      {/* ── ALERTA DESESPERADA ─────────────────────────── */}
-      {profile?.shop_orders?.some((o: any) => o?.status === 'READY') && !isAlertDismissed && (
-        <div className="fixed inset-x-0 bottom-32 z-[250] flex flex-col items-center pointer-events-none px-6">
-           <div className="bg-red-600 text-white p-8 rounded-[3rem] shadow-[0_30px_90px_rgba(220,38,38,0.8)] border-[6px] border-white animate-[shake_0.5s_infinite] flex flex-col items-center gap-4 pointer-events-auto max-w-sm w-full cursor-pointer hover:scale-110 transition-transform relative">
-              <button 
-                onClick={(e) => { e.stopPropagation(); setIsAlertDismissed(true); }}
-                className="absolute -top-4 -right-4 w-10 h-10 bg-black text-white rounded-full border-4 border-white flex items-center justify-center hover:bg-zinc-900 transition-colors z-10 pointer-events-auto"
-              >
-                <X className="w-6 h-6" />
-              </button>
-              <div className="flex items-center gap-4" onClick={() => router.push(`/profile/${params.id}`)}>
-                 <Zap className="w-10 h-10 animate-ping" />
-                 <h2 className="text-3xl font-black uppercase italic leading-none text-shadow-lg">¡¡YAAAAAAAA!!</h2>
-                 <Zap className="w-10 h-10 animate-ping" />
-              </div>
-              <p className="font-black uppercase text-sm tracking-tighter text-center leading-tight">
-                 ¡TU PEDIDO ESTÁ LISTO!<br />
-                 <span className="text-2xl">¡CORRE A LA BARRA AHORA MISMO!</span><br />
-                 💨💨💨💨💨💨💨
-              </p>
-           </div>
-        </div>
-      )}
-
       {/* ── NOTIFICACIÓN FASE 3 ───────────────────────── */}
       {userAlert && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] w-full max-w-sm px-6 animate-in slide-in-from-top-10 duration-500">

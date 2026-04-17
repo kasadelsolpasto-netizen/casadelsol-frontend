@@ -173,6 +173,19 @@ export default function ShopOrdersAdminPage() {
                       </div>
 
                       <div className="w-full flex md:flex-col gap-2">
+                         {(order.status === 'PENDING' || order.status === 'PAID' || order.status === 'READY') && (
+                            <button 
+                              onClick={() => {
+                                if(confirm('¿Rechazar pedido por falta de stock? Esto devolverá los productos al inventario.')) {
+                                  updateStatus(order.id, 'CANCELED');
+                                }
+                              }}
+                              className="flex-1 bg-zinc-900 text-red-500 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 transition-all flex items-center justify-center gap-2 border border-red-500/20"
+                            >
+                               <X className="w-4 h-4" /> Rechazar por Stock
+                            </button>
+                         )}
+
                          {order.status === 'PENDING' && (
                             <button 
                               onClick={() => updateStatus(order.id, 'PAID')}
@@ -181,7 +194,7 @@ export default function ShopOrdersAdminPage() {
                                <CreditCard className="w-4 h-4" /> Cobrar (Cash)
                             </button>
                          )}
-                         {order.status === 'PAID' && (
+                         {(order.status === 'PAID' || order.status === 'READY') && (
                             <button 
                               onClick={() => updateStatus(order.id, 'DELIVERED')}
                               className="flex-1 bg-white text-black py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-neon-green transition-all flex items-center justify-center gap-2"
@@ -193,14 +206,6 @@ export default function ShopOrdersAdminPage() {
                             <div className="flex-1 border border-zinc-900 text-zinc-600 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 opacity-50">
                                <CheckCircle2 className="w-4 h-4" /> Finalizado
                             </div>
-                         )}
-                         {order.status === 'PENDING' && (
-                            <button 
-                              onClick={() => updateStatus(order.id, 'CANCELED')}
-                              className="p-3 bg-zinc-900 text-red-800 hover:text-red-500 rounded-xl transition-all"
-                            >
-                               <X className="w-4 h-4" />
-                            </button>
                          )}
                       </div>
 

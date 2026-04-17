@@ -3,6 +3,7 @@ import { Outfit } from "next/font/google";
 import "./globals.css";
 import { NavbarWrapper } from "@/components/NavbarWrapper";
 import RecaptchaProvider from "@/components/RecaptchaProvider";
+import { GlobalOrderReadyAlert } from "@/components/GlobalOrderReadyAlert";
 
 const outfit = Outfit({ subsets: ["latin"] });
 
@@ -34,6 +35,8 @@ export default function RootLayout({
 
           {/* Global navbar — se auto-oculta en /admin, /login, /register, /scanner */}
           <NavbarWrapper />
+
+          <GlobalOrderReadyAlert />
 
           <main className="min-h-screen z-10 relative">
             {children}

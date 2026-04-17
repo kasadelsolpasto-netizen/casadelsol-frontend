@@ -125,7 +125,12 @@ export default function PublicShopPage() {
               reference: result.wompiData.reference,
               publicKey: result.wompiData.publicKey,
               signature: { integrity: result.wompiData.signature },
-              redirectUrl: user ? `${window.location.origin}/profile/${user.id}` : `${window.location.origin}/`
+              redirectUrl: user ? `${window.location.origin}/profile/${user.id}` : `${window.location.origin}/`,
+              customData: {
+                userId: user?.id || null,
+                items: JSON.stringify(result.items), // Items devueltos por la API para reconstrucción
+                total: result.total
+              }
             });
             checkout.open((result: any) => {
               const transaction = result.transaction;
