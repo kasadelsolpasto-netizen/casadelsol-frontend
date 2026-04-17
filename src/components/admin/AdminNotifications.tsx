@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Bell, ShoppingBag, X, CheckCircle, DollarSign } from 'lucide-react';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface ShopEvent {
   type: 'NEW_ORDER' | 'PAYMENT_CONFIRMED';
@@ -16,6 +17,10 @@ export default function AdminNotifications() {
   const [isVisible, setIsVisible] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Suscribe al admin a Web Push para recibir notificaciones nativas
+  // de nuevos pedidos aunque la pantalla esté apagada o la app cerrada.
+  usePushNotifications();
 
   useEffect(() => {
     // ── CONFIGURACIÓN DEL SOCKET ─────────────────────────────────────

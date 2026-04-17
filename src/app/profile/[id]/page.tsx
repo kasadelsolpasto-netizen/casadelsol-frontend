@@ -1,15 +1,15 @@
 "use client";
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  Ticket, QrCode, User, Star, MapPin, Calendar, CheckCircle, 
-  X, Lock, Share2, DoorOpen, ShieldCheck, Gift, Zap, 
+  Ticket, User, Star, CheckCircle, 
+  X, Share2, Gift, Zap, 
   TicketPercent, Loader2, ShoppingBag, MessageCircle, DollarSign
 } from 'lucide-react';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { InstallAppButton } from '@/components/InstallAppButton';
-import { io, Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 
 const BENEFIT_ICONS: Record<string, any> = {
   DISCOUNT: TicketPercent,
@@ -24,13 +24,6 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
   const [selectedQr, setSelectedQr] = useState<any>(null);
   const [selectedShopQr, setSelectedShopQr] = useState<any>(null);
-  const [isAlertDismissed, setIsAlertDismissed] = useState(false);
-  
-  // -- REAL-TIME ALERTS (FASE 3) --
-  const [userAlert, setUserAlert] = useState<any>(null);
-  const socketRef = useRef<Socket | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
   const [newName, setNewName] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -83,32 +76,20 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   useEffect(() => {
     if (!profile) return;
     
-    // Conexión en tiempo real (FASE 3)
+    // Actualización en tiempo real: cuando el pedido está READY,
+    // el GlobalOrderReadyAlert (en layout.tsx) muestra la notificación.
+    // Aquí solo refrescamos los datos del perfil para actualizar las tarjetas.
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    socketRef.current = io(API_URL, { query: { userId: params.id } });
+    const socket = io(API_URL, { query: { userId: params.id } });
 
-    socketRef.current.on('user_shop_event', (data: any) => {
+    socket.on('user_shop_event', (data: any) => {
       if (data.type === 'ORDER_READY') {
-        setUserAlert(data);
-        // Sonido y Vibración
-        if (audioRef.current) {
-          audioRef.current.currentTime = 0;
-          audioRef.current.play().catch(() => {});
-        }
-        if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            navigator.vibrate([200, 100, 200, 100, 200]);
-        }
-        // Actualizar datos automáticamente
+        // Solo actualizamos los datos — la notificación visual la maneja GlobalOrderReadyAlert
         fetchProfile();
-        // Quitar alerta tras 10s
-        setTimeout(() => { setUserAlert(null); }, 10000);
       }
     });
 
-    audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
-    audioRef.current.volume = 1.0;
-
-    return () => { socketRef.current?.disconnect(); };
+    return () => { socket.disconnect(); };
   }, [profile]);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
@@ -180,24 +161,6 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen pb-20 bg-[#050505] overflow-x-hidden">
-      {/* ── NOTIFICACIÓN FASE 3 ───────────────────────── */}
-      {userAlert && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] w-full max-w-sm px-6 animate-in slide-in-from-top-10 duration-500">
-           <div className="bg-neon-green p-6 rounded-[2.5rem] shadow-[0_20px_50px_rgba(57,255,20,0.4)] flex items-center gap-4 border-4 border-black">
-              <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-neon-green">
-                 <Zap className="w-6 h-6 animate-pulse" />
-              </div>
-              <div className="flex-1 text-black">
-                 <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-0.5">¡Aviso de Bar!</p>
-                 <p className="font-black uppercase text-sm leading-tight">{userAlert?.message}</p>
-              </div>
-              <button onClick={() => setUserAlert(null)} className="text-black/40 hover:text-black">
-                 <X className="w-5 h-5" />
-              </button>
-           </div>
-        </div>
-      )}
-
       {/* STAFF NAV */}
       {isStaff && (
         <div className="sticky top-0 z-30 bg-black/95 backdrop-blur border-b border-zinc-900">

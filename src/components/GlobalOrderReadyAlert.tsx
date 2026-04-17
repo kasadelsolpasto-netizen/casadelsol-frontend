@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Zap, X } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 export function GlobalOrderReadyAlert() {
   const router = useRouter();
@@ -10,6 +11,11 @@ export function GlobalOrderReadyAlert() {
   const [isVisible, setIsVisible] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Registra el Service Worker y suscribe al usuario a Web Push.
+  // Esto funciona en background: el usuario solo verá el diálogo de permiso
+  // la primera vez que visite la app con una cuenta activa.
+  usePushNotifications();
 
   // Recuperar pedidos descartados anteriormente de localStorage
   const getDismissedOrders = (): string[] => {

@@ -33,6 +33,7 @@ const nextConfig = {
               font-src 'self' https://fonts.gstatic.com;
               connect-src 'self' http://localhost:3001 https://casadelsol-backend.onrender.com https://snbqdxtrlvymswgqhxky.supabase.co https://accounts.google.com https://www.googleapis.com https://www.google.com/recaptcha/ https://www.recaptcha.net/;
               frame-src 'self' https://accounts.google.com https://www.google.com/recaptcha/ https://www.recaptcha.net/ https://checkout.wompi.co;
+              worker-src 'self';
               upgrade-insecure-requests;
             `.replace(/\s{2,}/g, ' ').trim(),
           },
