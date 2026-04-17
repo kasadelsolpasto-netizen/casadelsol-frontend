@@ -23,6 +23,14 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
   const [publishing, setPublishing] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
+  const formatForInput = (dateStr: any) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
   useEffect(() => {
     const fetchEvent = async () => {
       try {
@@ -32,15 +40,15 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
           setFormData({
             title: event.title,
             description: event.description || '',
-            date: new Date(event.date).toISOString().slice(0, 16),
+            date: formatForInput(event.date),
             venue: event.venue,
             status: event.status
           });
           setFlyerUrl(event.flyer_url || '');
           setTicketTypes(event.ticket_types.map((t: any) => ({
              ...t,
-             sale_start: t.sale_start ? new Date(t.sale_start).toISOString().slice(0, 16) : '',
-             sale_end: t.sale_end ? new Date(t.sale_end).toISOString().slice(0, 16) : ''
+             sale_start: formatForInput(t.sale_start),
+             sale_end: formatForInput(t.sale_end)
           })));
         } else {
           setSubmitError('Evento no encontrado');
