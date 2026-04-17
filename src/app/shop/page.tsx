@@ -126,9 +126,9 @@ export default function PublicShopPage() {
               publicKey: result.wompiData.publicKey,
               signature: { integrity: result.wompiData.signature },
               redirectUrl: user ? `${window.location.origin}/profile/${user.id}` : `${window.location.origin}/`,
-              customData: {
+              extra: {
                 userId: user?.id || null,
-                items: JSON.stringify(result.items), // Items devueltos por la API para reconstrucción
+                items: JSON.stringify(result.items),
                 total: result.total
               }
             });
