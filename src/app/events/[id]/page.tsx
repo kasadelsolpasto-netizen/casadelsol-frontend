@@ -53,7 +53,9 @@ export default function EventDetail({ params }: { params: { id: string } }) {
         ticket_type_id: selectedTicket.id
       }));
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/orders/checkout-wompi`, {
+      const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+      const res = await fetch(`${API}/orders/checkout-wompi`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json', 
@@ -69,19 +71,52 @@ export default function EventDetail({ params }: { params: { id: string } }) {
       }
 
       const data = await res.json();
+      // Guardamos el orderId para el fallback post-pago
+      const orderId: string = data.reference;
+
       const checkout = new (window as any).WidgetCheckout({
         currency: 'COP',
         amountInCents: data.amountInCents,
-        reference: data.reference,
+        reference: orderId,
         publicKey: data.publicKey,
         signature: { integrity: data.signature }
       });
 
-      checkout.open((result: any) => {
+      checkout.open(async (result: any) => {
         const tx = result.transaction;
         setShowWizard(false);
+
         if (tx.status === 'APPROVED') {
-          setSuccess('¡Pago aprobado! Redirigiendo a tu bóveda...');
+          setSuccess('¡Pago aprobado! Registrando tu compra...');
+
+          // ── FALLBACK CRÍTICO ────────────────────────────────────────────────
+          // Llamamos al backend para completar la orden y generar los QRs.
+          // Esto funciona aunque el webhook de Wompi no haya llegado.
+          // Si el webhook llegó primero, el endpoint es idempotente (no duplica).
+          try {
+            const confirmRes = await fetch(`${API}/orders/confirm-ticket-payment`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                orderId,
+                wompiTransactionId: tx.id,
+              }),
+            });
+            if (!confirmRes.ok) {
+              console.error('[ticket-confirm] Error en fallback:', await confirmRes.text());
+            } else {
+              console.log('[ticket-confirm] ✅ Orden confirmada exitosamente.');
+            }
+          } catch (confirmErr) {
+            // No bloqueamos el flujo del usuario si el fallback falla —
+            // el webhook aún puede llegar y completar la orden.
+            console.error('[ticket-confirm] Excepción en fallback:', confirmErr);
+          }
+          // ────────────────────────────────────────────────────────────────────
+
           setTimeout(() => {
             const userPayload = JSON.parse(decodeURIComponent(escape(atob(token.split('.')[1]))));
             router.push(`/profile/${userPayload.id || userPayload.sub}`);
@@ -96,6 +131,7 @@ export default function EventDetail({ params }: { params: { id: string } }) {
       setWizardLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen pb-20">
