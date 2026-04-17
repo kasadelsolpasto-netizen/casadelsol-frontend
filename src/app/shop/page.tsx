@@ -118,6 +118,9 @@ export default function PublicShopPage() {
         if (paymentType === 'VIRTUAL' && result.wompiData) {
             const userData = localStorage.getItem('kasa_user');
             const user = userData ? JSON.parse(userData) : null;
+            // Guardamos los items del resultado para usarlos después del pago
+            const shopItemsForConfirmation = result.items || [];
+            const shopTotalForConfirmation = result.total || 0;
             
             const checkout = new (window as any).WidgetCheckout({
               currency: 'COP',
@@ -132,12 +135,37 @@ export default function PublicShopPage() {
                 total: result.total
               }
             });
-            checkout.open((result: any) => {
-              const transaction = result.transaction;
+            checkout.open(async (wompiResult: any) => {
+              const transaction = wompiResult.transaction;
               if (transaction.status === 'APPROVED') {
-                 setOrderResult({ ...result, status: 'PAID' });
-                 setCart([]);
-                 setShowCart(false);
+                // FALLBACK: Llamamos al backend directamente para garantizar que la orden se cree.
+                // El backend es idempotente: si el webhook ya creó la orden, no se duplica.
+                try {
+                  const confirmRes = await fetch(`${API}/shop/orders/confirm-virtual`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                      wompiRef: transaction.id,
+                      total: shopTotalForConfirmation,
+                      items: shopItemsForConfirmation.map((i: any) => ({
+                        product_id: i.product_id,
+                        quantity: i.quantity,
+                        unit_price: i.unit_price
+                      }))
+                    })
+                  });
+                  if (!confirmRes.ok) {
+                    console.error('[SHOP] Error al confirmar orden virtual:', await confirmRes.text());
+                  }
+                } catch (confirmErr) {
+                  console.error('[SHOP] Error de red al confirmar orden virtual:', confirmErr);
+                }
+                setOrderResult({ ...wompiResult, status: 'PAID' });
+                setCart([]);
+                setShowCart(false);
               }
             });
         } else {
