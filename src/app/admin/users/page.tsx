@@ -140,6 +140,8 @@ export default function CommunityDashboard() {
   const [editComment, setEditComment] = useState('');
   const [editTags, setEditTags] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const getToken = () => {
     const row = document.cookie.split('; ').find(r => r.startsWith('kasa_auth_token='));
@@ -248,7 +250,25 @@ export default function CommunityDashboard() {
     setEditRating(user.rating || 0);
     setEditComment(user.rating_comment || '');
     setEditTags(user.tags || []);
+    setDeleteConfirm(false);
     setIsDrawerOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser || !deleteConfirm) { setDeleteConfirm(true); return; }
+    setIsDeleting(true);
+    try {
+      const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const res = await fetch(`${API}/users/admin/${selectedUser.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      if (res.ok) {
+        setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+        setIsDrawerOpen(false);
+        setDeleteConfirm(false);
+      }
+    } catch (err) { console.error(err); } finally { setIsDeleting(false); }
   };
 
   const handleUpdateUserData = async () => {
@@ -617,11 +637,27 @@ export default function CommunityDashboard() {
                   </div>
                 </div>
               </div>
-              <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[80%] z-[110]">
-                <button onClick={handleUpdateUserData} disabled={isSaving} className="w-full bg-white text-black font-black uppercase tracking-[0.2em] py-5 rounded-2xl hover:bg-neon-green hover:shadow-[0_20px_40px_rgba(57,255,20,0.3)] hover:-translate-y-1 active:translate-y-0 transition-all flex items-center justify-center gap-3 disabled:opacity-50">
-                  {isSaving ? <Loader2 className="w-6 h-6 animate-spin text-black" /> : <Save className="w-6 h-6" />}
-                  {isSaving ? 'Actualizando Bóveda...' : 'Confirmar Cambios'}
+              <div className="absolute bottom-0 left-0 right-0 p-6 bg-black/90 backdrop-blur border-t border-zinc-900 z-[110] space-y-3">
+                <button onClick={handleUpdateUserData} disabled={isSaving || isDeleting} className="w-full bg-white text-black font-black uppercase tracking-[0.2em] py-4 rounded-2xl hover:bg-neon-green hover:shadow-[0_20px_40px_rgba(57,255,20,0.3)] transition-all flex items-center justify-center gap-3 disabled:opacity-50">
+                  {isSaving ? <Loader2 className="w-5 h-5 animate-spin text-black" /> : <Save className="w-5 h-5" />}
+                  {isSaving ? 'Guardando...' : 'Confirmar Cambios'}
                 </button>
+                {!deleteConfirm ? (
+                  <button onClick={() => setDeleteConfirm(true)} disabled={isDeleting} className="w-full bg-transparent border border-zinc-800 text-zinc-600 hover:border-red-500/50 hover:text-red-400 font-black uppercase tracking-widest py-3 rounded-2xl transition-all flex items-center justify-center gap-2 text-xs">
+                    <Trash2 className="w-4 h-4" /> Eliminar Usuario
+                  </button>
+                ) : (
+                  <div className="bg-red-950/60 border border-red-500/40 rounded-2xl p-4 space-y-3">
+                    <p className="text-red-300 text-xs font-black uppercase tracking-widest text-center">⚠️ Esto borrará al usuario y TODOS sus datos. ¿Confirmar?</p>
+                    <div className="flex gap-3">
+                      <button onClick={() => setDeleteConfirm(false)} className="flex-1 py-2.5 rounded-xl border border-zinc-700 text-zinc-400 text-xs font-black uppercase hover:bg-zinc-900 transition-all">Cancelar</button>
+                      <button onClick={handleDeleteUser} disabled={isDeleting} className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                        {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        {isDeleting ? 'Eliminando...' : 'Sí, Eliminar'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </>

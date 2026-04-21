@@ -21,6 +21,7 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
   const [flyerUrl, setFlyerUrl] = useState<string>('');
   const [uploading, setUploading] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
   const formatForInput = (dateStr: any) => {
@@ -114,6 +115,7 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
     
     setPublishing(true);
     setSubmitError('');
+    setSaveSuccess(false);
     try {
       const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
       const authToken = tokenRow ? tokenRow.split('=')[1] : null;
@@ -126,13 +128,19 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
         },
         body: JSON.stringify({
            ...formData,
+           date: new Date(formData.date).toISOString(),
            flyer_url: flyerUrl,
-           ticket_types: ticketTypes
+           ticket_types: ticketTypes.map((t: any) => ({
+             ...t,
+             sale_start: t.sale_start ? new Date(t.sale_start).toISOString() : null,
+             sale_end: t.sale_end ? new Date(t.sale_end).toISOString() : null
+           }))
         })
       });
 
       if (res.ok) {
-         router.push('/admin/events');
+         setSaveSuccess(true);
+         setTimeout(() => setSaveSuccess(false), 3000);
       } else {
          const data = await res.json();
          setSubmitError("Error del Servidor: " + (data.message || 'Falló la actualización'));
@@ -286,13 +294,14 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
             </section>
 
             {submitError && <div className="text-red-500 text-xs font-bold uppercase tracking-widest mt-4 bg-red-500/10 p-4 rounded-xl border border-red-500/20">{submitError}</div>}
+            {saveSuccess && <div className="text-neon-green text-xs font-bold uppercase tracking-widest mt-4 bg-neon-green/10 p-4 rounded-xl border border-neon-green/20">✅ Cambios guardados correctamente</div>}
             
             <button 
               onClick={actualizarEvento} 
-              disabled={uploading || publishing} 
-              className="w-full mt-6 bg-blue-600 hover:bg-white hover:text-black hover:shadow-[0_0_40px_rgba(37,99,235,0.4)] text-white font-black uppercase tracking-[0.2em] text-sm py-6 rounded-2xl transition-all flex justify-center items-center gap-3"
+              disabled={uploading || publishing || saveSuccess} 
+              className={`w-full mt-6 text-white font-black uppercase tracking-[0.2em] text-sm py-6 rounded-2xl transition-all flex justify-center items-center gap-3 ${saveSuccess ? 'bg-neon-green text-black scale-95 opacity-50' : 'bg-blue-600 hover:bg-white hover:text-black hover:shadow-[0_0_40px_rgba(37,99,235,0.4)]'}`}
             >
-              {publishing ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Confirmar Cambios <Save className="w-4 h-4" /></>}
+              {publishing ? <Loader2 className="w-5 h-5 animate-spin" /> : saveSuccess ? '¡Guardado!' : <>Confirmar Cambios <Save className="w-4 h-4" /></>}
             </button>
           </div>
         </div>

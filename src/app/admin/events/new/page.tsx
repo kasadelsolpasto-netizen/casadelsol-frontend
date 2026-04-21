@@ -85,14 +85,19 @@ export default function NewEventPage() {
         },
         body: JSON.stringify({
            ...formData,
+           date: new Date(formData.date).toISOString(),
            flyer_url: flyerUrl,
            status: 'PUBLISHED',
-           ticket_types: ticketTypes
+           ticket_types: ticketTypes.map((t: any) => ({
+             ...t,
+             sale_start: t.sale_start ? new Date(t.sale_start).toISOString() : null,
+             sale_end: t.sale_end ? new Date(t.sale_end).toISOString() : null
+           }))
         })
       });
 
       if (res.ok) {
-         router.push('/');
+         router.push('/admin/events');
       } else {
          const data = await res.json();
          setSubmitError("Error del Servidor: " + (data.message || 'Falló la creación'));
