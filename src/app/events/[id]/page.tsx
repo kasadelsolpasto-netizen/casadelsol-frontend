@@ -104,16 +104,10 @@ export default function EventDetail({ params }: { params: { id: string } }) {
         ...(Object.keys(customerData).length > 0 && { customerData }),
       };
 
-      console.log('[Wompi] Config widget:', JSON.stringify({ ...widgetConfig, signature: '***' }));
-      console.log('[Wompi] WidgetCheckout disponible:', typeof (window as any).WidgetCheckout);
-
       const checkout = new (window as any).WidgetCheckout(widgetConfig);
-      console.log('[Wompi] checkout creado:', checkout);
 
       // IMPORTANTE: setWizardLoading(false) va DENTRO del callback, no en finally.
-      // Si va en finally, React re-renderiza ANTES de que Wompi abra su popup y lo puede bloquear.
       checkout.open(async (result: any) => {
-        console.log('[Wompi] resultado:', result);
         setWizardLoading(false);
         const tx = result.transaction;
         setShowWizard(false);
