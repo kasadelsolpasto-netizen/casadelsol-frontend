@@ -23,15 +23,17 @@ interface User {
 
 export default function PromotersAdminPage() {
   const [codes, setCodes] = useState<PromoterCode[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const [formData, setFormData] = useState({
     code: '',
-    promoter_id: '',
+    promoter_email: '',
     discount_perc: 0,
     event_id: '',
   });
@@ -42,17 +44,14 @@ export default function PromotersAdminPage() {
       if (!token) return;
 
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const [resCodes, resUsers, resEvents] = await Promise.all([
+      const [resCodes, resEvents] = await Promise.all([
         fetch(`${API_URL}/promoters`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_URL}/users/admin/all?limit=50`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_URL}/events/admin/all`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       const codesData = await resCodes.json();
-      const usersData = await resUsers.json();
       const eventsData = await resEvents.json();
       
       setCodes(codesData);
-      setUsers(usersData.users || []);
       setEvents(eventsData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -60,36 +59,6 @@ export default function PromotersAdminPage() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  // Búsqueda dinámica de usuarios en el backend
-  useEffect(() => {
-    const fetchUsersDynamic = async () => {
-      if (!searchTerm || searchTerm.length < 3) return;
-      try {
-        const token = JSON.parse(localStorage.getItem('kasa_user') || '{}').token;
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-        const res = await fetch(`${API_URL}/users/admin/all?limit=20&search=${searchTerm}`, { headers: { Authorization: `Bearer ${token}` } });
-        const data = await res.json();
-        setUsers(prev => {
-          const newUsers = data.users || [];
-          const combined = [...newUsers, ...prev]; // Los nuevos primero para la vista
-          const uniqueIds = new Set();
-          return combined.filter((u: any) => {
-            if (uniqueIds.has(u.id)) return false;
-            uniqueIds.add(u.id);
-            return true;
-          });
-        });
-      } catch (error) {}
-    };
-    
-    const timeout = setTimeout(fetchUsersDynamic, 500);
-    return () => clearTimeout(timeout);
-  }, [searchTerm]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,7 +74,7 @@ export default function PromotersAdminPage() {
         },
         body: JSON.stringify({
           code: formData.code,
-          promoter_id: formData.promoter_id,
+          promoter_email: formData.promoter_email.trim(),
           discount_perc: Number(formData.discount_perc),
           event_id: formData.event_id || undefined,
         })
@@ -116,7 +85,7 @@ export default function PromotersAdminPage() {
         throw new Error(errorData?.message || 'Error al crear código');
       }
       
-      setFormData({ code: '', promoter_id: '', discount_perc: 0, event_id: '' });
+      setFormData({ code: '', promoter_email: '', discount_perc: 0, event_id: '' });
       fetchData();
     } catch (error: any) {
       alert(error.message || 'Error al crear código');
@@ -170,27 +139,14 @@ export default function PromotersAdminPage() {
               
               <div>
                 <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Usuario (Promotor)</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                  <input 
-                    type="text" 
-                    placeholder="Buscar usuario..." 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-black/50 border border-zinc-800 rounded-lg pl-10 pr-4 py-2 text-sm focus:border-neon-purple focus:ring-1 focus:ring-neon-purple outline-none transition-all mb-2"
-                  />
-                </div>
-                <select 
+                <input 
                   required
-                  value={formData.promoter_id}
-                  onChange={(e) => setFormData({...formData, promoter_id: e.target.value})}
+                  type="email"
+                  placeholder="ejemplo@correo.com"
+                  value={formData.promoter_email}
+                  onChange={(e) => setFormData({...formData, promoter_email: e.target.value})}
                   className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-3 text-sm focus:border-neon-purple outline-none"
-                >
-                  <option value="">-- Seleccionar Usuario --</option>
-                  {filteredUsers.map(u => (
-                    <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div>
