@@ -35,42 +35,48 @@ export default async function Home() {
               ? Math.min(...event.ticket_types.map((t: any) => t.price))
               : 0;
             return (
-            <Link href={`/events/${event.id}`} key={event.id} className="group glass-panel rounded-2xl overflow-hidden hover:neon-border-primary transition-all duration-300 transform hover:-translate-y-2 pb-1 relative">
-              <div className="h-56 w-full bg-zinc-900 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10"></div>
-                {event.flyer_url && (
-                  <Image 
-                    src={event.flyer_url} 
-                    alt={event.title}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-700 opacity-80 group-hover:opacity-100" 
-                  />
-                )}
-              </div>
+            <Link href={`/events/${event.id}`} key={event.id} className="group relative rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_0_30px_rgba(57,255,20,0.15)] transform hover:-translate-y-2 transition-all duration-300 block p-[1px] bg-zinc-800/50">
+              {/* Animación Neón de fondo */}
+              <div className="absolute top-[-150%] left-[-50%] w-[200%] h-[400%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(from_0deg,transparent_70%,#39ff14_85%,#bf00ff_100%)] opacity-30 group-hover:opacity-100 transition-opacity duration-1000 point-events-none" />
               
-              <div className="p-6">
-                <h2 className="text-2xl font-bold uppercase tracking-wider text-white group-hover:text-neon-green transition-colors mb-4 line-clamp-1">
-                  {event.title}
-                </h2>
-                
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center text-sm text-zinc-400 gap-3">
-                    <Calendar className="w-4 h-4 text-neon-purple" />
-                    <span>{new Date(event.date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                  </div>
-                  <div className="flex items-center text-sm text-zinc-400 gap-3">
-                    <MapPin className="w-4 h-4 text-neon-purple" />
-                    <span className="line-clamp-1">{event.venue}</span>
-                  </div>
-                  <div className="flex items-center text-sm text-zinc-400 gap-3">
-                    <Tag className="w-4 h-4 text-neon-green" />
-                    <span className="font-semibold text-zinc-200">Desde {Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(minPrice)}</span>
-                  </div>
+              {/* Contenido protegido interno */}
+              <div className="relative bg-[#050505] rounded-[15px] overflow-hidden z-10 h-full flex flex-col glass-panel border border-zinc-800/80">
+                <div className="h-56 w-full bg-zinc-900 relative overflow-hidden shrink-0">
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent z-10"></div>
+                  {event.flyer_url && (
+                    <Image 
+                      src={event.flyer_url} 
+                      alt={event.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80 group-hover:opacity-100" 
+                    />
+                  )}
                 </div>
+                
+                <div className="p-6 flex-1 flex flex-col">
+                  <h2 className="text-2xl font-bold uppercase tracking-wider text-white group-hover:text-neon-green transition-colors mb-4 line-clamp-1">
+                    {event.title}
+                  </h2>
+                  
+                  <div className="space-y-3 mb-6 flex-1">
+                    <div className="flex items-center text-sm text-zinc-400 gap-3">
+                      <Calendar className="w-4 h-4 text-neon-purple" />
+                      <span>{new Date(event.date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-zinc-400 gap-3">
+                      <MapPin className="w-4 h-4 text-neon-purple" />
+                      <span className="line-clamp-1">{event.venue}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-zinc-400 gap-3">
+                      <Tag className="w-4 h-4 text-neon-green" />
+                      <span className="font-semibold text-zinc-200">Desde {Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(minPrice)}</span>
+                    </div>
+                  </div>
 
-                <div className="w-full text-center py-3 border border-zinc-700 rounded-lg text-xs uppercase tracking-widest font-bold text-zinc-300 group-hover:bg-neon-green group-hover:text-black group-hover:border-neon-green transition-all flex justify-center items-center gap-2">
-                  Ver Detalles <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <div className="w-full text-center py-3 border border-zinc-700 rounded-lg text-[10px] uppercase tracking-[0.2em] font-black text-zinc-300 group-hover:bg-neon-green group-hover:text-black group-hover:border-neon-green group-hover:shadow-[0_0_15px_rgba(57,255,20,0.5)] transition-all flex justify-center items-center gap-2">
+                    Ver Detalles <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </div>
               </div>
             </Link>

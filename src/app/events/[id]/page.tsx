@@ -168,8 +168,13 @@ export default function EventDetail({ params }: { params: { id: string } }) {
           </div>
 
           <div className="w-full md:w-1/2 order-1 md:order-2 flex justify-center md:justify-end">
-            <div className="relative w-full max-w-sm aspect-[4/5] shadow-[0_0_50px_rgba(0,0,0,0.7)] group transform md:rotate-3 hover:rotate-0 transition-transform duration-500 rounded-2xl overflow-hidden border border-zinc-800">
-              {event.flyer_url && <Image src={event.flyer_url} alt={event.title} fill priority sizes="(max-width: 768px) 100vw, 400px" className="object-cover group-hover:scale-105 transition-transform duration-1000" />}
+            <div className="relative w-full max-w-sm aspect-[4/5] shadow-[0_0_50px_rgba(0,0,0,0.7)] group transform md:rotate-3 hover:rotate-0 transition-all duration-500 rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800/50 p-[2px]">
+              {/* Controles de la animación neón envolvente */}
+              <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(from_0deg,transparent_75%,#39ff14_90%,#bf00ff_100%)] opacity-40 group-hover:opacity-100 transition-opacity duration-1000 z-0 pointer-events-none"></div>
+              
+              <div className="relative w-full h-full rounded-xl overflow-hidden bg-black z-10">
+                {event.flyer_url && <Image src={event.flyer_url} alt={event.title} fill priority sizes="(max-width: 768px) 100vw, 400px" className="object-cover group-hover:scale-105 transition-transform duration-1000" />}
+              </div>
             </div>
           </div>
         </div>
@@ -228,27 +233,27 @@ export default function EventDetail({ params }: { params: { id: string } }) {
                       </div>
                     )}
 
-                    <div className="flex justify-between items-center relative z-10">
-                      <div>
-                        <div className="flex items-center gap-2">
+                    <div className="flex justify-between items-center relative z-10 gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center flex-wrap gap-2">
                           <h4 className={`font-bold uppercase tracking-wider text-sm ${isSelected ? 'text-neon-green' : canBuy ? 'text-zinc-200' : 'text-zinc-600 line-through'}`}>
                             {ticket.name}
                           </h4>
-                          {!isStarted && <span className="bg-zinc-800 text-zinc-400 text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-widest">PRÓXIMAMENTE</span>}
-                          {isEnded && <span className="bg-red-900/40 text-red-500 text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-widest border border-red-900">CERRADO</span>}
-                          {!isAvailable && isStarted && !isEnded && <span className="bg-zinc-800 text-zinc-500 text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-widest">SOLD OUT</span>}
+                          {!isStarted && <span className="bg-zinc-800 text-zinc-400 text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-widest shrink-0">PRÓXIMAMENTE</span>}
+                          {isEnded && <span className="bg-red-900/40 text-red-500 text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-widest border border-red-900 shrink-0">CERRADO</span>}
+                          {!isAvailable && isStarted && !isEnded && <span className="bg-zinc-800 text-zinc-500 text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-widest shrink-0">SOLD OUT</span>}
                           {canBuy && (
-                             <span className="bg-neon-green/10 text-neon-green text-[8px] px-2 py-0.5 rounded font-black uppercase tracking-[0.2em] border border-neon-green/20 animate-pulse">DISPONIBLE AHORA</span>
+                             <span className="bg-neon-green/10 text-neon-green text-[8px] px-2 py-0.5 rounded font-black uppercase tracking-[0.2em] border border-neon-green/20 animate-pulse shrink-0 flex-initial">DISPONIBLE AHORA</span>
                           )}
                         </div>
-                        <p className="text-xs text-zinc-500 mt-0.5">{canBuy ? `${ticket.available} disponibles` : 'No disponible para compra'}</p>
+                        <p className="text-xs text-zinc-500 mt-1">{canBuy ? `${ticket.available} disponibles` : 'No disponible para compra'}</p>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 shrink-0">
                         <span className={`font-black text-lg ${canBuy ? 'text-white' : 'text-zinc-600'}`}>
                           {Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(ticket.price)}
                         </span>
                         {canBuy && (
-                          <div className={`w-4 h-4 rounded-full border-2 transition-all shrink-0 ${isSelected ? 'border-neon-green bg-neon-green' : 'border-zinc-600'}`} />
+                          <div className={`w-5 h-5 rounded-full border-2 transition-all shrink-0 ${isSelected ? 'border-neon-green bg-neon-green' : 'border-zinc-600'}`} />
                         )}
                       </div>
                     </div>
