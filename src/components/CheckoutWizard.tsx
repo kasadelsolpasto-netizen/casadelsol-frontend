@@ -305,7 +305,10 @@ export default function CheckoutWizard({
                 </button>
               </div>
 
-              <GoogleSignInButton className="mb-4" />
+              <GoogleSignInButton 
+                className="mb-4" 
+                returnUrl={typeof window !== 'undefined' ? window.location.pathname + window.location.search : ''} 
+              />
 
               <div className="flex items-center gap-4 mb-4">
                 <div className="h-[1px] flex-1 bg-zinc-800"></div>

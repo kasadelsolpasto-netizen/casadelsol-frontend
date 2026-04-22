@@ -5,13 +5,18 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 interface GoogleSignInButtonProps {
   label?: string;
   className?: string;
+  returnUrl?: string;
 }
 
 export function GoogleSignInButton({
   label = 'Continuar con Google',
   className = '',
+  returnUrl
 }: GoogleSignInButtonProps) {
   const handleClick = () => {
+    if (returnUrl && typeof window !== 'undefined') {
+      sessionStorage.setItem('kasa_return_url', returnUrl);
+    }
     // Redirige al backend que inicia el flujo con Google
     window.location.href = `${API_URL}/auth/google`;
   };

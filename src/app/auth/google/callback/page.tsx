@@ -29,7 +29,16 @@ function CallbackContent() {
       // Redirigir según el rol con recarga completa para que el Navbar global detecte el usuario
       if (user.role === 'OWNER') window.location.href = '/admin';
       else if (user.role === 'STAFF') window.location.href = '/scanner';
-      else window.location.href = `/profile/${user.id}`;
+      else {
+        // Redirigir
+        const returnUrl = sessionStorage.getItem('kasa_return_url');
+        if (returnUrl) {
+          sessionStorage.removeItem('kasa_return_url');
+          window.location.href = returnUrl;
+        } else {
+          window.location.href = `/profile/${user.id}`;
+        }
+      }
     } catch {
       router.push('/login?error=google_failed');
     }
