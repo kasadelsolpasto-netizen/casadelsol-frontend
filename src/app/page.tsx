@@ -62,7 +62,7 @@ export default async function Home() {
                   <div className="space-y-3 mb-6 flex-1">
                     <div className="flex items-center text-sm text-zinc-400 gap-3">
                       <Calendar className="w-4 h-4 text-neon-purple" />
-                      <span>{new Date(event.date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      <span>{new Date(event.date).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'short', year: 'numeric' })}</span>
                     </div>
                     <div className="flex items-center text-sm text-zinc-400 gap-3">
                       <MapPin className="w-4 h-4 text-neon-purple" />

@@ -17,7 +17,7 @@ export default function NewEventPage() {
     title: '', description: '', date: '', venue: ''
   });
   const [flyerUrl, setFlyerUrl] = useState<string>('');
-  const [ticketTypes, setTicketTypes] = useState([{ name: 'General', price: 60000, capacity: 100, sale_start: '', sale_end: '' }]);
+  const [ticketTypes, setTicketTypes] = useState([{ name: 'General', price: 60000, capacity: 100, sale_start: '', sale_end: '', hide_stock: false }]);
   const [uploading, setUploading] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -43,7 +43,7 @@ export default function NewEventPage() {
     setUploading(false);
   };
 
-  const handleTicketChange = (index: number, field: string, value: string) => {
+  const handleTicketChange = (index: number, field: string, value: any) => {
     const newTickets = [...ticketTypes];
     newTickets[index] = { ...newTickets[index], [field]: value };
     setTicketTypes(newTickets);
@@ -187,7 +187,7 @@ export default function NewEventPage() {
                      <h2 className="text-sm font-black uppercase tracking-widest text-zinc-300">Etapas de Venta</h2>
                    </div>
                    <button 
-                     onClick={() => setTicketTypes([...ticketTypes, { name: 'Siguiente Fase', price: 80000, capacity: 100, sale_start: '', sale_end: '' }])}
+                     onClick={() => setTicketTypes([...ticketTypes, { name: 'Siguiente Fase', price: 80000, capacity: 100, sale_start: '', sale_end: '', hide_stock: false }])}
                      className="bg-zinc-800 hover:bg-neon-green hover:text-black px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border border-zinc-700"
                    >
                      <Plus className="w-3 h-3" /> Añadir Nueva Etapa
@@ -228,6 +228,10 @@ export default function NewEventPage() {
                             <input type="number" placeholder="000" className="w-full bg-zinc-900/50 rounded-xl py-3 px-4 text-xl font-black text-white text-center outline-none border border-zinc-800 focus:border-white shadow-inner" 
                                value={t.capacity} onChange={e => handleTicketChange(index, 'capacity', e.target.value)} />
                             <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-tighter">Tickets</span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-2 pl-1">
+                            <input type="checkbox" id={`hideStock-${index}`} checked={t.hide_stock || false} onChange={e => handleTicketChange(index, 'hide_stock', e.target.checked)} className="accent-neon-purple w-3 h-3" />
+                            <label htmlFor={`hideStock-${index}`} className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest cursor-pointer">Ocultar Stock Exacto</label>
                           </div>
                         </div>
 

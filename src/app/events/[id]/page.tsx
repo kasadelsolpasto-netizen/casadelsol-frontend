@@ -251,7 +251,11 @@ export default function EventDetail({ params }: { params: { id: string } }) {
                              <span className="bg-neon-green/10 text-neon-green text-[8px] px-2 py-0.5 rounded font-black uppercase tracking-[0.2em] border border-neon-green/20 animate-pulse shrink-0 flex-initial">DISPONIBLE AHORA</span>
                           )}
                         </div>
-                        <p className="text-xs text-zinc-500 mt-1">{canBuy ? `${ticket.available} disponibles` : 'No disponible para compra'}</p>
+                        <p className={`text-xs mt-1 font-medium ${canBuy && ticket.hide_stock && ticket.available <= 20 ? 'text-orange-400 font-bold' : 'text-zinc-500'}`}>
+                          {!canBuy ? 'No disponible para compra' : 
+                           ticket.hide_stock ? (ticket.available > 20 ? 'Disponible ahora' : `¡Últimas ${ticket.available} entradas!`) : 
+                           `${ticket.available} disponibles`}
+                        </p>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         <span className={`font-black text-lg ${canBuy ? 'text-white' : 'text-zinc-600'}`}>
