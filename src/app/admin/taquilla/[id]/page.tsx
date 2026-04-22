@@ -8,7 +8,7 @@ export default function TaquillaEventPage({ params }: { params: { id: string } }
   const [sales, setSales] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [form, setForm] = useState({ name: '', cedula: '', email: '', amount: '', rating: 0, rating_comment: '' });
+  const [form, setForm] = useState({ name: '', cedula: '', email: '', amount: '', rating: 0, rating_comment: '', promoter_code: '' });
   const [error, setError] = useState('');
 
   const getToken = () => {
@@ -52,14 +52,15 @@ export default function TaquillaEventPage({ params }: { params: { id: string } }
           email: form.email || undefined,
           amount: Number(form.amount),
           rating: form.rating > 0 ? form.rating : undefined,
-          rating_comment: form.rating_comment || undefined
+          rating_comment: form.rating_comment || undefined,
+          promoter_code: form.promoter_code || undefined
         })
       });
 
       if (res.ok) {
         const newSale = await res.json();
         setSales(prev => [newSale, ...prev]);
-        setForm({ name: '', cedula: '', email: '', amount: '', rating: 0, rating_comment: '' });
+        setForm({ name: '', cedula: '', email: '', amount: '', rating: 0, rating_comment: '', promoter_code: '' });
         setSuccess(true);
         setTimeout(() => setSuccess(false), 2500);
       } else {
@@ -144,6 +145,12 @@ export default function TaquillaEventPage({ params }: { params: { id: string } }
               className="w-full bg-zinc-900/60 border border-zinc-800 rounded-lg py-3 px-4 text-white hover:border-zinc-600 focus:border-orange-500 outline-none transition-colors text-sm" />
           </div>
 
+          <div>
+            <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold block mb-1.5">Código Promotor <span className="text-zinc-600">(opcional)</span></label>
+            <input type="text" placeholder="Ej: JUANVIP5" value={form.promoter_code} onChange={e => setForm({...form, promoter_code: e.target.value.toUpperCase()})}
+              className="w-full bg-zinc-900/60 border border-zinc-800 rounded-lg py-3 px-4 text-white hover:border-zinc-600 focus:border-neon-purple outline-none transition-colors text-sm uppercase font-mono" />
+          </div>
+
           <div className="pt-2 border-t border-zinc-800 mt-2">
             <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black block mb-2">Calificación del Asistente (Interno)</label>
             <div className="flex gap-2 mb-3">
@@ -202,6 +209,11 @@ export default function TaquillaEventPage({ params }: { params: { id: string } }
                       {sale.email && <span className="text-[10px] text-zinc-500 font-bold">{sale.email}</span>}
                       {!sale.cedula && !sale.email && <span className="text-[10px] text-zinc-600 italic">Sin datos adicionales</span>}
                     </div>
+                    {sale.promoter_code && (
+                      <div className="inline-block bg-neon-purple/10 border border-neon-purple/30 rounded px-2 py-0.5 mt-1.5">
+                        <span className="text-[9px] text-neon-purple font-black uppercase tracking-widest font-mono">Promotor: {sale.promoter_code.code || sale.promoter_code}</span>
+                      </div>
+                    )}
                     {sale.rating && (
                       <div className="flex items-center gap-0.5 mt-1.5">
                         {[1, 2, 3, 4, 5].map((s) => (

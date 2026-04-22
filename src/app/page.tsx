@@ -8,7 +8,7 @@ import { InstallAppButton } from '@/components/InstallAppButton';
 export default async function Home() {
   let events = [];
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/events`, { cache: 'no-store' });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001'}/events`, { cache: 'no-store' });
     if (res.ok) events = await res.json();
   } catch (error) {
     console.error('Error fetching events:', error);

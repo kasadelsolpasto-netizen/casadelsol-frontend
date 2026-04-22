@@ -17,7 +17,10 @@ export default function EventDetail({ params }: { params: { id: string } }) {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/events/${params.id}`)
+    let apiEndpoint = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
+    if (apiEndpoint.includes('localhost')) apiEndpoint = apiEndpoint.replace('localhost', '127.0.0.1');
+
+    fetch(`${apiEndpoint}/events/${params.id}`)
       .then(res => res.json())
       .then(setEvent)
       .catch(console.error);
@@ -41,7 +44,7 @@ export default function EventDetail({ params }: { params: { id: string } }) {
     );
   }
 
-  const handleLaunchWompi = async (attendees: any[], hp: string, recaptchaToken: string) => {
+  const handleLaunchWompi = async (attendees: any[], hp: string, recaptchaToken: string, promoterCode?: string) => {
     setWizardError('');
     setWizardLoading(true);
     try {
@@ -63,7 +66,7 @@ export default function EventDetail({ params }: { params: { id: string } }) {
           'Authorization': `Bearer ${token}`,
           'recaptcha-token': recaptchaToken
         },
-        body: JSON.stringify({ attendees: payloadAttendees, hp })
+        body: JSON.stringify({ attendees: payloadAttendees, hp, promoter_code: promoterCode })
       });
 
       if (!res.ok) {
@@ -187,7 +190,9 @@ export default function EventDetail({ params }: { params: { id: string } }) {
             <h3 className="text-xl font-bold uppercase tracking-widest text-zinc-300 border-b border-zinc-800 pb-2 mb-4">
               Acerca del Evento
             </h3>
-            <p className="text-zinc-400 leading-relaxed whitespace-pre-line">{event.description}</p>
+            <div className="w-full overflow-hidden">
+              <p className="text-zinc-400 leading-relaxed whitespace-pre-line break-words break-all">{event.description}</p>
+            </div>
           </section>
         </div>
 

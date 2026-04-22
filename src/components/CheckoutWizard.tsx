@@ -7,12 +7,13 @@ import {
 } from 'lucide-react';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
+import { useSearchParams } from 'next/navigation';
 
 interface CheckoutWizardProps {
   isOpen: boolean;
   onClose: () => void;
   ticketType: any;
-  onLaunchWompi: (attendees: any[], hp: string, recaptchaToken: string) => void;
+  onLaunchWompi: (attendees: any[], hp: string, recaptchaToken: string, promoterCode?: string) => void;
   isLoading: boolean;
   error: string;
 }
@@ -54,7 +55,23 @@ export default function CheckoutWizard({
   // Confirm step: which idx is pending deletion confirmation
   const [deleteConfirmIdx, setDeleteConfirmIdx] = useState<number | null>(null);
 
+  const searchParams = useSearchParams();
+
+  // Promo code
+  const urlCode = searchParams?.get('ref') || searchParams?.get('promo') || '';
+  const [promoCode, setPromoCode] = useState(urlCode.toUpperCase());
+  const [discount, setDiscount] = useState<{perc: number, valid: boolean} | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState('');
+
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-validate code from URL when wizard opens
+  useEffect(() => {
+    if (isOpen && promoCode && !discount && !promoError) {
+      validatePromo();
+    }
+  }, [isOpen]);
 
   // On open: detect auth
   useEffect(() => {
@@ -74,6 +91,9 @@ export default function CheckoutWizard({
       setQuantity(1);
       setAttendees([EMPTY_ATTENDEE()]);
     }
+    setPromoCode('');
+    setDiscount(null);
+    setPromoError('');
   }, [isOpen]);
 
   // Sync attendees array size with quantity
@@ -91,7 +111,38 @@ export default function CheckoutWizard({
 
   const fmt = (n: number) =>
     Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n);
-  const totalPrice = (ticketType?.price || 0) * attendees.length;
+  
+  const baseTotalPrice = (ticketType?.price || 0) * attendees.length;
+  const totalPrice = discount ? baseTotalPrice * (1 - discount.perc / 100) : baseTotalPrice;
+
+  // ─── VALIDATE PROMO ────────────────────────────────────────────────────────
+  const validatePromo = async () => {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    setPromoError('');
+    try {
+      const tokenRow = document.cookie.split('; ').find(r => r.startsWith('kasa_auth_token='));
+      const token = tokenRow ? tokenRow.split('=')[1] : '';
+      const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      
+      const res = await fetch(`${API}/promoters/validate/${promoCode}?eventId=${ticketType?.event_id || ''}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.message || 'Código inválido');
+      }
+      
+      const data = await res.json();
+      setDiscount({ perc: data.discount_perc, valid: true });
+    } catch (err: any) {
+      setDiscount(null);
+      setPromoError(err.message);
+    } finally {
+      setPromoLoading(false);
+    }
+  };
 
   // ─── AUTH ────────────────────────────────────────────────────────────────────
   const handleAuth = async (e: React.FormEvent) => {
@@ -576,11 +627,48 @@ export default function CheckoutWizard({
                 </button>
               )}
 
+              {/* Promo code */}
+              {!(urlCode && urlCode.toUpperCase() === promoCode && discount && discount.perc === 0) && (
+                <div className="mb-4 bg-zinc-900/50 border border-zinc-800 rounded-xl p-3">
+                  <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black block mb-2">Código de Promotor (Opcional)</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={promoCode}
+                      onChange={e => {
+                        setPromoCode(e.target.value.toUpperCase());
+                        if (discount) setDiscount(null);
+                      }}
+                      placeholder="Escribe tu código"
+                      className="flex-1 bg-black border border-zinc-800 rounded-lg px-3 py-2 text-white text-sm focus:border-neon-purple outline-none uppercase font-mono"
+                    />
+                    <button 
+                      type="button"
+                      onClick={validatePromo}
+                      disabled={promoLoading || !promoCode.trim()}
+                      className="bg-zinc-800 text-white hover:bg-neon-purple text-xs font-black uppercase tracking-widest px-4 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      {promoLoading ? '...' : 'Aplicar'}
+                    </button>
+                  </div>
+                  {promoError && <p className="text-red-400 text-xs mt-2 font-bold">{promoError}</p>}
+                  {discount && (
+                    <p className="text-neon-green text-xs mt-2 font-black uppercase tracking-widest flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" /> 
+                      {discount.perc > 0 ? `Código aplicado: ${discount.perc}% de descuento` : 'Código de promotor vinculado exitosamente'}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Total bar */}
               <div className="flex justify-between items-center bg-neon-green/5 border border-neon-green/20 rounded-xl px-4 py-3.5 mb-4">
                 <div>
                   <p className="text-zinc-500 text-[10px] uppercase tracking-widest">{attendees.length}× {ticketType?.name}</p>
-                  <p className="text-white font-black text-lg leading-tight">{fmt(totalPrice)}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-white font-black text-lg leading-tight">{fmt(totalPrice)}</p>
+                    {discount && discount.perc > 0 && <p className="text-zinc-500 line-through text-xs font-bold">{fmt(baseTotalPrice)}</p>}
+                  </div>
                 </div>
                 <button onClick={() => { setExpandedIdx(null); setDeleteConfirmIdx(null); setStep('quantity'); }}
                   className="text-[10px] text-zinc-500 hover:text-white uppercase tracking-widest underline transition-colors">
@@ -598,7 +686,7 @@ export default function CheckoutWizard({
                   onClick={async () => {
                     if (!executeRecaptcha) return;
                     const token = await executeRecaptcha('checkout');
-                    onLaunchWompi(attendees, hp, token); 
+                    onLaunchWompi(attendees, hp, token, discount ? promoCode : undefined); 
                   }}
                   disabled={isLoading || !allConfirmValid}
                   className="flex-1 py-4 rounded-xl bg-neon-green text-black font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 hover:shadow-[0_0_25px_rgba(57,255,20,0.45)] disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.98]">
