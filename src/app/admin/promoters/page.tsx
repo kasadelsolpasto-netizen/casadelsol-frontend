@@ -112,7 +112,6 @@ export default function PromotersAdminPage() {
     }
   };
 
-  const filteredUsers = users.filter(u => u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <div className="p-8 pb-24 text-white max-w-7xl mx-auto">
