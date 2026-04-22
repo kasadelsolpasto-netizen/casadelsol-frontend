@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import {
   ShoppingBag, Plus, Minus, X, CreditCard,
   DollarSign, Loader2, Package, CheckCircle2,
-  ChevronRight,
+  ChevronRight, ArrowRight, User,
   ArrowLeft,
   ShoppingCart,
   Zap,

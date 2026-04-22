@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { 
-  ShoppingBag, Check7 as Check, X, Clock, 
+  ShoppingBag, Check, X, Clock, 
   Truck, DollarSign, User, Calendar, 
   Loader2, Search, Filter, AlertCircle,
   CreditCard,
