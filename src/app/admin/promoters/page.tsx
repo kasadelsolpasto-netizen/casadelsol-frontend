@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { Shield, Plus, CheckCircle2, XCircle, Ticket, Activity, Percent, Pencil, Trash2, X, Save, AlertTriangle } from 'lucide-react';
+import { Plus, CheckCircle2, XCircle, Ticket, Activity, Percent, Pencil, Trash2, X, Save, AlertTriangle, ChevronDown, ChevronUp, Trophy, MousePointerClick, ShoppingCart, TrendingUp } from 'lucide-react';
 
 interface PromoterCode {
   id: string;
@@ -36,6 +36,11 @@ export default function PromotersAdminPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+
+  // Stats por evento
+  const [statsByEvent, setStatsByEvent] = useState<any[]>([]);
+  const [openEventId, setOpenEventId] = useState<string | null>(null);
+
   useEffect(() => { fetchData(); }, []);
 
   const getToken = () => document.cookie.split('; ').find(r => r.startsWith('kasa_auth_token='))?.split('=')[1] || null;
@@ -46,12 +51,14 @@ export default function PromotersAdminPage() {
     try {
       const token = getToken();
       if (!token) return;
-      const [resCodes, resEvents] = await Promise.all([
+      const [resCodes, resEvents, resStats] = await Promise.all([
         fetch(`${API}/promoters`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API}/events/admin/all`, { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${API}/events/admin/all`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API}/promoters/stats-by-event`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       setCodes(await resCodes.json());
       setEvents((await resEvents.json()) || []);
+      setStatsByEvent(await resStats.json());
     } finally {
       setLoading(false);
     }
@@ -367,6 +374,167 @@ export default function PromotersAdminPage() {
         </div>
 
       </div>
+
+      {/* ══════════ RANKING POR EVENTO ══════════════════════════════════ */}
+      <section className="mt-14">
+        <div className="flex items-center gap-3 mb-6">
+          <Trophy className="w-7 h-7 text-yellow-400" />
+          <h2 className="text-2xl font-black uppercase tracking-widest">Ranking por Evento</h2>
+          <span className="text-xs text-zinc-500 font-bold uppercase tracking-widest ml-2">
+            {statsByEvent.length} grupo{statsByEvent.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+
+        {statsByEvent.length === 0 ? (
+          <div className="text-center py-12 text-zinc-500 border border-dashed border-zinc-800 rounded-xl font-bold uppercase tracking-widest text-sm">
+            No hay datos de promotores aún.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {statsByEvent.map((group: any) => {
+              const isOpen = openEventId === group.event.id;
+              const topPromoter = group.promoters[0];
+              const totalClicks = group.promoters.reduce((s: number, p: any) => s + p.clicks_count, 0);
+              const totalSales = group.promoters.reduce((s: number, p: any) => s + p.uses_count, 0);
+
+              return (
+                <div key={group.event.id} className={`border rounded-xl overflow-hidden transition-all duration-200 ${
+                  isOpen ? 'border-neon-purple/40 bg-neon-purple/5' : 'border-zinc-800 bg-zinc-900/40 hover:border-zinc-700'
+                }`}>
+
+                  {/* Header del evento — clickeable */}
+                  <button
+                    className="w-full flex items-center gap-4 p-4 text-left"
+                    onClick={() => setOpenEventId(isOpen ? null : group.event.id)}
+                  >
+                    {/* Flyer thumbnail */}
+                    {group.event.flyer_url ? (
+                      <img src={group.event.flyer_url} alt={group.event.title}
+                        className="w-12 h-12 rounded-lg object-cover shrink-0 opacity-80" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center shrink-0">
+                        <Ticket className="w-5 h-5 text-zinc-600" />
+                      </div>
+                    )}
+
+                    {/* Info evento */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-white truncate">{group.event.title}</p>
+                      <p className="text-xs text-zinc-500">
+                        {group.event.date ? new Date(group.event.date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Global'}
+                        {' · '}{group.promoters.length} promotor{group.promoters.length !== 1 ? 'es' : ''}
+                      </p>
+                    </div>
+
+                    {/* Resumen rápido */}
+                    <div className="hidden sm:flex items-center gap-4 shrink-0">
+                      <div className="text-center">
+                        <p className="font-black text-zinc-300 text-lg">{totalClicks}</p>
+                        <p className="text-[9px] text-zinc-500 uppercase tracking-widest">visitas</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="font-black text-neon-green text-lg">{totalSales}</p>
+                        <p className="text-[9px] text-zinc-500 uppercase tracking-widest">ventas</p>
+                      </div>
+                      {topPromoter && (
+                        <div className="bg-yellow-400/10 border border-yellow-400/20 rounded-lg px-3 py-1.5">
+                          <p className="text-[10px] text-yellow-400 font-black uppercase tracking-widest">🥇 {topPromoter.promoter_name || topPromoter.code}</p>
+                          <p className="text-[10px] text-zinc-400">{topPromoter.uses_count} venta{topPromoter.uses_count !== 1 ? 's' : ''}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {isOpen
+                      ? <ChevronUp className="w-5 h-5 text-neon-purple shrink-0" />
+                      : <ChevronDown className="w-5 h-5 text-zinc-500 shrink-0" />}
+                  </button>
+
+                  {/* Tabla de ranking (expandible) */}
+                  {isOpen && (
+                    <div className="border-t border-zinc-800/60">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="border-b border-zinc-800 text-[10px] uppercase tracking-widest text-zinc-500">
+                            <th className="py-2.5 px-5 font-bold">#</th>
+                            <th className="py-2.5 px-4 font-bold">Promotor / Código</th>
+                            <th className="py-2.5 px-4 font-bold text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <MousePointerClick className="w-3 h-3" /> Visitas
+                              </div>
+                            </th>
+                            <th className="py-2.5 px-4 font-bold text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <ShoppingCart className="w-3 h-3" /> Ventas
+                              </div>
+                            </th>
+                            <th className="py-2.5 px-4 font-bold text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <TrendingUp className="w-3 h-3" /> Conversión
+                              </div>
+                            </th>
+                            <th className="py-2.5 px-4 font-bold">Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {group.promoters.map((p: any, idx: number) => (
+                            <tr key={p.id} className={`border-b border-zinc-800/40 transition-colors ${
+                              idx === 0 ? 'bg-yellow-400/5' : 'hover:bg-zinc-800/20'
+                            }`}>
+                              {/* Posición */}
+                              <td className="py-3 px-5">
+                                <span className={`font-black text-lg ${
+                                  idx === 0 ? 'text-yellow-400' :
+                                  idx === 1 ? 'text-zinc-300' :
+                                  idx === 2 ? 'text-amber-700' : 'text-zinc-600'
+                                }`}>
+                                  {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`}
+                                </span>
+                              </td>
+                              {/* Promotor */}
+                              <td className="py-3 px-4">
+                                <p className="font-bold text-sm text-white">{p.promoter_name || '—'}</p>
+                                <p className="text-[11px] text-zinc-500">{p.promoter_email}</p>
+                                <p className="font-mono text-[10px] text-neon-green mt-0.5">{p.code}</p>
+                              </td>
+                              {/* Visitas */}
+                              <td className="py-3 px-4 text-center">
+                                <span className="font-black text-zinc-300 text-base">{p.clicks_count}</span>
+                              </td>
+                              {/* Ventas */}
+                              <td className="py-3 px-4 text-center">
+                                <span className={`font-black text-base ${
+                                  p.uses_count > 0 ? 'text-neon-green' : 'text-zinc-600'
+                                }`}>{p.uses_count}</span>
+                              </td>
+                              {/* Conversión */}
+                              <td className="py-3 px-4 text-center">
+                                <span className={`text-xs font-black px-2 py-1 rounded-full ${
+                                  p.conversion >= 20 ? 'bg-neon-green/20 text-neon-green' :
+                                  p.conversion >= 5 ? 'bg-yellow-400/20 text-yellow-400' :
+                                  'bg-zinc-800 text-zinc-500'
+                                }`}>{p.conversion}%</span>
+                              </td>
+                              {/* Estado */}
+                              <td className="py-3 px-4">
+                                <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+                                  p.is_active ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
+                                }`}>
+                                  {p.is_active ? 'ACTIVO' : 'INACTIVO'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
     </div>
   );
 }
