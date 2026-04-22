@@ -40,7 +40,8 @@ export default function PromotersAdminPage() {
 
   const fetchData = async () => {
     try {
-      const token = JSON.parse(localStorage.getItem('kasa_user') || '{}').token;
+      const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
+      const token = tokenRow ? tokenRow.split('=')[1] : null;
       if (!token) return;
 
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -64,7 +65,8 @@ export default function PromotersAdminPage() {
     e.preventDefault();
     setFormLoading(true);
     try {
-      const token = JSON.parse(localStorage.getItem('kasa_user') || '{}').token;
+      const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
+      const token = tokenRow ? tokenRow.split('=')[1] : null;
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       const res = await fetch(`${API_URL}/promoters`, {
         method: 'POST',
@@ -96,7 +98,8 @@ export default function PromotersAdminPage() {
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      const token = JSON.parse(localStorage.getItem('kasa_user') || '{}').token;
+      const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
+      const token = tokenRow ? tokenRow.split('=')[1] : null;
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       await fetch(`${API_URL}/promoters/${id}/toggle`, {
         method: 'PATCH',
