@@ -91,21 +91,21 @@ export default function EventDetail({ params }: { params: { id: string } }) {
 
       // Pre-llenar datos del comprador (primer asistente) para que no los repita en Wompi
       const buyer = attendees[0];
+      const customerData: Record<string, string> = {
+        phoneNumberPrefix: '+57',
+        legalIdType: 'CC',
+      };
+      if (buyer?.attendee_email) customerData.email = buyer.attendee_email;
+      if (buyer?.attendee_name) customerData.fullName = buyer.attendee_name;
+      if (buyer?.attendee_dni) customerData.legalId = buyer.attendee_dni;
+
       const checkout = new (window as any).WidgetCheckout({
         currency: 'COP',
         amountInCents: data.amountInCents,
         reference: orderId,
         publicKey: data.publicKey,
         signature: { integrity: data.signature },
-        ...(buyer && {
-          customerData: {
-            email: buyer.attendee_email || undefined,
-            fullName: buyer.attendee_name || undefined,
-            legalId: buyer.attendee_dni || undefined,
-            legalIdType: 'CC',
-            phoneNumberPrefix: '+57',
-          }
-        })
+        customerData,
       });
 
       checkout.open(async (result: any) => {
