@@ -39,7 +39,7 @@ export default async function EventsFeed() {
             </div>
             
             <div className="p-6">
-              <h2 className="text-2xl font-bold uppercase tracking-wider text-white group-hover:text-neon-green transition-colors mb-4 line-clamp-1">
+              <h2 className="text-2xl font-bold uppercase tracking-wider text-white group-hover:text-white group-hover:drop-shadow-[0_0_10px_rgba(57,255,20,0.8)] transition-all mb-4 line-clamp-1">
                 {event.title}
               </h2>
               
