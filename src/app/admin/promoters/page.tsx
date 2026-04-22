@@ -24,6 +24,7 @@ interface User {
 export default function PromotersAdminPage() {
   const [codes, setCodes] = useState<PromoterCode[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,15 +42,18 @@ export default function PromotersAdminPage() {
       if (!token) return;
 
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const [resCodes, resUsers] = await Promise.all([
+      const [resCodes, resUsers, resEvents] = await Promise.all([
         fetch(`${API_URL}/promoters`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_URL}/users/admin/all?limit=100`, { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${API_URL}/users/admin/all?limit=50`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_URL}/events/admin/all`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       const codesData = await resCodes.json();
       const usersData = await resUsers.json();
+      const eventsData = await resEvents.json();
       
       setCodes(codesData);
       setUsers(usersData.users || []);
+      setEvents(eventsData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -60,6 +64,32 @@ export default function PromotersAdminPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Búsqueda dinámica de usuarios en el backend
+  useEffect(() => {
+    const fetchUsersDynamic = async () => {
+      if (!searchTerm || searchTerm.length < 3) return;
+      try {
+        const token = JSON.parse(localStorage.getItem('kasa_user') || '{}').token;
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const res = await fetch(`${API_URL}/users/admin/all?limit=20&search=${searchTerm}`, { headers: { Authorization: `Bearer ${token}` } });
+        const data = await res.json();
+        setUsers(prev => {
+          const newUsers = data.users || [];
+          const combined = [...newUsers, ...prev]; // Los nuevos primero para la vista
+          const uniqueIds = new Set();
+          return combined.filter((u: any) => {
+            if (uniqueIds.has(u.id)) return false;
+            uniqueIds.add(u.id);
+            return true;
+          });
+        });
+      } catch (error) {}
+    };
+    
+    const timeout = setTimeout(fetchUsersDynamic, 500);
+    return () => clearTimeout(timeout);
+  }, [searchTerm]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,14 +221,18 @@ export default function PromotersAdminPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">ID Evento Específico (Opcional)</label>
-                <input 
-                  type="text"
-                  placeholder="Dejar vacío para Todos los Eventos"
+                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Evento Específico (Opcional)</label>
+                <select 
                   value={formData.event_id}
                   onChange={(e) => setFormData({...formData, event_id: e.target.value})}
-                  className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-3 text-sm focus:border-neon-purple outline-none font-mono"
-                />
+                  className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-3 text-sm focus:border-neon-purple outline-none"
+                >
+                  <option value="">-- Todos los Eventos --</option>
+                  {events.map(e => (
+                    <option key={e.id} value={e.id}>{e.title} - {new Date(e.date).toLocaleDateString('es-CO')}</option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-zinc-500 mt-1 uppercase tracking-wider">Si lo dejas en "Todos los Eventos", el código funcionará en cualquier compra.</p>
               </div>
 
               <button 
