@@ -57,36 +57,33 @@ export default function CheckoutWizard({
 
   const searchParams = useSearchParams();
 
-  // Promo code
+  // Promo code — se carga desde URL o localStorage
   const urlCode = searchParams?.get('ref') || searchParams?.get('promo') || '';
-  const [promoCode, setPromoCode] = useState(urlCode.toUpperCase());
 
-  useEffect(() => {
-    // Si no hay codigo en la URL, intentamos sacar el que se haya guardado del PromoTracker
-    if (!urlCode) {
-      const stored = localStorage.getItem('kasa_promo_code');
-      if (stored) setPromoCode(stored);
-    }
-  }, [urlCode]);
+  const getInitialPromoCode = () => {
+    if (urlCode) return urlCode.toUpperCase();
+    try { return (localStorage.getItem('kasa_promo_code') || '').toUpperCase(); } catch { return ''; }
+  };
 
+  const [promoCode, setPromoCode] = useState(getInitialPromoCode);
   const [discount, setDiscount] = useState<{perc: number, valid: boolean} | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState('');
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-validate code from URL when wizard opens
-  useEffect(() => {
-    if (isOpen && promoCode && !discount && !promoError) {
-      validatePromo();
-    }
-  }, [isOpen]);
-
-  // On open: detect auth
+  // On open: detect auth — NO borramos el promoCode para que llegue pre-llenado
   useEffect(() => {
     if (!isOpen) return;
     setDeleteConfirmIdx(null);
     setExpandedIdx(null);
+    setDiscount(null);
+    setPromoError('');
+
+    // Recargar código desde URL o localStorage cada vez que se abre
+    const freshCode = urlCode.toUpperCase() || (localStorage.getItem('kasa_promo_code') || '').toUpperCase();
+    setPromoCode(freshCode);
+
     const token = document.cookie.split('; ').find(r => r.startsWith('kasa_auth_token='))?.split('=')[1];
     if (token) {
       try {
@@ -100,10 +97,14 @@ export default function CheckoutWizard({
       setQuantity(1);
       setAttendees([EMPTY_ATTENDEE()]);
     }
-    setPromoCode('');
-    setDiscount(null);
-    setPromoError('');
   }, [isOpen]);
+
+  // Auto-validar el código cuando el wizard abre y ya hay un código guardado
+  useEffect(() => {
+    if (isOpen && promoCode && !discount && !promoError) {
+      validatePromo();
+    }
+  }, [isOpen, promoCode]);
 
   // Sync attendees array size with quantity
   useEffect(() => {
@@ -640,16 +641,34 @@ export default function CheckoutWizard({
               )}
 
               {/* Promo code */}
-              {!(urlCode && urlCode.toUpperCase() === promoCode && discount && discount.perc === 0) && (
-                <div className="mb-4 bg-zinc-900/50 border border-zinc-800 rounded-xl p-3">
-                  <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black block mb-2">Código de Promotor (Opcional)</label>
+              <div className="mb-4 bg-zinc-900/50 border border-zinc-800 rounded-xl p-3">
+                <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black block mb-2">Código de Promotor (Opcional)</label>
+                {discount ? (
+                  // Modo confirmado: mostrar código bloqueado con opción de borrar
+                  <div className="flex items-center gap-2 bg-neon-green/10 border border-neon-green/30 rounded-lg px-3 py-2">
+                    <CheckCircle className="w-4 h-4 text-neon-green shrink-0" />
+                    <span className="flex-1 text-neon-green font-black text-sm uppercase font-mono tracking-widest">{promoCode}</span>
+                    <span className="text-neon-green text-xs font-black">
+                      {discount.perc > 0 ? `−${discount.perc}%` : '✓ Vinculado'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => { setDiscount(null); setPromoCode(''); localStorage.removeItem('kasa_promo_code'); }}
+                      className="text-zinc-500 hover:text-red-400 transition-colors ml-1"
+                      title="Quitar código"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  // Modo edición
                   <div className="flex gap-2">
                     <input 
                       type="text" 
                       value={promoCode}
                       onChange={e => {
                         setPromoCode(e.target.value.toUpperCase());
-                        if (discount) setDiscount(null);
+                        setPromoError('');
                       }}
                       placeholder="Escribe tu código"
                       className="flex-1 bg-black border border-zinc-800 rounded-lg px-3 py-2 text-white text-sm focus:border-neon-purple outline-none uppercase font-mono"
@@ -663,15 +682,9 @@ export default function CheckoutWizard({
                       {promoLoading ? '...' : 'Aplicar'}
                     </button>
                   </div>
-                  {promoError && <p className="text-red-400 text-xs mt-2 font-bold">{promoError}</p>}
-                  {discount && (
-                    <p className="text-neon-green text-xs mt-2 font-black uppercase tracking-widest flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3" /> 
-                      {discount.perc > 0 ? `Código aplicado: ${discount.perc}% de descuento` : 'Código de promotor vinculado exitosamente'}
-                    </p>
-                  )}
-                </div>
-              )}
+                )}
+                {promoError && <p className="text-red-400 text-xs mt-2 font-bold">{promoError}</p>}
+              </div>
 
               {/* Total bar */}
               <div className="flex justify-between items-center bg-neon-green/5 border border-neon-green/20 rounded-xl px-4 py-3.5 mb-4">
