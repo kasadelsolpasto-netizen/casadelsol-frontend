@@ -89,36 +89,37 @@ export default function EventDetail({ params }: { params: { id: string } }) {
          throw new Error('Cargando servidor seguro de pagos... por favor intenta nuevamente en unos segundos.');
       }
 
-      // Pre-llenar datos del comprador (primer asistente) para que no los repita en Wompi
+      // Pre-llenar datos del comprador — Wompi widget SOLO acepta email y fullName
       const buyer = attendees[0];
-      const customerData: Record<string, string> = {
-        phoneNumberPrefix: '+57',
-        legalIdType: 'CC',
-      };
+      const customerData: Record<string, string> = {};
       if (buyer?.attendee_email) customerData.email = buyer.attendee_email;
       if (buyer?.attendee_name) customerData.fullName = buyer.attendee_name;
-      if (buyer?.attendee_dni) customerData.legalId = buyer.attendee_dni;
 
-      const checkout = new (window as any).WidgetCheckout({
+      const widgetConfig = {
         currency: 'COP',
         amountInCents: data.amountInCents,
         reference: orderId,
         publicKey: data.publicKey,
         signature: { integrity: data.signature },
-        customerData,
-      });
+        ...(Object.keys(customerData).length > 0 && { customerData }),
+      };
 
+      console.log('[Wompi] Config widget:', JSON.stringify({ ...widgetConfig, signature: '***' }));
+      console.log('[Wompi] WidgetCheckout disponible:', typeof (window as any).WidgetCheckout);
+
+      const checkout = new (window as any).WidgetCheckout(widgetConfig);
+      console.log('[Wompi] checkout creado:', checkout);
+
+      // IMPORTANTE: setWizardLoading(false) va DENTRO del callback, no en finally.
+      // Si va en finally, React re-renderiza ANTES de que Wompi abra su popup y lo puede bloquear.
       checkout.open(async (result: any) => {
+        console.log('[Wompi] resultado:', result);
+        setWizardLoading(false);
         const tx = result.transaction;
         setShowWizard(false);
 
         if (tx.status === 'APPROVED') {
           setSuccess('¡Pago aprobado! Registrando tu compra...');
-
-          // ── FALLBACK CRÍTICO ────────────────────────────────────────────────
-          // Llamamos al backend para completar la orden y generar los QRs.
-          // Esto funciona aunque el webhook de Wompi no haya llegado.
-          // Si el webhook llegó primero, el endpoint es idempotente (no duplica).
           try {
             const confirmRes = await fetch(`${API}/orders/confirm-ticket-payment`, {
               method: 'POST',
@@ -126,10 +127,7 @@ export default function EventDetail({ params }: { params: { id: string } }) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
               },
-              body: JSON.stringify({
-                orderId,
-                wompiTransactionId: tx.id,
-              }),
+              body: JSON.stringify({ orderId, wompiTransactionId: tx.id }),
             });
             if (!confirmRes.ok) {
               console.error('[ticket-confirm] Error en fallback:', await confirmRes.text());
@@ -137,12 +135,8 @@ export default function EventDetail({ params }: { params: { id: string } }) {
               console.log('[ticket-confirm] ✅ Orden confirmada exitosamente.');
             }
           } catch (confirmErr) {
-            // No bloqueamos el flujo del usuario si el fallback falla —
-            // el webhook aún puede llegar y completar la orden.
             console.error('[ticket-confirm] Excepción en fallback:', confirmErr);
           }
-          // ────────────────────────────────────────────────────────────────────
-
           setTimeout(() => {
             const userPayload = JSON.parse(decodeURIComponent(escape(atob(token.split('.')[1]))));
             router.push(`/profile/${userPayload.id || userPayload.sub}`);
@@ -151,9 +145,10 @@ export default function EventDetail({ params }: { params: { id: string } }) {
           setWizardError(`Estado: ${tx.status}. Intenta de nuevo.`);
         }
       });
+
     } catch (err: any) {
+      console.error('[Wompi] ERROR:', err);
       setWizardError(err.message);
-    } finally {
       setWizardLoading(false);
     }
   };
