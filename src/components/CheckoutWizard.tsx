@@ -60,6 +60,15 @@ export default function CheckoutWizard({
   // Promo code
   const urlCode = searchParams?.get('ref') || searchParams?.get('promo') || '';
   const [promoCode, setPromoCode] = useState(urlCode.toUpperCase());
+
+  useEffect(() => {
+    // Si no hay codigo en la URL, intentamos sacar el que se haya guardado del PromoTracker
+    if (!urlCode) {
+      const stored = localStorage.getItem('kasa_promo_code');
+      if (stored) setPromoCode(stored);
+    }
+  }, [urlCode]);
+
   const [discount, setDiscount] = useState<{perc: number, valid: boolean} | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState('');

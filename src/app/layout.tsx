@@ -4,6 +4,7 @@ import "./globals.css";
 import { NavbarWrapper } from "@/components/NavbarWrapper";
 import RecaptchaProvider from "@/components/RecaptchaProvider";
 import { GlobalOrderReadyAlert } from "@/components/GlobalOrderReadyAlert";
+import { PromoTracker } from "@/components/PromoTracker";
 
 const outfit = Outfit({ subsets: ["latin"] });
 
@@ -37,6 +38,7 @@ export default function RootLayout({
           <NavbarWrapper />
 
           <GlobalOrderReadyAlert />
+          <PromoTracker />
 
           <main className="min-h-screen z-10 relative">
             {children}

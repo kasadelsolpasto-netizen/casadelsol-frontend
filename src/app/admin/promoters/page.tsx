@@ -9,6 +9,7 @@ interface PromoterCode {
   event_id: string | null;
   discount_perc: number;
   uses_count: number;
+  clicks_count: number;
   is_active: boolean;
   created_at: string;
   promoter: { name: string; email: string };
@@ -227,8 +228,10 @@ export default function PromotersAdminPage() {
                       <th className="py-3 px-4 font-bold">Código</th>
                       <th className="py-3 px-4 font-bold">Promotor</th>
                       <th className="py-3 px-4 font-bold">Descuento</th>
-                      <th className="py-3 px-4 font-bold">Usos</th>
+                      <th className="py-3 px-4 font-bold text-center">Visitas</th>
+                      <th className="py-3 px-4 font-bold text-center">Ventas</th>
                       <th className="py-3 px-4 font-bold">Estado</th>
+                      <th className="py-3 px-4 font-bold">Enlace</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -248,7 +251,8 @@ export default function PromotersAdminPage() {
                             <span className="text-zinc-600">-</span>
                           )}
                         </td>
-                        <td className="py-4 px-4 font-bold text-xl">{c.uses_count}</td>
+                        <td className="py-4 px-4 font-bold text-xl text-center text-zinc-400">{c.clicks_count || 0}</td>
+                        <td className="py-4 px-4 font-bold text-xl text-center text-neon-green">{c.uses_count}</td>
                         <td className="py-4 px-4">
                           <button 
                             onClick={() => toggleActive(c.id, c.is_active)}
@@ -257,6 +261,17 @@ export default function PromotersAdminPage() {
                             {c.is_active ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                             {c.is_active ? 'ACTIVO' : 'INACTIVO'}
                           </button>
+                        </td>
+                        <td className="py-4 px-4">
+                           <button onClick={() => {
+                              const link = c.event_id 
+                                ? `https://kasadelsol.co/events/${c.event_id}?promo=${c.code}`
+                                : `https://kasadelsol.co/?promo=${c.code}`;
+                              navigator.clipboard.writeText(link);
+                              alert('¡Enlace copiado al portapapeles!');
+                           }} className="text-xs font-bold uppercase tracking-widest bg-zinc-800 hover:bg-neon-purple hover:text-white px-3 py-2 rounded transition-colors text-zinc-300 whitespace-nowrap">
+                             Copiar Link
+                           </button>
                         </td>
                       </tr>
                     ))}
