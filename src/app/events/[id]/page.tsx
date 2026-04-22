@@ -4,6 +4,7 @@ import { ArrowLeft, Calendar, MapPin } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
+import Image from 'next/image';
 import CheckoutWizard from '@/components/CheckoutWizard';
 
 export default function EventDetail({ params }: { params: { id: string } }) {
@@ -74,6 +75,10 @@ export default function EventDetail({ params }: { params: { id: string } }) {
       // Guardamos el orderId para el fallback post-pago
       const orderId: string = data.reference;
 
+      if (typeof (window as any).WidgetCheckout !== 'function') {
+         throw new Error('Cargando servidor seguro de pagos... por favor intenta nuevamente en unos segundos.');
+      }
+
       const checkout = new (window as any).WidgetCheckout({
         currency: 'COP',
         amountInCents: data.amountInCents,
@@ -135,12 +140,12 @@ export default function EventDetail({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen pb-20">
-      <Script src="https://checkout.wompi.co/widget.js" strategy="lazyOnload" />
+      <Script src="https://checkout.wompi.co/widget.js" strategy="afterInteractive" />
 
       {/* Hero */}
       <div className="relative w-full min-h-[60vh] border-b border-zinc-800 flex items-center justify-center p-6 md:p-12 overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <img src={event.flyer_url} alt="background" className="w-full h-full object-cover blur-3xl opacity-30 transform scale-125" />
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          {event.flyer_url && <Image src={event.flyer_url} alt="background" fill priority sizes="100vw" className="object-cover blur-3xl opacity-30 transform scale-125" />}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
         </div>
 
@@ -163,8 +168,8 @@ export default function EventDetail({ params }: { params: { id: string } }) {
           </div>
 
           <div className="w-full md:w-1/2 order-1 md:order-2 flex justify-center md:justify-end">
-            <div className="relative w-full max-w-sm shadow-[0_0_50px_rgba(0,0,0,0.7)] group transform md:rotate-3 hover:rotate-0 transition-transform duration-500 rounded-2xl overflow-hidden border border-zinc-800">
-              <img src={event.flyer_url} alt={event.title} className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-1000" />
+            <div className="relative w-full max-w-sm aspect-[4/5] shadow-[0_0_50px_rgba(0,0,0,0.7)] group transform md:rotate-3 hover:rotate-0 transition-transform duration-500 rounded-2xl overflow-hidden border border-zinc-800">
+              {event.flyer_url && <Image src={event.flyer_url} alt={event.title} fill priority sizes="(max-width: 768px) 100vw, 400px" className="object-cover group-hover:scale-105 transition-transform duration-1000" />}
             </div>
           </div>
         </div>

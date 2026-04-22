@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Script from 'next/script';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 export default function PublicShopPage() {
@@ -122,6 +123,12 @@ export default function PublicShopPage() {
             const shopItemsForConfirmation = result.items || [];
             const shopTotalForConfirmation = result.total || 0;
             
+            if (typeof (window as any).WidgetCheckout !== 'function') {
+               alert('Cargando servidor seguro de pagos... por favor intenta nuevamente en unos segundos.');
+               setIsCheckingOut(false);
+               return;
+            }
+
             const checkout = new (window as any).WidgetCheckout({
               currency: 'COP',
               amountInCents: result.wompiData.amountInCents,
@@ -241,7 +248,7 @@ export default function PublicShopPage() {
 
   return (
     <div className="min-h-screen bg-[#050505] pb-32">
-      <Script src="https://checkout.wompi.co/widget.js" strategy="lazyOnload" />
+      <Script src="https://checkout.wompi.co/widget.js" strategy="afterInteractive" />
       
       {/* Dynamic Header */}
       <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-zinc-900 px-6 py-6 flex justify-between items-center overflow-hidden">
@@ -274,7 +281,7 @@ export default function PublicShopPage() {
                 <div key={p.id} className="bg-zinc-950 border border-zinc-900 rounded-[2.5rem] p-4 flex flex-col group active:scale-[0.98] transition-all">
                    <div className="relative mb-4 aspect-square rounded-[2rem] overflow-hidden bg-zinc-900 border border-zinc-800 shadow-inner">
                       {p.image_url ? (
-                        <img src={p.image_url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <Image src={p.image_url} alt="" fill sizes="(max-width: 768px) 50vw, 250px" className="object-cover group-hover:scale-110 transition-transform duration-500" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center"><Package className="w-8 h-8 text-zinc-800" /></div>
                       )}
@@ -330,7 +337,9 @@ export default function PublicShopPage() {
               <div className="space-y-6">
                  {cart.map(item => (
                    <div key={item.product.id} className="flex gap-4 items-center">
-                      <img src={item.product.image_url} alt="" className="w-20 h-20 rounded-2xl object-cover bg-zinc-900 border border-zinc-800" />
+                      <div className="relative w-20 h-20 shrink-0 rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800">
+                         {item.product.image_url && <Image src={item.product.image_url} alt="" fill sizes="80px" className="object-cover" />}
+                      </div>
                       <div className="flex-1">
                          <h4 className="text-sm font-bold text-white uppercase">{item.product.name}</h4>
                          <p className="text-orange-500 font-black text-xs">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(item.product.price)}</p>

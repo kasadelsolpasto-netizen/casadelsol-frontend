@@ -6,6 +6,14 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'snbqdxtrlvymswgqhxky.supabase.co',
+      },
+    ],
+  },
   async headers() {
     return [
       {
