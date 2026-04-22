@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, DollarSign, Users, Ticket, Download, DoorOpen } from 'lucide-react';
+import { ArrowLeft, Loader2, DollarSign, Users, Ticket, Download, DoorOpen, ArrowRight, CheckCircle } from 'lucide-react';
 
 export default function EventSalesStatsPage({ params }: { params: { id: string } }) {
   const [data, setData] = useState<any>(null);
@@ -99,6 +99,41 @@ export default function EventSalesStatsPage({ params }: { params: { id: string }
           </div>
           <p className="text-3xl md:text-4xl font-black tracking-tighter">${totalCombinedRevenue.toLocaleString()} <span className="text-xs text-zinc-600">COP</span></p>
           <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-bold">Online + Efectivo</p>
+        </div>
+      </div>
+
+      {/* ANALITICA DE CONVERSION */}
+      <h2 className="text-lg font-black uppercase tracking-widest text-white mb-4 mt-8 flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-pink-500 inline-block"></span> Embudo de Conversión
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
+        <div className="glass-panel p-6 rounded-2xl border-t-2 border-t-yellow-500 bg-black">
+          <div className="flex items-center gap-2 mb-3 text-yellow-500">
+            <Users className="w-5 h-5" />
+            <h3 className="font-black uppercase tracking-widest text-[10px]">Visitas a la Página</h3>
+          </div>
+          <p className="text-3xl md:text-4xl font-black tracking-tighter">{data.event.page_views || 0} <span className="text-xs text-zinc-600">USUARIOS</span></p>
+          <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-bold">Vistas únicas por sesión</p>
+        </div>
+
+        <div className="glass-panel p-6 rounded-2xl border-t-2 border-t-pink-500 bg-black">
+          <div className="flex items-center gap-2 mb-3 text-pink-500">
+            <ArrowRight className="w-5 h-5" />
+            <h3 className="font-black uppercase tracking-widest text-[10px]">Interacción de Compra</h3>
+          </div>
+          <p className="text-3xl md:text-4xl font-black tracking-tighter">{data.event.checkout_clicks || 0} <span className="text-xs text-zinc-600">CLICS</span></p>
+          <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-bold">Aperturas del Checkout</p>
+        </div>
+
+        <div className="glass-panel p-6 rounded-2xl border-t-2 border-t-neon-green bg-black">
+          <div className="flex items-center gap-2 mb-3 text-neon-green">
+            <CheckCircle className="w-5 h-5" />
+            <h3 className="font-black uppercase tracking-widest text-[10px]">Ventas Totales</h3>
+          </div>
+          <p className="text-3xl md:text-4xl font-black tracking-tighter">{data.totalTicketsSold || 0} <span className="text-xs text-zinc-600">TICKETS</span></p>
+          <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-bold">
+             Conversión: {data.event.page_views > 0 ? Math.round((data.totalTicketsSold / data.event.page_views) * 100) : 0}%
+          </p>
         </div>
       </div>
 

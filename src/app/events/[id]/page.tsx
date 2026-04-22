@@ -20,6 +20,13 @@ export default function EventDetail({ params }: { params: { id: string } }) {
     let apiEndpoint = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
     if (apiEndpoint.includes('localhost')) apiEndpoint = apiEndpoint.replace('localhost', '127.0.0.1');
 
+    // View Tracking
+    const trackedKey = `kasa_event_view_${params.id}`;
+    if (!sessionStorage.getItem(trackedKey)) {
+      sessionStorage.setItem(trackedKey, 'true');
+      fetch(`${apiEndpoint}/events/${params.id}/view`, { method: 'POST' }).catch(() => {});
+    }
+
     fetch(`${apiEndpoint}/events/${params.id}`)
       .then(res => res.json())
       .then(setEvent)
@@ -272,7 +279,18 @@ export default function EventDetail({ params }: { params: { id: string } }) {
             </div>
 
             <button
-              onClick={() => { if (selectedTicket) setShowWizard(true); }}
+              onClick={() => { 
+                if (selectedTicket) {
+                  // Track Checkout Click
+                  const trackedClickKey = `kasa_event_click_${params.id}`;
+                  if (!sessionStorage.getItem(trackedClickKey)) {
+                    sessionStorage.setItem(trackedClickKey, 'true');
+                    const apiEndpoint = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
+                    fetch(`${apiEndpoint}/events/${params.id}/click`, { method: 'POST' }).catch(() => {});
+                  }
+                  setShowWizard(true); 
+                }
+              }}
               disabled={!selectedTicket}
               className="w-full mt-6 bg-neon-green text-black font-black uppercase tracking-widest py-4 rounded-xl hover:shadow-[0_0_20px_rgba(57,255,20,0.4)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >

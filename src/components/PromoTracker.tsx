@@ -13,9 +13,13 @@ function PromoTrackerLogic() {
       // Guardar en localStorage para que se aplique automáticamente al checkout
       localStorage.setItem('kasa_promo_code', promo.toUpperCase());
       
-      // Registrar la visita en el backend
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      fetch(`${API_URL}/promoters/click/${promo}`, { method: 'POST' }).catch(() => {});
+      // Registrar la visita en el backend solo una vez por sesión
+      const trackedKey = `kasa_tracked_${promo.toUpperCase()}`;
+      if (!sessionStorage.getItem(trackedKey)) {
+        sessionStorage.setItem(trackedKey, 'true');
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        fetch(`${API_URL}/promoters/click/${promo}`, { method: 'POST' }).catch(() => {});
+      }
     }
   }, [searchParams]);
 
