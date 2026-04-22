@@ -89,12 +89,23 @@ export default function EventDetail({ params }: { params: { id: string } }) {
          throw new Error('Cargando servidor seguro de pagos... por favor intenta nuevamente en unos segundos.');
       }
 
+      // Pre-llenar datos del comprador (primer asistente) para que no los repita en Wompi
+      const buyer = attendees[0];
       const checkout = new (window as any).WidgetCheckout({
         currency: 'COP',
         amountInCents: data.amountInCents,
         reference: orderId,
         publicKey: data.publicKey,
-        signature: { integrity: data.signature }
+        signature: { integrity: data.signature },
+        ...(buyer && {
+          customerData: {
+            email: buyer.attendee_email || undefined,
+            fullName: buyer.attendee_name || undefined,
+            legalId: buyer.attendee_dni || undefined,
+            legalIdType: 'CC',
+            phoneNumberPrefix: '+57',
+          }
+        })
       });
 
       checkout.open(async (result: any) => {
