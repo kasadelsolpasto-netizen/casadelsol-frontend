@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { Shield, Plus, CheckCircle2, XCircle, Search, Ticket, Activity, Percent } from 'lucide-react';
-import api from '@/lib/api';
 
 interface PromoterCode {
   id: string;
@@ -41,12 +40,16 @@ export default function PromotersAdminPage() {
       const token = JSON.parse(localStorage.getItem('kasa_user') || '{}').token;
       if (!token) return;
 
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       const [resCodes, resUsers] = await Promise.all([
-        api.get('/promoters', { headers: { Authorization: `Bearer ${token}` } }),
-        api.get('/users/admin/all?limit=100', { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${API_URL}/promoters`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_URL}/users/admin/all?limit=100`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
-      setCodes(resCodes.data);
-      setUsers(resUsers.data.users || []);
+      const codesData = await resCodes.json();
+      const usersData = await resUsers.json();
+      
+      setCodes(codesData);
+      setUsers(usersData.users || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -63,18 +66,30 @@ export default function PromotersAdminPage() {
     setFormLoading(true);
     try {
       const token = JSON.parse(localStorage.getItem('kasa_user') || '{}').token;
-      await api.post('/promoters', {
-        code: formData.code,
-        promoter_id: formData.promoter_id,
-        discount_perc: Number(formData.discount_perc),
-        event_id: formData.event_id || undefined,
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const res = await fetch(`${API_URL}/promoters`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          code: formData.code,
+          promoter_id: formData.promoter_id,
+          discount_perc: Number(formData.discount_perc),
+          event_id: formData.event_id || undefined,
+        })
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.message || 'Error al crear código');
+      }
+      
       setFormData({ code: '', promoter_id: '', discount_perc: 0, event_id: '' });
       fetchData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Error al crear código');
+      alert(error.message || 'Error al crear código');
     } finally {
       setFormLoading(false);
     }
@@ -83,8 +98,14 @@ export default function PromotersAdminPage() {
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
       const token = JSON.parse(localStorage.getItem('kasa_user') || '{}').token;
-      await api.patch(`/promoters/${id}/toggle`, { is_active: !currentStatus }, {
-        headers: { Authorization: `Bearer ${token}` }
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      await fetch(`${API_URL}/promoters/${id}/toggle`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ is_active: !currentStatus })
       });
       fetchData();
     } catch (error) {
