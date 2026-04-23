@@ -3,6 +3,7 @@ import Image from 'next/image';
 export const dynamic = 'force-dynamic';
 import { ArrowLeft, ArrowRight, Calendar, MapPin, Tag } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
+import { WhatsAppButton } from '@/components/WhatsAppButton';
 
 export default async function Home() {
   let events = [];
@@ -83,6 +84,8 @@ export default async function Home() {
           })}
         </div>
       </main>
+      
+      <WhatsAppButton className="bottom-6 right-4 md:right-6" />
     </div>
   );
 }

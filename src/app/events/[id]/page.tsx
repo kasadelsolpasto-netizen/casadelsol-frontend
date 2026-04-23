@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import Image from 'next/image';
 import CheckoutWizard from '@/components/CheckoutWizard';
+import { WhatsAppButton } from '@/components/WhatsAppButton';
 
 export default function EventDetail({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -383,6 +384,8 @@ export default function EventDetail({ params }: { params: { id: string } }) {
         isLoading={wizardLoading}
         error={wizardError}
       />
+      
+      <WhatsAppButton className="bottom-[90px] lg:bottom-6 right-4 lg:right-6" />
     </div>
   );
 }
