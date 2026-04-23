@@ -264,6 +264,8 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   const isStaff = profile?.role === 'STAFF' || profile?.role === 'OWNER';
   const passwordsMatch = newPassword.length >= 8 && newPassword === confirmPassword;
 
+  const normalOrders = profile?.orders?.filter((o: any) => o?.qr_codes?.length > 0 && o?.payment_ref !== 'COURTESY') || [];
+
   return (
     <div className="min-h-screen pb-20 bg-[#050505] overflow-x-hidden">
       {/* STAFF NAV */}
