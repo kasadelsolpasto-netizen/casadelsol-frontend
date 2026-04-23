@@ -60,10 +60,10 @@ export default function ScannerPage() {
       .then((all: any[]) => {
         const now = new Date();
         const cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // hace 30 días
-        // Eventos pasados o de hoy, ordenados del más reciente al más antiguo
+        // Eventos desde hace 7 días hacia el futuro, ordenados del más próximo al más lejano
         const recent = all
-          .filter(ev => new Date(ev.date) <= now)
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          .filter(ev => new Date(ev.date).getTime() >= now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
           .slice(0, 10); // máximo 10
         setEvents(recent);
       })
