@@ -31,6 +31,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   const [profileMsg, setProfileMsg] = useState('');
   const [passMsg, setPassMsg] = useState('');
   const [showAllEvents, setShowAllEvents] = useState(false);
+  const [showAllPromos, setShowAllPromos] = useState(false);
   const [showAllShop, setShowAllShop] = useState(false);
   const [qrPages, setQrPages] = useState<Record<string, number>>({});
   const [isFirstLoad, setIsFirstLoad] = useState(false);
@@ -117,6 +118,9 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
         fetchProfile();
       }
     });
+
+  const normalOrders = profile?.orders?.filter((o: any) => o?.qr_codes?.length > 0 && o?.payment_ref !== 'COURTESY') || [];
+  const promoOrders = profile?.orders?.filter((o: any) => o?.qr_codes?.length > 0 && o?.payment_ref === 'COURTESY') || [];
 
     return () => { socket.disconnect(); };
   }, [profile]);
@@ -305,9 +309,9 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                     <Ticket className="w-6 h-6 text-neon-green" /> Boletas de Eventos
                  </h2>
                  <div className="space-y-4">
-                    {profile?.orders?.filter((o: any) => o?.qr_codes?.length > 0).length > 0 ? (
+                    {normalOrders.length > 0 ? (
                        <>
-                          {(showAllEvents ? profile?.orders?.filter((o: any) => o?.qr_codes?.length > 0) : profile?.orders?.filter((o: any) => o?.qr_codes?.length > 0).slice(0, 3)).map((order: any) => (
+                          {(showAllEvents ? normalOrders : normalOrders.slice(0, 3)).map((order: any) => (
                              <div key={order?.id} className="p-6 bg-zinc-950 border border-zinc-900 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-6">
                              <div className="text-center md:text-left">
                                 <p className="text-white font-black uppercase text-xl">{order?.order_items?.[0]?.ticket_type?.event?.title || 'Evento Kasa'}</p>
@@ -403,12 +407,12 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                              </div>
                           </div>
                        ))}
-                       {profile?.orders?.filter((o: any) => o?.qr_codes?.length > 0).length > 3 && (
+                       {normalOrders.length > 3 && (
                           <button 
                              onClick={() => setShowAllEvents(!showAllEvents)}
                              className="w-full py-4 bg-zinc-900 border border-zinc-800 hover:bg-neon-green hover:text-black hover:border-neon-green text-zinc-400 font-black uppercase tracking-widest rounded-2xl transition-all"
                           >
-                             {showAllEvents ? 'Ver menos' : `Ver todos los eventos (${profile?.orders?.filter((o: any) => o?.qr_codes?.length > 0).length})`}
+                             {showAllEvents ? 'Ver menos' : `Ver todos los eventos (${normalOrders.length})`}
                           </button>
                        )}
                        </>

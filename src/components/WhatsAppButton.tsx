@@ -3,7 +3,7 @@ import { MessageCircle } from "lucide-react";
 
 export function WhatsAppButton({ className = "" }: { className?: string }) {
   // El número debe incluir el código de país sin el '+'
-  const whatsappUrl = "https://wa.me/573000000000?text=Hola,%20necesito%20ayuda%20con%20Kasa%20del%20Sol"; 
+  const whatsappUrl = "https://wa.me/573234760800?text=Hola,%20necesito%20ayuda%20con%20Kasa%20del%20Sol"; 
 
   return (
     <a 

@@ -162,9 +162,10 @@ export function Navbar() {
 
          {user && (
            <>
-              <Link href={`/profile/${user.id}`} className={`flex flex-col items-center gap-1 group relative ${pathname?.includes('promos') ? 'text-pink-500' : 'text-zinc-600 hover:text-zinc-300'}`}>
-                 <Tag className="w-6 h-6 transition-all group-hover:scale-110" />
+              <Link href={`/promos`} className={`flex flex-col items-center gap-1 group relative ${pathname?.includes('promos') ? 'text-orange-500' : 'text-zinc-600 hover:text-zinc-300'}`}>
+                 <Tag className={`w-6 h-6 transition-all ${pathname?.includes('promos') ? 'drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'group-hover:scale-110'}`} />
                  <span className="text-[8px] font-black uppercase tracking-wider">Promos</span>
+                 {pathname?.includes('promos') && <div className="absolute -bottom-2 w-1 h-1 rounded-full bg-orange-500 shadow-[0_0_10px_#f97316]" />}
               </Link>
 
               <Link href={`/profile/${user.id}`} className={`flex flex-col items-center gap-1 group relative ${pathname?.includes(user.id) && !pathname?.includes('promos') ? 'text-neon-purple' : 'text-zinc-600 hover:text-zinc-300'}`}>
