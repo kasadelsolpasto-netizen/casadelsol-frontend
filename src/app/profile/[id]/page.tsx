@@ -29,6 +29,8 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [profileMsg, setProfileMsg] = useState('');
   const [passMsg, setPassMsg] = useState('');
+  const [showAllEvents, setShowAllEvents] = useState(false);
+  const [showAllShop, setShowAllShop] = useState(false);
 
   const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://casadelsol.app';
 
@@ -193,6 +195,96 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
            <div className="lg:col-span-2 space-y-16">
               
+              {/* SECCIÓN BOLETAS DE EVENTOS */}
+              <section>
+                 <h2 className="text-xl font-black uppercase tracking-widest text-white flex items-center gap-3 mb-8">
+                    <Ticket className="w-6 h-6 text-neon-green" /> Boletas de Eventos
+                 </h2>
+                 <div className="space-y-4">
+                    {profile?.orders?.filter((o: any) => o?.qr_codes?.length > 0).length > 0 ? (
+                       <>
+                          {(showAllEvents ? profile?.orders?.filter((o: any) => o?.qr_codes?.length > 0) : profile?.orders?.filter((o: any) => o?.qr_codes?.length > 0).slice(0, 3)).map((order: any) => (
+                             <div key={order?.id} className="p-6 bg-zinc-950 border border-zinc-900 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-6">
+                             <div className="text-center md:text-left">
+                                <p className="text-white font-black uppercase text-xl">{order?.order_items?.[0]?.ticket_type?.event?.title || 'Evento Kasa'}</p>
+                                <p className="text-neon-green font-bold text-sm tracking-widest uppercase">{order?.order_items?.[0]?.ticket_type?.name}</p>
+                             </div>
+                             <div className="flex flex-wrap gap-6 justify-center">
+                                {order?.qr_codes?.map((qr: any) => {
+                                   const isBurned = !!qr.used_at;
+                                   return (
+                                      <div key={qr?.id} className="flex flex-col items-center gap-2">
+                                         {/* QR BOX */}
+                                         <div className="relative">
+                                            <div 
+                                               onClick={() => !isBurned && setSelectedQr(qr)} 
+                                               className={`relative w-24 h-24 p-2.5 rounded-2xl transition-all duration-500 shadow-xl ${
+                                                  isBurned 
+                                                  ? 'bg-zinc-900 opacity-50 scale-95 translate-y-2 z-0' 
+                                                  : 'bg-white cursor-pointer hover:neon-border-primary z-10'
+                                               }`}
+                                            >
+                                               {/* Aplicamos grayscale SOLO al código QR si está quemado, no al contenedor entero para no opacar la etiqueta */}
+                                               <div className={isBurned ? "grayscale brightness-50" : ""}>
+                                                  <QRCodeSVG value={`${BASE_URL}/ticket/${qr?.token_hash}`} size={75} />
+                                               </div>
+                                            </div>
+                                            
+                                            {/* Etiqueta USADA fuera del contenedor grayscale para que conserve su color rojo vivo */}
+                                            {isBurned && (
+                                               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                                                  <div className="bg-red-600 text-[10px] font-black text-white px-2 py-1 rounded uppercase tracking-tighter border-2 border-red-800 rotate-[-12deg] shadow-[0_0_15px_rgba(220,38,38,0.8)]">USADA</div>
+                                               </div>
+                                            )}
+                                         </div>
+
+                                         <p className="text-white text-[10px] font-bold uppercase text-center w-full max-w-[96px] truncate" title={qr.attendee_name || profile?.name}>
+                                            {qr.attendee_name || profile?.name}
+                                         </p>
+
+                                         {/* Botones de Compartir */}
+                                         {!isBurned && (
+                                            <div className="flex gap-2 mt-1">
+                                               <button 
+                                                  onClick={(e) => handleShare(e, qr.token_hash, order?.order_items?.[0]?.ticket_type?.event?.title)}
+                                                  className="w-8 h-8 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center text-zinc-400 hover:text-white hover:bg-neon-purple transition-all shadow-lg active:scale-90"
+                                                  title="Compartir"
+                                               >
+                                                  <Share2 className="w-4 h-4" />
+                                               </button>
+                                               <button 
+                                                  onClick={(e) => shareWhatsApp(e, qr.token_hash, order?.order_items?.[0]?.ticket_type?.event?.title, qr.attendee_name || profile?.name)}
+                                                  className="w-8 h-8 bg-[#25D366]/10 border border-[#25D366]/20 rounded-xl flex items-center justify-center text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all shadow-lg active:scale-90"
+                                                  title="Compartir por WhatsApp"
+                                               >
+                                                  <MessageCircle className="w-4 h-4" />
+                                               </button>
+                                            </div>
+                                         )}
+                                      </div>
+                                   );
+                                })}
+                             </div>
+                          </div>
+                       ))}
+                       {profile?.orders?.filter((o: any) => o?.qr_codes?.length > 0).length > 3 && (
+                          <button 
+                             onClick={() => setShowAllEvents(!showAllEvents)}
+                             className="w-full py-4 bg-zinc-900 border border-zinc-800 hover:bg-neon-green hover:text-black hover:border-neon-green text-zinc-400 font-black uppercase tracking-widest rounded-2xl transition-all"
+                          >
+                             {showAllEvents ? 'Ver menos' : `Ver todos los eventos (${profile?.orders?.filter((o: any) => o?.qr_codes?.length > 0).length})`}
+                          </button>
+                       )}
+                       </>
+                    ) : (
+                       <div className="p-12 border-2 border-dashed border-zinc-900 rounded-[3rem] text-center">
+                          <Ticket className="w-10 h-10 text-zinc-800 mx-auto mb-4" />
+                          <p className="text-zinc-600 text-xs font-black uppercase tracking-widest">Aún no tienes boletas</p>
+                       </div>
+                    )}
+                 </div>
+              </section>
+
               {/* SECCIÓN SHOP */}
               <section>
                  <h2 className="text-xl font-black uppercase tracking-widest text-white flex items-center gap-3 mb-8">
@@ -200,7 +292,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                  </h2>
                  {profile?.shop_orders?.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                       {profile?.shop_orders?.map((order: any) => {
+                       {(showAllShop ? profile?.shop_orders : profile?.shop_orders?.slice(0, 3)).map((order: any) => {
                           const isReady = order?.status === 'READY';
                           const isPaid = ['PAID', 'READY', 'DELIVERED'].includes(order?.status);
                           return (
@@ -213,30 +305,40 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                 </div>
                                 <div className="flex items-center gap-6">
                                    {order?.status === 'DELIVERED' ? (
-                                      <div className="w-24 h-24 rounded-3xl bg-zinc-900 flex flex-col items-center justify-center border-2 border-zinc-800">
+                                      <div className="w-24 h-24 rounded-3xl bg-zinc-900 flex flex-col items-center justify-center border-2 border-zinc-800 shrink-0">
                                          <CheckCircle className="w-8 h-8 text-zinc-700 mb-1" />
                                          <span className="text-[7px] font-black text-zinc-700 uppercase">Entregado</span>
                                       </div>
                                    ) : isPaid ? (
-                                      <div onClick={() => setSelectedShopQr(order)} className={`w-24 h-24 p-3 bg-white rounded-3xl cursor-pointer hover:scale-105 transition-all ${isReady ? 'ring-4 ring-neon-green' : ''}`}>
+                                      <div onClick={() => setSelectedShopQr(order)} className={`w-24 h-24 p-3 bg-white rounded-3xl cursor-pointer hover:scale-105 transition-all shrink-0 ${isReady ? 'ring-4 ring-neon-green' : ''}`}>
                                          <QRCodeSVG value={`KASA_SHOP_DELIVER:${order?.id}:${order?.verification_token || 'legacy'}`} size={72} />
                                       </div>
                                    ) : (
-                                      <div className="w-24 h-24 rounded-3xl bg-orange-500/10 flex flex-col items-center justify-center border-2 border-orange-500/20">
+                                      <div className="w-24 h-24 rounded-3xl bg-orange-500/10 flex flex-col items-center justify-center border-2 border-orange-500/20 shrink-0">
                                          <DollarSign className="w-8 h-8 text-orange-500 mb-1" />
                                          <span className="text-[7px] font-black text-orange-500 uppercase">Por Pagar</span>
                                       </div>
                                    )}
-                                   <div className="flex-1">
-                                      <p className="text-xs font-bold text-zinc-400 mb-1">
+                                   <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-bold text-zinc-400 mb-1 truncate">
                                          {isReady ? '¡TU PEDIDO ESTÁ LISTO!' : order?.status === 'PENDING' ? 'Paga en la barra' : 'Preparando...'}
                                       </p>
-                                      <p className="text-2xl font-black text-white">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(order?.total || 0)}</p>
+                                      <p className="text-2xl font-black text-white truncate">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(order?.total || 0)}</p>
                                    </div>
                                 </div>
                              </div>
                           );
                        })}
+                       {profile?.shop_orders?.length > 3 && (
+                          <div className="md:col-span-2">
+                             <button 
+                                onClick={() => setShowAllShop(!showAllShop)}
+                                className="w-full py-4 bg-zinc-900 border border-zinc-800 hover:bg-orange-500 hover:text-white hover:border-orange-500 text-zinc-400 font-black uppercase tracking-widest rounded-2xl transition-all"
+                             >
+                                {showAllShop ? 'Ver menos' : `Ver todos los pedidos (${profile?.shop_orders?.length})`}
+                             </button>
+                          </div>
+                       )}
                     </div>
                  ) : (
                     <div className="p-12 border-2 border-dashed border-zinc-900 rounded-[3rem] text-center">
@@ -244,68 +346,6 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                        <p className="text-zinc-600 text-xs font-black uppercase tracking-widest">Aún no hay pedidos en la barra</p>
                     </div>
                  )}
-              </section>
-
-              {/* SECCIÓN BOLETAS DE EVENTOS */}
-              <section>
-                 <h2 className="text-xl font-black uppercase tracking-widest text-white flex items-center gap-3 mb-8">
-                    <Ticket className="w-6 h-6 text-neon-green" /> Boletas de Eventos
-                 </h2>
-                 <div className="space-y-4">
-                    {profile?.orders?.map((order: any) => (
-                       <div key={order?.id} className="p-6 bg-zinc-950 border border-zinc-900 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-6">
-                          <div>
-                             <p className="text-white font-black uppercase text-xl">{order?.order_items?.[0]?.ticket_type?.event?.title || 'Evento Kasa'}</p>
-                             <p className="text-neon-green font-bold text-sm tracking-widest uppercase">{order?.order_items?.[0]?.ticket_type?.name}</p>
-                          </div>
-                          <div className="flex flex-wrap gap-6 justify-center">
-                             {order?.qr_codes?.map((qr: any) => {
-                                const isBurned = !!qr.used_at;
-                                return (
-                                   <div key={qr?.id} className="flex flex-col items-center gap-3">
-                                      {/* QR BOX con Efecto Quemado/Atrás */}
-                                      <div 
-                                         onClick={() => !isBurned && setSelectedQr(qr)} 
-                                         className={`relative w-24 h-24 p-2.5 rounded-2xl transition-all duration-500 shadow-xl ${
-                                            isBurned 
-                                            ? 'bg-zinc-900 opacity-20 grayscale brightness-50 scale-90 translate-y-3 z-0' 
-                                            : 'bg-white cursor-pointer hover:neon-border-primary z-10'
-                                         }`}
-                                      >
-                                         <QRCodeSVG value={`${BASE_URL}/ticket/${qr?.token_hash}`} size={75} />
-                                         {isBurned && (
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                               <div className="bg-red-600/90 text-[7px] font-black text-white px-1.5 py-0.5 rounded uppercase tracking-tighter border border-white/20 rotate-[-12deg]">USADA</div>
-                                            </div>
-                                         )}
-                                      </div>
-
-                                      {/* Botones de Compartir (Siempe Visibles debajo) */}
-                                      {!isBurned && (
-                                         <div className="flex gap-2">
-                                            <button 
-                                               onClick={(e) => handleShare(e, qr.token_hash, order?.order_items?.[0]?.ticket_type?.event?.title)}
-                                               className="w-8 h-8 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center text-zinc-400 hover:text-white hover:bg-neon-purple transition-all shadow-lg active:scale-90"
-                                               title="Compartir"
-                                            >
-                                               <Share2 className="w-4 h-4" />
-                                            </button>
-                                            <button 
-                                               onClick={(e) => shareWhatsApp(e, qr.token_hash, order?.order_items?.[0]?.ticket_type?.event?.title, qr.attendee_name || profile?.name)}
-                                               className="w-8 h-8 bg-[#25D366]/10 border border-[#25D366]/20 rounded-xl flex items-center justify-center text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all shadow-lg active:scale-90"
-                                               title="Compartir por WhatsApp"
-                                            >
-                                               <MessageCircle className="w-4 h-4" />
-                                            </button>
-                                         </div>
-                                      )}
-                                   </div>
-                                );
-                             })}
-                          </div>
-                       </div>
-                    ))}
-                 </div>
               </section>
            </div>
            

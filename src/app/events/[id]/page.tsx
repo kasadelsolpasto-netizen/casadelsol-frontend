@@ -10,11 +10,12 @@ import CheckoutWizard from '@/components/CheckoutWizard';
 export default function EventDetail({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [event, setEvent] = useState<any>(null);
-  const [selectedTicket, setSelectedTicket] = useState<any>(null); // full ticket object
+  const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [showWizard, setShowWizard] = useState(false);
   const [wizardLoading, setWizardLoading] = useState(false);
   const [wizardError, setWizardError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showVaultAnim, setShowVaultAnim] = useState(false);
 
   useEffect(() => {
     let apiEndpoint = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
@@ -85,7 +86,7 @@ export default function EventDetail({ params }: { params: { id: string } }) {
 
         setWizardLoading(false);
         setShowWizard(false);
-        setSuccess('¡Entrada gratuita registrada! Revisa tu perfil para ver tu QR.');
+        setShowVaultAnim(true);
         setTimeout(() => {
           const userPayload = JSON.parse(decodeURIComponent(escape(atob(token.split('.')[1]))));
           router.push(`/profile/${userPayload.id || userPayload.sub}`);
@@ -138,24 +139,17 @@ export default function EventDetail({ params }: { params: { id: string } }) {
         setShowWizard(false);
 
         if (tx.status === 'APPROVED') {
-          setSuccess('¡Pago aprobado! Registrando tu compra...');
+          // Mostrar animación de bóveda inmediatamente
+          setShowWizard(false);
+          setShowVaultAnim(true);
           try {
             const confirmRes = await fetch(`${API}/orders/confirm-ticket-payment`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-              },
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
               body: JSON.stringify({ orderId, wompiTransactionId: tx.id }),
             });
-            if (!confirmRes.ok) {
-              console.error('[ticket-confirm] Error en fallback:', await confirmRes.text());
-            } else {
-              console.log('[ticket-confirm] ✅ Orden confirmada exitosamente.');
-            }
-          } catch (confirmErr) {
-            console.error('[ticket-confirm] Excepción en fallback:', confirmErr);
-          }
+            if (!confirmRes.ok) console.error('[ticket-confirm] Error:', await confirmRes.text());
+          } catch (confirmErr) { console.error('[ticket-confirm] Error:', confirmErr); }
           setTimeout(() => {
             const userPayload = JSON.parse(decodeURIComponent(escape(atob(token.split('.')[1]))));
             router.push(`/profile/${userPayload.id || userPayload.sub}`);
@@ -173,6 +167,28 @@ export default function EventDetail({ params }: { params: { id: string } }) {
   };
 
 
+
+  // ── Animación de bóveda ──────────────────────────────────────
+  if (showVaultAnim) {
+    return (
+      <div className="fixed inset-0 z-[999] bg-black flex flex-col items-center justify-center overflow-hidden">
+        {/* Scanlines */}
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(transparent, transparent 2px, rgba(0,0,0,0.4) 2px, rgba(0,0,0,0.4) 4px)' }} />
+        {/* Glow ring */}
+        <div className="absolute w-[500px] h-[500px] rounded-full border border-neon-green/10 animate-ping" />
+        <div className="absolute w-[300px] h-[300px] rounded-full border border-neon-green/20 animate-ping" style={{ animationDelay: '0.3s' }} />
+        {/* Spinner ring */}
+        <div className="w-32 h-32 rounded-full border-4 border-zinc-900 border-t-neon-green animate-spin mb-10" />
+        {/* Texto glitch */}
+        <div className="relative text-center">
+          <span className="absolute text-neon-green/30 text-2xl font-black uppercase tracking-[0.5em] blur-[3px] translate-x-[3px] -translate-y-[3px]">ABRIENDO LA BÓVEDA</span>
+          <span className="absolute text-neon-purple/40 text-2xl font-black uppercase tracking-[0.5em] blur-[2px] -translate-x-[2px] translate-y-[2px]">ABRIENDO LA BÓVEDA</span>
+          <span className="relative text-white text-2xl font-black uppercase tracking-[0.5em]">ABRIENDO LA BÓVEDA</span>
+        </div>
+        <p className="mt-6 text-zinc-600 text-xs uppercase tracking-widest animate-pulse">Tu entrada está siendo generada…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-20">

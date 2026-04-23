@@ -53,10 +53,21 @@ export default function ScannerPage() {
 
   const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-  // Cargar lista de eventos
+  // Cargar lista de eventos — solo los recientes (últimos 30 días) y pasados
   useEffect(() => {
     fetch(`${API}/events`, { headers: { Authorization: `Bearer ${getToken()}` } })
-      .then(r => r.json()).then(setEvents).catch(() => {});
+      .then(r => r.json())
+      .then((all: any[]) => {
+        const now = new Date();
+        const cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // hace 30 días
+        // Eventos pasados o de hoy, ordenados del más reciente al más antiguo
+        const recent = all
+          .filter(ev => new Date(ev.date) <= now)
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          .slice(0, 10); // máximo 10
+        setEvents(recent);
+      })
+      .catch(() => {});
   }, []);
 
   // Resumen taquilla cuando cambia el evento activo
