@@ -3,7 +3,6 @@ import Image from 'next/image';
 export const dynamic = 'force-dynamic';
 import { ArrowLeft, ArrowRight, Calendar, MapPin, Tag } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
-import { InstallAppButton } from '@/components/InstallAppButton';
 
 export default async function Home() {
   let events = [];
@@ -82,11 +81,6 @@ export default async function Home() {
             </Link>
             );
           })}
-        </div>
-
-        {/* PWA Instalador Móvil */}
-        <div className="mt-16 flex justify-center">
-          <InstallAppButton />
         </div>
       </main>
     </div>

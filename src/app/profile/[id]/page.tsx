@@ -5,11 +5,11 @@ import {
   Ticket, User, Star, CheckCircle, 
   X, Share2, Gift, Zap, 
   TicketPercent, Loader2, ShoppingBag, MessageCircle, DollarSign,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, Upload
 } from 'lucide-react';
+import { UserAvatar, AVATAR_OPTIONS } from '@/components/UserAvatar';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
-import { InstallAppButton } from '@/components/InstallAppButton';
 import { io } from 'socket.io-client';
 
 const BENEFIT_ICONS: Record<string, any> = {
@@ -34,6 +34,8 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   const [showAllShop, setShowAllShop] = useState(false);
   const [qrPages, setQrPages] = useState<Record<string, number>>({});
   const [isFirstLoad, setIsFirstLoad] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [updatingAvatar, setUpdatingAvatar] = useState(false);
 
   const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://casadelsol.app';
 
@@ -54,6 +56,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
         const data = await res.json();
         setProfile(data);
         setNewName(data.name);
+        sessionStorage.setItem(`kasa_profile_${params.id}`, JSON.stringify(data));
         
         // Fetch Benefits
         try {
@@ -75,10 +78,27 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   };
 
   useEffect(() => {
-    if (!sessionStorage.getItem('vault_initialized')) {
+    const lastVisited = sessionStorage.getItem('vault_last_visited');
+    const now = Date.now();
+    const FIVE_MINUTES = 5 * 60 * 1000;
+    const isExpired = !lastVisited || (now - parseInt(lastVisited, 10)) > FIVE_MINUTES;
+
+    if (isExpired) {
       setIsFirstLoad(true);
-      sessionStorage.setItem('vault_initialized', 'true');
+      setLoading(true);
+    } else {
+      const cachedProfile = sessionStorage.getItem(`kasa_profile_${params.id}`);
+      if (cachedProfile) {
+        try {
+          const data = JSON.parse(cachedProfile);
+          setProfile(data);
+          setNewName(data.name);
+          setLoading(false);
+        } catch (e) {}
+      }
     }
+
+    sessionStorage.setItem('vault_last_visited', now.toString());
     fetchProfile();
   }, [params.id, router]);
 
@@ -114,6 +134,43 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
       });
       if (res.ok) setProfileMsg('¡Actualizado!');
     } catch (err) {}
+  };
+
+  const handleUpdateAvatar = async (avatarId: string) => {
+    setUpdatingAvatar(true);
+    const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
+    const token = tokenRow ? tokenRow.split('=')[1] : null;
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/${params.id}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ avatar: avatarId })
+      });
+      if (res.ok) {
+        setProfile({ ...profile, avatar: avatarId });
+        setShowAvatarModal(false);
+        // Also update local storage so Navbar updates!
+        const lsUser = localStorage.getItem('kasa_user');
+        if (lsUser) {
+           const parsed = JSON.parse(lsUser);
+           parsed.avatar = avatarId;
+           localStorage.setItem('kasa_user', JSON.stringify(parsed));
+           window.dispatchEvent(new Event('storage'));
+        }
+        // Update profile cache
+        const pc = sessionStorage.getItem(`kasa_profile_${params.id}`);
+        if (pc) {
+           const pParsed = JSON.parse(pc);
+           pParsed.avatar = avatarId;
+           sessionStorage.setItem(`kasa_profile_${params.id}`, JSON.stringify(pParsed));
+        }
+      }
+    } catch(e) {}
+    setUpdatingAvatar(false);
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -220,10 +277,15 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
 
       <main className="max-w-6xl mx-auto px-6 py-12">
         <header className="flex flex-col md:flex-row items-center gap-8 mb-16 pb-12 border-b border-zinc-900">
-           <div className="w-32 h-32 rounded-full bg-zinc-900 border-2 border-neon-purple p-1">
-              <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
-                 <User className="w-12 h-12 text-zinc-800" />
-              </div>
+           <div className="relative group/avatar w-32 h-32">
+              <UserAvatar avatarId={profile?.avatar} className="w-full h-full border-2 border-neon-purple p-1" iconClassName="w-16 h-16 text-zinc-600" />
+              <button 
+                onClick={() => setShowAvatarModal(true)} 
+                className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-zinc-800 border border-zinc-600 flex items-center justify-center text-zinc-400 hover:bg-neon-purple hover:text-black hover:border-neon-purple transition-all shadow-lg z-10"
+                title="Cambiar Diseño"
+              >
+                <Upload className="w-4 h-4" />
+              </button>
            </div>
            <div className="text-center md:text-left">
               <h1 className="text-4xl md:text-5xl font-black uppercase text-white mb-2">{profile?.name}</h1>
@@ -495,6 +557,49 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
           100% { transform: translate(1px, -2px) rotate(-1deg); }
         }
       `}</style>
+      {/* Modal de Selección de Avatar */}
+      {showAvatarModal && (
+        <div className="fixed inset-0 z-[1000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-8 max-w-lg w-full relative shadow-2xl">
+            <button 
+              onClick={() => setShowAvatarModal(false)}
+              className="absolute top-6 right-6 text-zinc-500 hover:text-white transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <h2 className="text-2xl font-black uppercase text-white mb-2">Diseño de Identidad</h2>
+            <p className="text-sm text-zinc-500 mb-8">Elige una silueta que represente tu estilo en la pista.</p>
+            
+            <div className="grid grid-cols-5 gap-4">
+              {AVATAR_OPTIONS.map((opt) => {
+                const Icon = opt.icon;
+                const isSelected = profile?.avatar === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => handleUpdateAvatar(opt.id)}
+                    disabled={updatingAvatar}
+                    className={`aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 border transition-all ${
+                      isSelected 
+                      ? 'bg-neon-purple/20 border-neon-purple text-neon-purple shadow-[0_0_15px_rgba(168,85,247,0.4)]' 
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white hover:border-zinc-600'
+                    }`}
+                    title={opt.label}
+                  >
+                    <Icon className="w-8 h-8" />
+                  </button>
+                );
+              })}
+            </div>
+            {updatingAvatar && (
+              <div className="absolute inset-0 bg-black/60 rounded-3xl flex items-center justify-center backdrop-blur-sm">
+                <Loader2 className="w-8 h-8 text-neon-purple animate-spin" />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

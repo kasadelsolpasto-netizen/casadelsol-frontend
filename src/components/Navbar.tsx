@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { UserAvatar } from '@/components/UserAvatar';
 
 export function Navbar() {
   const router = useRouter();
@@ -100,9 +101,7 @@ export function Navbar() {
             <div className="relative group/user py-4">
                <button className="flex items-center gap-3 bg-zinc-900/50 hover:bg-zinc-900 border border-zinc-800 pl-4 pr-3 py-2 rounded-full transition-all">
                   <span className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">{user.name?.split(' ')[0]}</span>
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-900 flex items-center justify-center overflow-hidden border border-zinc-700">
-                     <User className="w-3 h-3 text-zinc-400" />
-                  </div>
+                  <UserAvatar avatarId={user.avatar} className="w-6 h-6" />
                   <ChevronDown className="w-3 h-3 text-zinc-600 group-hover/user:rotate-180 transition-transform duration-300" />
                </button>
 
