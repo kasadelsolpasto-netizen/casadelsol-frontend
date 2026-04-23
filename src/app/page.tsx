@@ -21,7 +21,7 @@ export default async function Home() {
       <main className="max-w-7xl mx-auto px-6 py-16">
         <div className="mb-16">
           <h1 className="text-4xl md:text-6xl font-black uppercase tracking-widest text-white mb-4">
-            Próximos <span className="text-neon-green neon-text-primary">Eventos</span>
+            Próximos <span className="text-white drop-shadow-[0_0_15px_rgba(57,255,20,0.8)] [text-shadow:0_0_20px_#39ff14]">Eventos</span>
           </h1>
           <p className="text-lg text-zinc-400 max-w-2xl text-balance">
             Navega por la cartelera de música electrónica oficial. Asegura tu entrada y vive la rave antes del Sold Out.

@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation';
 import { 
   Ticket, User, Star, CheckCircle, 
   X, Share2, Gift, Zap, 
-  TicketPercent, Loader2, ShoppingBag, MessageCircle, DollarSign
+  TicketPercent, Loader2, ShoppingBag, MessageCircle, DollarSign,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
@@ -31,6 +32,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   const [passMsg, setPassMsg] = useState('');
   const [showAllEvents, setShowAllEvents] = useState(false);
   const [showAllShop, setShowAllShop] = useState(false);
+  const [qrPages, setQrPages] = useState<Record<string, number>>({});
 
   const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://casadelsol.app';
 
@@ -209,61 +211,93 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                                 <p className="text-white font-black uppercase text-xl">{order?.order_items?.[0]?.ticket_type?.event?.title || 'Evento Kasa'}</p>
                                 <p className="text-neon-green font-bold text-sm tracking-widest uppercase">{order?.order_items?.[0]?.ticket_type?.name}</p>
                              </div>
-                             <div className="flex flex-wrap gap-6 justify-center">
-                                {order?.qr_codes?.map((qr: any) => {
-                                   const isBurned = !!qr.used_at;
-                                   return (
-                                      <div key={qr?.id} className="flex flex-col items-center gap-2">
-                                         {/* QR BOX */}
-                                         <div className="relative">
-                                            <div 
-                                               onClick={() => !isBurned && setSelectedQr(qr)} 
-                                               className={`relative w-24 h-24 p-2.5 rounded-2xl transition-all duration-500 shadow-xl ${
-                                                  isBurned 
-                                                  ? 'bg-zinc-900 opacity-50 scale-95 translate-y-2 z-0' 
-                                                  : 'bg-white cursor-pointer hover:neon-border-primary z-10'
-                                               }`}
-                                            >
-                                               {/* Aplicamos grayscale SOLO al código QR si está quemado, no al contenedor entero para no opacar la etiqueta */}
-                                               <div className={isBurned ? "grayscale brightness-50" : ""}>
-                                                  <QRCodeSVG value={`${BASE_URL}/ticket/${qr?.token_hash}`} size={75} />
+                             <div className="flex flex-col items-center md:items-end gap-6 w-full md:w-auto">
+                                <div className="flex flex-wrap gap-6 justify-center md:justify-end">
+                                   {(() => {
+                                      const currentPage = qrPages[order.id] || 0;
+                                      const qrsPerPage = 4;
+                                      const totalPages = Math.ceil(order.qr_codes.length / qrsPerPage);
+                                      const paginatedQrs = order.qr_codes.slice(currentPage * qrsPerPage, (currentPage + 1) * qrsPerPage);
+                                      
+                                      return paginatedQrs.map((qr: any) => {
+                                         const isBurned = !!qr.used_at;
+                                         return (
+                                            <div key={qr?.id} className="flex flex-col items-center gap-2">
+                                               {/* QR BOX */}
+                                               <div className="relative">
+                                                  <div 
+                                                     onClick={() => !isBurned && setSelectedQr(qr)} 
+                                                     className={`relative w-24 h-24 p-2.5 rounded-2xl transition-all duration-500 shadow-xl ${
+                                                        isBurned 
+                                                        ? 'bg-zinc-900 opacity-50 scale-95 translate-y-2 z-0' 
+                                                        : 'bg-white cursor-pointer hover:neon-border-primary z-10'
+                                                     }`}
+                                                  >
+                                                     {/* Aplicamos grayscale SOLO al código QR si está quemado, no al contenedor entero para no opacar la etiqueta */}
+                                                     <div className={isBurned ? "grayscale brightness-50" : ""}>
+                                                        <QRCodeSVG value={`${BASE_URL}/ticket/${qr?.token_hash}`} size={75} />
+                                                     </div>
+                                                  </div>
+                                                  
+                                                  {/* Etiqueta USADA fuera del contenedor grayscale para que conserve su color rojo vivo */}
+                                                  {isBurned && (
+                                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                                                        <div className="bg-red-600 text-[10px] font-black text-white px-2 py-1 rounded uppercase tracking-tighter border-2 border-red-800 rotate-[-12deg] shadow-[0_0_15px_rgba(220,38,38,0.8)]">USADA</div>
+                                                     </div>
+                                                  )}
                                                </div>
-                                            </div>
-                                            
-                                            {/* Etiqueta USADA fuera del contenedor grayscale para que conserve su color rojo vivo */}
-                                            {isBurned && (
-                                               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                                                  <div className="bg-red-600 text-[10px] font-black text-white px-2 py-1 rounded uppercase tracking-tighter border-2 border-red-800 rotate-[-12deg] shadow-[0_0_15px_rgba(220,38,38,0.8)]">USADA</div>
-                                               </div>
-                                            )}
-                                         </div>
 
-                                         <p className="text-white text-[10px] font-bold uppercase text-center w-full max-w-[96px] truncate" title={qr.attendee_name || profile?.name}>
-                                            {qr.attendee_name || profile?.name}
-                                         </p>
+                                               <p className="text-white text-[10px] font-bold uppercase text-center w-full max-w-[96px] truncate" title={qr.attendee_name || profile?.name}>
+                                                  {qr.attendee_name || profile?.name}
+                                               </p>
 
-                                         {/* Botones de Compartir */}
-                                         {!isBurned && (
-                                            <div className="flex gap-2 mt-1">
-                                               <button 
-                                                  onClick={(e) => handleShare(e, qr.token_hash, order?.order_items?.[0]?.ticket_type?.event?.title)}
-                                                  className="w-8 h-8 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center text-zinc-400 hover:text-white hover:bg-neon-purple transition-all shadow-lg active:scale-90"
-                                                  title="Compartir"
-                                               >
-                                                  <Share2 className="w-4 h-4" />
-                                               </button>
-                                               <button 
-                                                  onClick={(e) => shareWhatsApp(e, qr.token_hash, order?.order_items?.[0]?.ticket_type?.event?.title, qr.attendee_name || profile?.name)}
-                                                  className="w-8 h-8 bg-[#25D366]/10 border border-[#25D366]/20 rounded-xl flex items-center justify-center text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all shadow-lg active:scale-90"
-                                                  title="Compartir por WhatsApp"
-                                               >
-                                                  <MessageCircle className="w-4 h-4" />
-                                               </button>
+                                               {/* Botones de Compartir */}
+                                               {!isBurned && (
+                                                  <div className="flex gap-2 mt-1">
+                                                     <button 
+                                                        onClick={(e) => handleShare(e, qr.token_hash, order?.order_items?.[0]?.ticket_type?.event?.title)}
+                                                        className="w-8 h-8 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center text-zinc-400 hover:text-white hover:bg-neon-purple transition-all shadow-lg active:scale-90"
+                                                        title="Compartir"
+                                                     >
+                                                        <Share2 className="w-4 h-4" />
+                                                     </button>
+                                                     <button 
+                                                        onClick={(e) => shareWhatsApp(e, qr.token_hash, order?.order_items?.[0]?.ticket_type?.event?.title, qr.attendee_name || profile?.name)}
+                                                        className="w-8 h-8 bg-[#25D366]/10 border border-[#25D366]/20 rounded-xl flex items-center justify-center text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all shadow-lg active:scale-90"
+                                                        title="Compartir por WhatsApp"
+                                                     >
+                                                        <MessageCircle className="w-4 h-4" />
+                                                     </button>
+                                                  </div>
+                                               )}
                                             </div>
-                                         )}
-                                      </div>
-                                   );
-                                })}
+                                         );
+                                      });
+                                   })()}
+                                </div>
+
+                                {/* Controles de Paginación */}
+                                {order?.qr_codes?.length > 4 && (
+                                   <div className="flex items-center gap-3 bg-zinc-900/40 rounded-full p-1.5 border border-zinc-800 shadow-xl mt-2">
+                                      <button 
+                                         onClick={() => setQrPages(p => ({ ...p, [order.id]: Math.max(0, (p[order.id] || 0) - 1) }))}
+                                         disabled={(qrPages[order.id] || 0) === 0}
+                                         className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 border border-zinc-700 hover:bg-neon-purple text-zinc-400 hover:text-white transition-all disabled:opacity-20 disabled:hover:bg-zinc-800 disabled:hover:text-zinc-400"
+                                      >
+                                         <ChevronLeft className="w-5 h-5 ml-[-2px]" />
+                                      </button>
+                                      <span className="text-[9px] font-black uppercase text-zinc-500 tracking-widest px-1">
+                                         Pág {(qrPages[order.id] || 0) + 1} / {Math.ceil(order.qr_codes.length / 4)}
+                                      </span>
+                                      <button 
+                                         onClick={() => setQrPages(p => ({ ...p, [order.id]: Math.min(Math.ceil(order.qr_codes.length / 4) - 1, (p[order.id] || 0) + 1) }))}
+                                         disabled={(qrPages[order.id] || 0) === Math.ceil(order.qr_codes.length / 4) - 1}
+                                         className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 border border-zinc-700 hover:bg-neon-purple text-zinc-400 hover:text-white transition-all disabled:opacity-20 disabled:hover:bg-zinc-800 disabled:hover:text-zinc-400"
+                                      >
+                                         <ChevronRight className="w-5 h-5 mr-[-2px]" />
+                                      </button>
+                                   </div>
+                                )}
                              </div>
                           </div>
                        ))}

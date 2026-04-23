@@ -36,11 +36,17 @@ export function Navbar() {
     };
 
     const fetchBrand = async () => {
+      const cachedLogo = localStorage.getItem('kasa_brand_logo');
+      if (cachedLogo) setBrandLogo(cachedLogo);
+
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/settings/brand`);
         if (res.ok) {
           const data = await res.json();
-          if (data.logoBase64) setBrandLogo(data.logoBase64);
+          if (data.logoBase64 && data.logoBase64 !== cachedLogo) {
+             setBrandLogo(data.logoBase64);
+             localStorage.setItem('kasa_brand_logo', data.logoBase64);
+          }
         }
       } catch(e) {}
     };
@@ -73,9 +79,7 @@ export function Navbar() {
                <img src={brandLogo} alt="Logo" className="w-full h-full object-cover" />
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-green to-neon-purple flex items-center justify-center p-1.5 shadow-[0_0_15px_rgba(57,255,20,0.3)] group-hover:shadow-neon-green/50 transition-all duration-500">
-               <div className="w-full h-full bg-black rounded-sm flex items-center justify-center text-[10px] font-black text-white">K</div>
-            </div>
+            <div className="w-10 h-10" />
           )}
           <span className="font-black uppercase tracking-[0.2em] text-sm text-white group-hover:text-neon-green transition-colors">
             Kasa del Sol
