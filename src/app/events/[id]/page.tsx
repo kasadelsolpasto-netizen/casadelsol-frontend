@@ -265,8 +265,10 @@ export default function EventDetail({ params }: { params: { id: string } }) {
                         </p>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
-                        <span className={`font-black text-lg ${canBuy ? 'text-white' : 'text-zinc-600'}`}>
-                          {Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(ticket.price)}
+                        <span className={`font-black text-lg ${canBuy ? (ticket.price === 0 ? 'text-neon-green' : 'text-white') : 'text-zinc-600'}`}>
+                          {ticket.price === 0
+                            ? 'GRATIS'
+                            : Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(ticket.price)}
                         </span>
                         {canBuy && (
                           <div className={`w-5 h-5 rounded-full border-2 transition-all shrink-0 ${isSelected ? 'border-neon-green bg-neon-green' : 'border-zinc-600'}`} />

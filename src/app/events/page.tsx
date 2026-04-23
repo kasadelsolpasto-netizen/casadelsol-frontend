@@ -54,7 +54,12 @@ export default async function EventsFeed() {
                 </div>
                 <div className="flex items-center text-sm text-zinc-400 gap-2">
                   <Tag className="w-4 h-4 text-neon-green" />
-                  <span>Desde {Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(minPrice)}</span>
+                  <span>
+                    {minPrice === 0
+                      ? <span className="text-neon-green font-bold">Gratis</span>
+                      : `Desde ${Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(minPrice)}`
+                    }
+                  </span>
                 </div>
               </div>
 
