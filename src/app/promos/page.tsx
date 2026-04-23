@@ -21,7 +21,17 @@ export default function PromosPage() {
     
     const user = JSON.parse(userStr);
     
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/${user.id}`)
+    const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
+    const token = tokenRow ? tokenRow.split('=')[1] : null;
+
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/${user.id}/profile`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
       .then(res => res.json())
       .then(data => {
         setProfile(data);

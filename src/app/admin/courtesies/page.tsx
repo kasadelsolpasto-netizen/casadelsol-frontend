@@ -129,8 +129,11 @@ export default function CourtesiesAdminPage() {
     setSubmitting(false);
   };
 
-  const handleRevoke = async (id: string) => {
-    if (!confirm('¿Seguro que deseas revocar este enlace?')) return;
+  const handleRevoke = async (id: string, isClaimed: boolean) => {
+    const msg = isClaimed 
+      ? 'Esta cortesía ya fue reclamada. Si la revocas, se eliminará el código QR de la bóveda del usuario y la entrada quedará invalidada. ¿Estás seguro?' 
+      : '¿Seguro que deseas revocar este enlace de cortesía?';
+    if (!confirm(msg)) return;
     const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
     const token = tokenRow ? tokenRow.split('=')[1] : null;
 
@@ -390,8 +393,8 @@ export default function CourtesiesAdminPage() {
                           )}
                         </td>
                         <td className="p-4 text-right">
-                          {!c.claimed_at && (
-                            <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-2">
+                            {!c.claimed_at && (
                               <button 
                                 onClick={() => copyLink(c.token)}
                                 className={`p-2 rounded-lg transition-colors ${copiedToken === c.token ? 'bg-neon-green/20 text-neon-green' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}
@@ -399,15 +402,15 @@ export default function CourtesiesAdminPage() {
                               >
                                 {copiedToken === c.token ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                               </button>
-                              <button 
-                                onClick={() => handleRevoke(c.id)}
-                                className="p-2 bg-zinc-900 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                                title="Revocar"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          )}
+                            )}
+                            <button 
+                              onClick={() => handleRevoke(c.id, !!c.claimed_at)}
+                              className="p-2 bg-zinc-900 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                              title={c.claimed_at ? "Revocar e Invalidar Entrada" : "Revocar Enlace"}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
