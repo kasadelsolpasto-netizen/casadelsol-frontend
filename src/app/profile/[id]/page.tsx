@@ -155,9 +155,33 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   };
 
   if (loading) return (
-     <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-neon-green animate-spin" />
-     </div>
+      <div className="min-h-[calc(100vh-80px)] w-full bg-[#050505] flex flex-col items-center justify-center overflow-hidden relative">
+        {/* Scanlines */}
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(transparent, transparent 2px, rgba(0,0,0,0.4) 2px, rgba(0,0,0,0.4) 4px)' }} />
+        
+        {/* Red portal rings */}
+        <div className="absolute w-[600px] h-[600px] rounded-full border border-red-900/10 animate-ping" style={{ animationDuration: '3s' }} />
+        <div className="absolute w-[400px] h-[400px] rounded-full border border-red-700/20 animate-ping" style={{ animationDelay: '0.5s', animationDuration: '3s' }} />
+        <div className="absolute w-[200px] h-[200px] rounded-full border border-red-500/30 animate-ping" style={{ animationDelay: '1s', animationDuration: '3s' }} />
+
+        {/* Diabolical Core / Door */}
+        <div className="w-32 h-48 border-2 border-red-900 bg-black rounded-t-full shadow-[0_0_100px_rgba(220,38,38,0.4)] flex items-center justify-center relative mb-12 overflow-hidden">
+           <div className="absolute inset-x-2 bottom-0 top-2 border border-red-800 rounded-t-full shadow-[inset_0_0_50px_rgba(220,38,38,0.5)]"></div>
+           <div className="absolute inset-x-4 bottom-0 top-4 bg-gradient-to-t from-red-600/30 to-black rounded-t-full animate-pulse" style={{ animationDuration: '2s' }}></div>
+           
+           {/* Eye / Core */}
+           <div className="w-12 h-12 rounded-full border border-red-900 border-t-red-500 animate-spin absolute top-1/3"></div>
+           <div className="w-6 h-6 rounded-full border border-red-900 border-b-red-600 animate-spin absolute top-1/3" style={{ animationDirection: 'reverse', animationDuration: '0.5s' }}></div>
+        </div>
+
+        {/* Texto glitch */}
+        <div className="relative text-center">
+          <span className="absolute text-red-600/50 text-2xl font-black uppercase tracking-[0.5em] blur-[3px] translate-x-[3px] -translate-y-[3px]">ABRIENDO LA BÓVEDA</span>
+          <span className="absolute text-orange-600/40 text-2xl font-black uppercase tracking-[0.5em] blur-[2px] -translate-x-[2px] translate-y-[2px]">ABRIENDO LA BÓVEDA</span>
+          <span className="relative text-white text-2xl font-black uppercase tracking-[0.5em]">ABRIENDO LA BÓVEDA</span>
+        </div>
+        <p className="mt-6 text-zinc-600 text-xs uppercase tracking-widest animate-pulse">Cruzando el umbral…</p>
+      </div>
   );
 
   const isStaff = profile?.role === 'STAFF' || profile?.role === 'OWNER';
