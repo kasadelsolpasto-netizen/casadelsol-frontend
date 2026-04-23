@@ -1,9 +1,22 @@
 "use client";
+import { useEffect, useState } from "react";
 import { MessageCircle } from "lucide-react";
 
 export function WhatsAppButton({ className = "" }: { className?: string }) {
-  // El número debe incluir el código de país sin el '+'
-  const whatsappUrl = "https://wa.me/573234760800?text=Hola,%20necesito%20ayuda%20con%20Kasa%20del%20Sol"; 
+  const [whatsappNumber, setWhatsappNumber] = useState("573234760800");
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/settings/brand`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data.whatsappNumber) {
+          setWhatsappNumber(data.whatsappNumber);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=Hola,%20necesito%20ayuda%20con%20Kasa%20del%20Sol`; 
 
   return (
     <a 

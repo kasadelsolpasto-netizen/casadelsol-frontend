@@ -28,6 +28,7 @@ export default function SettingsPage() {
 
   // Brand / PWA state
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
+  const [whatsappNumber, setWhatsappNumber] = useState('');
   const [isSavingBrand, setIsSavingBrand] = useState(false);
   const [saveBrandMessage, setSaveBrandMessage] = useState('');
 
@@ -58,6 +59,9 @@ export default function SettingsPage() {
           const brandData = await brandRes.json();
           if (brandData && brandData.logoBase64) {
             setLogoBase64(brandData.logoBase64);
+          }
+          if (brandData && brandData.whatsappNumber) {
+            setWhatsappNumber(brandData.whatsappNumber.startsWith('57') ? brandData.whatsappNumber.slice(2) : brandData.whatsappNumber);
           }
         }
       } catch (err) {
@@ -127,11 +131,14 @@ export default function SettingsPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ logoBase64 })
+        body: JSON.stringify({ 
+          logoBase64,
+          whatsappNumber: whatsappNumber ? `57${whatsappNumber}` : ''
+        })
       });
 
       if (res.ok) {
-        setSaveBrandMessage('Logo y Marca actualizados. Los PWA e iconos se generarán dinámicamente.');
+        setSaveBrandMessage('Identidad y WhatsApp actualizados exitosamente.');
       } else {
         setSaveBrandMessage('Fallo al guardar.');
       }
@@ -214,7 +221,7 @@ export default function SettingsPage() {
                onClick={() => setActiveTab('brand')} 
                className={`w-full text-left px-5 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-3 border ${activeTab === 'brand' ? 'bg-neon-green/10 border-neon-green text-neon-green shadow-[0_0_15px_rgba(57,255,20,0.2)]' : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'}`}
              >
-               <ImageIcon className="w-4 h-4" /> Marca & PWA
+               <ImageIcon className="w-4 h-4" /> Identidad
              </button>
              <button 
                onClick={() => setActiveTab('seguridad')} 
@@ -360,8 +367,8 @@ export default function SettingsPage() {
                          <ImageIcon className="w-6 h-6 text-neon-green" />
                       </div>
                       <div>
-                        <h2 className="text-xl font-black uppercase tracking-widest text-white">Marca & Aplicación PWA</h2>
-                        <p className="text-xs text-zinc-400 mt-1 uppercase tracking-widest font-bold">Personaliza tu Web App Instalable</p>
+                        <h2 className="text-xl font-black uppercase tracking-widest text-white">Identidad Visual y Soporte</h2>
+                        <p className="text-xs text-zinc-400 mt-1 uppercase tracking-widest font-bold">Personaliza tu App y Botón de WhatsApp</p>
                       </div>
                     </div>
 
@@ -402,6 +409,24 @@ export default function SettingsPage() {
                         </div>
                       </div>
 
+                      <div className="space-y-2 mt-6 bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800">
+                        <label className="text-xs font-black uppercase tracking-widest text-white">Número de Soporte (WhatsApp)</label>
+                        <p className="text-[10px] text-zinc-400 mb-4">Este número se usará en el botón flotante de chat para que los usuarios te contacten.</p>
+                        <div className="flex">
+                          <span className="flex items-center justify-center bg-zinc-800 border border-r-0 border-zinc-700 rounded-l-xl px-4 text-zinc-400 font-black">
+                            +57
+                          </span>
+                          <input 
+                            type="text" 
+                            value={whatsappNumber} 
+                            onChange={e => setWhatsappNumber(e.target.value.replace(/\D/g, ''))}
+                            className="w-full bg-black border border-zinc-700 rounded-r-xl py-3 px-4 text-white font-mono tracking-wider focus:border-neon-green focus:ring-1 focus:ring-neon-green outline-none text-sm transition-all"
+                            placeholder="3001234567"
+                            maxLength={10}
+                          />
+                        </div>
+                      </div>
+
                       <div className="pt-6 border-t border-zinc-800 flex items-center justify-between">
                         <p className={`text-xs font-bold uppercase tracking-widest ${saveBrandMessage.includes('Error') || saveBrandMessage.includes('Fallo') ? 'text-red-500' : 'text-neon-green'}`}>
                           {saveBrandMessage}
@@ -411,7 +436,7 @@ export default function SettingsPage() {
                           disabled={isSavingBrand || !logoBase64}
                           className="flex items-center gap-2 bg-neon-green text-black px-8 py-3 rounded text-sm font-black uppercase tracking-widest hover:shadow-[0_0_20px_rgba(57,255,20,0.5)] transition-all disabled:opacity-50 hover:bg-white"
                         >
-                          <Save className="w-4 h-4" /> {isSavingBrand ? 'Generando...' : 'Aplicar Marca'}
+                          <Save className="w-4 h-4" /> {isSavingBrand ? 'Guardando...' : 'Guardar Identidad'}
                         </button>
                       </div>
                     </form>
