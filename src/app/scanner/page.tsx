@@ -174,7 +174,7 @@ export default function ScannerPage() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/qrs/scan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ token, event_id: dniEventId || undefined }),
       });
       const data = await res.json();
       if (res.status === 400) { setStatus({ type: 'already_used' }); return; }
@@ -263,7 +263,18 @@ export default function ScannerPage() {
 
         {/* ── Modo QR ── */}
         {mode === 'qr' && (
-          <div className="flex-1 flex flex-col items-center px-4 py-6 max-w-md mx-auto w-full">
+          <div className="flex-1 flex flex-col items-center px-4 py-4 max-w-md mx-auto w-full">
+
+            {/* Selector de evento — obligatorio para validar el QR */}
+            <select
+              value={dniEventId}
+              onChange={e => { setDniEventId(e.target.value); setStatus({ type: 'idle' }); }}
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white outline-none mb-4 focus:border-neon-green"
+            >
+              <option value="">⚠️ Selecciona el evento activo</option>
+              {events.map(ev => <option key={ev.id} value={ev.id}>{ev.title}</option>)}
+            </select>
+
             <div className="w-full rounded-2xl overflow-hidden border-2 border-zinc-800 bg-black relative mb-6">
               <div id="qr-reader" ref={scannerDivRef} className="w-full" />
             </div>

@@ -66,6 +66,34 @@ export default function EventDetail({ params }: { params: { id: string } }) {
 
       const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+      // ── FLUJO GRATUITO ────────────────────────────────────────────
+      if (selectedTicket.price === 0) {
+        const res = await fetch(`${API}/orders/checkout-free`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'recaptcha-token': recaptchaToken
+          },
+          body: JSON.stringify({ attendees: payloadAttendees, hp })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => null);
+          throw new Error(errData?.message || 'Error al registrar tu entrada gratuita.');
+        }
+
+        setWizardLoading(false);
+        setShowWizard(false);
+        setSuccess('¡Entrada gratuita registrada! Revisa tu perfil para ver tu QR.');
+        setTimeout(() => {
+          const userPayload = JSON.parse(decodeURIComponent(escape(atob(token.split('.')[1]))));
+          router.push(`/profile/${userPayload.id || userPayload.sub}`);
+        }, 2000);
+        return;
+      }
+
+      // ── FLUJO WOMPI (tickets de pago) ─────────────────────────────
       const res = await fetch(`${API}/orders/checkout-wompi`, {
         method: 'POST',
         headers: { 
@@ -82,14 +110,12 @@ export default function EventDetail({ params }: { params: { id: string } }) {
       }
 
       const data = await res.json();
-      // Guardamos el orderId para el fallback post-pago
       const orderId: string = data.reference;
 
       if (typeof (window as any).WidgetCheckout !== 'function') {
          throw new Error('Cargando servidor seguro de pagos... por favor intenta nuevamente en unos segundos.');
       }
 
-      // Pre-llenar datos del comprador — Wompi widget SOLO acepta email y fullName
       const buyer = attendees[0];
       const customerData: Record<string, string> = {};
       if (buyer?.attendee_email) customerData.email = buyer.attendee_email;
@@ -106,7 +132,6 @@ export default function EventDetail({ params }: { params: { id: string } }) {
 
       const checkout = new (window as any).WidgetCheckout(widgetConfig);
 
-      // IMPORTANTE: setWizardLoading(false) va DENTRO del callback, no en finally.
       checkout.open(async (result: any) => {
         setWizardLoading(false);
         const tx = result.transaction;
@@ -141,11 +166,12 @@ export default function EventDetail({ params }: { params: { id: string } }) {
       });
 
     } catch (err: any) {
-      console.error('[Wompi] ERROR:', err);
+      console.error('[Checkout] ERROR:', err);
       setWizardError(err.message);
       setWizardLoading(false);
     }
   };
+
 
 
   return (
