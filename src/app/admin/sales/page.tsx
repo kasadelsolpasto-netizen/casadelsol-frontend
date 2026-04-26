@@ -112,18 +112,18 @@ export default function AdminSalesPage() {
                      <Calendar className="w-12 h-12 text-zinc-800" />
                    )}
                 </div>
-                <div className="p-8 flex-1 flex flex-col">
+                <div className="p-8 flex-1 flex flex-col min-w-0">
                    <h3 className="font-black uppercase tracking-tighter text-white text-xl leading-tight mb-4 truncate">{event.title}</h3>
-                   <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-black uppercase tracking-widest">
-                      <Clock className="w-3.5 h-3.5" />
-                      {new Date(event.date).toLocaleDateString('es-CO')}
+                   <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-black uppercase tracking-widest min-w-0">
+                      <Clock className="shrink-0 w-3.5 h-3.5" />
+                      <span className="truncate">{new Date(event.date).toLocaleDateString('es-CO')}</span>
                    </div>
                    <div className="mt-8 pt-6 border-t border-zinc-900 flex items-center justify-between">
-                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500">
+                     <div className="flex items-center gap-2 shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500 shrink-0">
                            <Users className="w-4 h-4" />
                         </div>
-                        <span className="text-[10px] font-black text-white uppercase">{event._count?.orders || 0} ORDENES</span>
+                        <span className="text-[10px] font-black text-white uppercase shrink-0">{event._count?.orders || 0} ORDENES</span>
                      </div>
                      <ArrowRight className="w-5 h-5 text-zinc-800 group-hover:text-orange-500 group-hover:translate-x-1 transition-all" />
                    </div>
@@ -171,11 +171,11 @@ export default function AdminSalesPage() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="bg-zinc-900/50">
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500">Fecha / Hora</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500">Cliente</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500">Pago</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500">Estado</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500 text-right">Total</th>
+                      <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500 whitespace-nowrap">Fecha / Hora</th>
+                      <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500 whitespace-nowrap">Cliente</th>
+                      <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500 whitespace-nowrap">Pago</th>
+                      <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500 whitespace-nowrap">Estado</th>
+                      <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500 text-right whitespace-nowrap">Total</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-900">
@@ -185,14 +185,14 @@ export default function AdminSalesPage() {
                         className="hover:bg-zinc-900/50 transition-colors group"
                       >
                         <td 
-                          className="px-8 py-6 cursor-pointer"
+                          className="px-6 py-6 cursor-pointer whitespace-nowrap"
                           onClick={() => setSelectedOrder(order)}
                         >
                            <p className="text-white text-xs font-black">{new Date(order.created_at).toLocaleDateString('es-CO')}</p>
                            <p className="text-[10px] text-zinc-600 font-bold">{new Date(order.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
                         </td>
                         <td 
-                          className="px-8 py-6"
+                          className="px-6 py-6 whitespace-nowrap"
                           onClick={() => setSelectedOrder(order)}
                         >
                            <div className="flex flex-col gap-1">
@@ -205,16 +205,16 @@ export default function AdminSalesPage() {
                            </div>
                         </td>
                         <td 
-                          className="px-8 py-6"
+                          className="px-6 py-6 whitespace-nowrap"
                           onClick={() => setSelectedOrder(order)}
                         >
                            <div className="flex items-center gap-2">
-                              {order.payment_type === 'VIRTUAL' ? <CreditCard className="w-4 h-4 text-neon-purple" /> : <DollarSign className="w-4 h-4 text-orange-500" />}
+                              {order.payment_type === 'VIRTUAL' ? <CreditCard className="w-4 h-4 text-neon-purple shrink-0" /> : <DollarSign className="w-4 h-4 text-orange-500 shrink-0" />}
                               <span className="text-[10px] font-black text-zinc-500 uppercase">{order.payment_type}</span>
                            </div>
                         </td>
                         <td 
-                          className="px-8 py-6"
+                          className="px-6 py-6 whitespace-nowrap"
                         >
                            <div className="flex items-center gap-4">
                              <span className={`px-2 py-1 rounded text-[8px] font-black border uppercase tracking-widest ${

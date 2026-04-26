@@ -94,8 +94,8 @@ export default function StaffManagementPage() {
   return (
     <AdminGuard>
       <div className="min-h-screen p-6 md:p-12 max-w-6xl mx-auto">
-        <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-zinc-800 pb-6 relative">
-          <Link href="/admin" className="absolute -top-6 left-0 text-zinc-500 hover:text-white flex items-center gap-2 text-xs uppercase tracking-widest transition-colors font-bold">
+        <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-zinc-800 pb-6 relative mt-8 md:mt-0">
+          <Link href="/admin" className="absolute -top-8 md:-top-6 left-0 text-zinc-500 hover:text-white flex items-center gap-2 text-xs uppercase tracking-widest transition-colors font-bold">
             <ArrowLeft className="w-4 h-4" /> Volver
           </Link>
           <div>
@@ -192,10 +192,10 @@ export default function StaffManagementPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-black/40 border-b border-zinc-800/80">
-                      <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-zinc-500">ID Operativo</th>
-                      <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-zinc-500">Tipo</th>
-                      <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-zinc-500">Módulo</th>
-                      <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-zinc-500 text-right">Estado Operativo</th>
+                      <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-zinc-500 whitespace-nowrap">ID Operativo</th>
+                      <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-zinc-500 whitespace-nowrap">Tipo</th>
+                      <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-zinc-500 whitespace-nowrap">Módulo</th>
+                      <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-zinc-500 text-right whitespace-nowrap">Estado Operativo</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800/50">
@@ -214,21 +214,21 @@ export default function StaffManagementPage() {
                     ) : (
                       staffList.map((st) => (
                         <tr key={st.id} className="hover:bg-zinc-900/30 transition-colors group">
-                          <td className="py-4 px-6">
+                          <td className="py-4 px-6 whitespace-nowrap">
                             <p className="text-white font-bold text-sm">{st.name}</p>
                             <p className="text-zinc-500 text-xs mt-1">{st.email}</p>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-4 px-6 whitespace-nowrap">
                             <span className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider ${st.staff_access?.permissions?.classification === 'ARTISTA' ? 'bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/30' : 'bg-neon-purple/10 text-neon-purple border border-neon-purple/30'}`}>
                               {st.staff_access?.permissions?.classification || 'EMPLEADO'}
                             </span>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-4 px-6 whitespace-nowrap">
                             <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neon-green opacity-50 group-hover:opacity-100 transition-opacity">
                               <Camera className="w-4 h-4" /> Escáner QR
                             </span>
                           </td>
-                          <td className="py-4 px-6 text-right">
+                          <td className="py-4 px-6 text-right whitespace-nowrap">
                              <button 
                                onClick={() => handleToggle(st.id, st.role)}
                                className={`text-[10px] font-black uppercase tracking-widest px-4 py-2 border rounded-full transition-all flex items-center justify-center min-w-[105px] ml-auto ${

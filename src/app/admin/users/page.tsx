@@ -372,7 +372,7 @@ export default function CommunityDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_1.5fr_100px] gap-4 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-600/50 border-b border-zinc-900/50">
+                <div className="hidden lg:grid grid-cols-[1.5fr_1.5fr_1fr_2fr_auto] gap-4 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-600/50 border-b border-zinc-900/50">
                   <div>Raver / Identidad</div>
                   <div>Contacto</div>
                   <div>Último Evento</div>
@@ -386,30 +386,30 @@ export default function CommunityDashboard() {
                      <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Ningún Raver coincide con tu búsqueda o filtros.</p>
                   </div>
                 ) : users.map(user => (
-                  <div key={user.id} className="group bg-black/40 border border-zinc-900/50 rounded-2xl p-4 md:px-6 hover:border-zinc-700 hover:bg-zinc-900/10 transition-all flex flex-col md:grid md:grid-cols-[1.5fr_1fr_1fr_1.5fr_100px] items-center gap-4">
-                    <div className="flex items-center gap-4 w-full md:w-auto">
-                      <div className="w-11 h-11 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 font-black text-xs uppercase group-hover:border-neon-purple/50 transition-colors">{user.name.charAt(0)}</div>
-                      <div className="overflow-hidden">
+                  <div key={user.id} className="group bg-black/40 border border-zinc-900/50 rounded-2xl p-4 lg:px-6 hover:border-zinc-700 hover:bg-zinc-900/10 transition-all flex flex-col lg:grid lg:grid-cols-[1.5fr_1.5fr_1fr_2fr_auto] lg:items-center gap-4">
+                    <div className="flex items-center gap-4 w-full min-w-0">
+                      <div className="shrink-0 w-11 h-11 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 font-black text-xs uppercase group-hover:border-neon-purple/50 transition-colors">{user.name.charAt(0)}</div>
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-bold text-white truncate">{user.name}</h3>
-                          {user.tags?.length > 0 && <div className="w-1.5 h-1.5 rounded-full bg-neon-green shadow-[0_0_5px_#39FF14]" />}
+                          {user.tags?.length > 0 && <div className="shrink-0 w-1.5 h-1.5 rounded-full bg-neon-green shadow-[0_0_5px_#39FF14]" />}
                         </div>
-                        <p className="text-[10px] font-black uppercase text-zinc-600 tracking-tighter">{user.role}</p>
+                        <p className="text-[10px] font-black uppercase text-zinc-600 tracking-tighter truncate">{user.role}</p>
                       </div>
                     </div>
-                    <div className="text-zinc-500 text-xs w-full md:w-auto truncate font-medium">{user.email}</div>
-                    <div className="text-[10px] font-bold text-zinc-400 w-full md:w-auto truncate uppercase tracking-tighter">
+                    <div className="text-zinc-500 text-xs w-full min-w-0 truncate font-medium">{user.email}</div>
+                    <div className="text-[10px] font-bold text-zinc-400 w-full min-w-0 truncate uppercase tracking-tighter">
                       {user.last_event?.title || 'Nuevo Recluta'}
                     </div>
-                    <div className="w-full flex flex-wrap gap-1 items-center">
-                       <div className="flex gap-0.5 mr-2 bg-zinc-900 p-1 rounded-lg">
+                    <div className="w-full min-w-0 flex flex-wrap gap-1 items-center">
+                       <div className="shrink-0 flex gap-0.5 mr-2 bg-zinc-900 p-1 rounded-lg">
                           {[1,2,3,4,5].map(s => <Star key={s} className={`w-3 h-3 ${user.rating >= s ? 'text-orange-400 fill-orange-400' : 'text-zinc-800'}`} />)}
                        </div>
                        {user.tags?.slice(0, 2).map((tag: string) => <TagPill key={tag} tag={tag} />)}
-                       {user.tags?.length > 2 && <span className="text-[8px] font-black text-zinc-600">+{user.tags.length - 2}</span>}
+                       {user.tags?.length > 2 && <span className="shrink-0 text-[8px] font-black text-zinc-600">+{user.tags.length - 2}</span>}
                     </div>
-                    <div className="text-right w-full md:w-auto">
-                      <button onClick={() => handleOpenDrawer(user)} className="w-full md:w-auto px-4 py-2 bg-zinc-900 hover:bg-white hover:text-black rounded-lg text-[10px] font-black uppercase tracking-widest transition-all">Ver Ficha</button>
+                    <div className="text-right w-full lg:w-auto shrink-0">
+                      <button onClick={() => handleOpenDrawer(user)} className="w-full lg:w-auto px-4 py-2 bg-zinc-900 hover:bg-white hover:text-black rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap">Ver Ficha</button>
                     </div>
                   </div>
                 ))}

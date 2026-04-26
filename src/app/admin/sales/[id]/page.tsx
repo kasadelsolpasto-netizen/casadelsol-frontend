@@ -53,20 +53,20 @@ export default function EventSalesStatsPage({ params }: { params: { id: string }
             <span>{new Date(data.event.date).toLocaleDateString()}</span> &bull; <span>{data.event.venue}</span>
           </p>
         </div>
-        <div className="flex items-center gap-3 mt-6 lg:mt-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-6 lg:mt-0">
           <Link href={`/admin/taquilla/${data.event.id}`}
-            className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 font-bold uppercase tracking-widest text-xs py-3 px-5 rounded-lg transition-colors">
+            className="flex items-center justify-center gap-2 bg-orange-500/10 border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 font-bold uppercase tracking-widest text-xs py-3 px-5 rounded-lg transition-colors">
             <DoorOpen className="w-4 h-4" /> Abrir Taquilla
           </Link>
-          <button className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 text-white font-bold uppercase tracking-widest text-xs py-3 px-5 rounded-lg hover:border-zinc-600 transition-colors">
+          <button className="flex items-center justify-center gap-2 bg-zinc-900 border border-zinc-800 text-white font-bold uppercase tracking-widest text-xs py-3 px-5 rounded-lg hover:border-zinc-600 transition-colors">
             <Download className="w-4 h-4" /> Exportar CSV
           </button>
         </div>
       </header>
 
       {/* METRICAS */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-        <div className="glass-panel p-6 rounded-2xl border-t-2 border-t-blue-500 bg-black col-span-2 md:col-span-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+        <div className="glass-panel p-6 rounded-2xl border-t-2 border-t-blue-500 bg-black">
           <div className="flex items-center gap-2 mb-3 text-blue-500">
             <DollarSign className="w-5 h-5" />
             <h3 className="font-black uppercase tracking-widest text-[10px]">Wompi (Online)</h3>
@@ -74,7 +74,7 @@ export default function EventSalesStatsPage({ params }: { params: { id: string }
           <p className="text-3xl md:text-4xl font-black tracking-tighter">${data.totalRevenue.toLocaleString()} <span className="text-xs text-zinc-600">COP</span></p>
         </div>
 
-        <div className="glass-panel p-6 rounded-2xl border-t-2 border-t-orange-500 bg-black col-span-2 md:col-span-1">
+        <div className="glass-panel p-6 rounded-2xl border-t-2 border-t-orange-500 bg-black">
           <div className="flex items-center gap-2 mb-3 text-orange-400">
             <DoorOpen className="w-5 h-5" />
             <h3 className="font-black uppercase tracking-widest text-[10px]">Taquilla (Efectivo)</h3>
@@ -148,26 +148,26 @@ export default function EventSalesStatsPage({ params }: { params: { id: string }
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-800 bg-zinc-900/50">
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400">Cliente</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400">Tickets</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400">Monto</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 hidden sm:table-cell">Ref.</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 whitespace-nowrap">Cliente</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 whitespace-nowrap">Tickets</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 whitespace-nowrap">Monto</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 hidden sm:table-cell whitespace-nowrap">Ref.</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800">
                   {data.orders.map((order: any) => (
                     <tr key={order.id} className="hover:bg-zinc-900/30 transition-colors">
-                      <td className="p-4">
+                      <td className="p-4 whitespace-nowrap">
                         <div className="font-bold text-white text-sm">{order.user?.name || 'Invitado'}</div>
                         <div className="text-xs text-zinc-500">{order.user?.email || 'N/A'}</div>
                       </td>
-                      <td className="p-4">
+                      <td className="p-4 whitespace-nowrap">
                         {order.order_items.map((item: any, idx: number) => (
                           <div key={idx} className="text-xs font-bold">{item.quantity}x <span className="text-neon-purple">{item.ticket_type?.name}</span></div>
                         ))}
                       </td>
-                      <td className="p-4"><div className="text-sm font-black text-neon-green">${order.total.toLocaleString()}</div></td>
-                      <td className="p-4 hidden sm:table-cell">
+                      <td className="p-4 whitespace-nowrap"><div className="text-sm font-black text-neon-green">${order.total.toLocaleString()}</div></td>
+                      <td className="p-4 hidden sm:table-cell whitespace-nowrap">
                         <div className="text-xs font-mono text-zinc-500 bg-zinc-900 p-1.5 rounded">{order.payment_ref?.substring(0, 12) || 'N/A'}</div>
                       </td>
                     </tr>
@@ -191,22 +191,22 @@ export default function EventSalesStatsPage({ params }: { params: { id: string }
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-800 bg-zinc-900/50">
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400">Asistente</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400">Cédula</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400">Pagó</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 whitespace-nowrap">Asistente</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 whitespace-nowrap">Cédula</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 whitespace-nowrap">Pagó</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800">
                   {walkIns.map((sale: any) => (
                     <tr key={sale.id} className="hover:bg-zinc-900/30 transition-colors">
-                      <td className="p-4">
+                      <td className="p-4 whitespace-nowrap">
                         <div className="font-bold text-white text-sm">{sale.name || <span className="text-zinc-500 italic text-xs">Anónimo</span>}</div>
                         {sale.email && <div className="text-xs text-zinc-500">{sale.email}</div>}
                       </td>
-                      <td className="p-4">
+                      <td className="p-4 whitespace-nowrap">
                         <div className="text-xs font-mono text-zinc-400">{sale.cedula || '—'}</div>
                       </td>
-                      <td className="p-4">
+                      <td className="p-4 whitespace-nowrap">
                         <div className="text-sm font-black text-orange-400">${sale.amount.toLocaleString()}</div>
                         <div className="text-[10px] text-zinc-600">{new Date(sale.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
                       </td>

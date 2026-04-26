@@ -69,7 +69,7 @@ export default function AdminEventsPage() {
               Edita, borra y visualiza el rendimiento general de los Raves.
             </p>
           </div>
-          <Link href="/admin/events/new" className="bg-neon-green text-black px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs hover:shadow-[0_0_20px_rgba(57,255,20,0.5)] hover:bg-white flex items-center gap-2 transition-all shrink-0">
+          <Link href="/admin/events/new" className="w-full md:w-auto justify-center bg-neon-green text-black px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs hover:shadow-[0_0_20px_rgba(57,255,20,0.5)] hover:bg-white flex items-center gap-2 transition-all shrink-0">
             <Plus className="w-4 h-4" /> Lanzar Nuevo Evento
           </Link>
         </header>
@@ -100,22 +100,22 @@ export default function AdminEventsPage() {
                 
                 <div className="p-5 flex-1 flex flex-col">
                   <h3 className="font-black uppercase tracking-widest text-white text-lg leading-tight mb-2 truncate" title={event.title}>{event.title}</h3>
-                  <div className="space-y-1.5 mb-4">
-                    <div className="flex items-center gap-2 text-xs text-zinc-400">
-                      <Calendar className="w-3.5 h-3.5 text-zinc-500" />
-                      {new Date(event.date).toLocaleDateString()} {new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <div className="space-y-1.5 mb-4 w-full min-w-0">
+                    <div className="flex items-center gap-2 text-xs text-zinc-400 w-full min-w-0">
+                      <Calendar className="shrink-0 w-3.5 h-3.5 text-zinc-500" />
+                      <span className="truncate">{new Date(event.date).toLocaleDateString()} {new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-zinc-400">
-                      <MapPin className="w-3.5 h-3.5 text-zinc-500" />
+                    <div className="flex items-center gap-2 text-xs text-zinc-400 w-full min-w-0">
+                      <MapPin className="shrink-0 w-3.5 h-3.5 text-zinc-500" />
                       <span className="truncate">{event.venue}</span>
                     </div>
                   </div>
                   
-                  <div className="mt-auto pt-4 border-t border-zinc-800/50 flex items-center justify-between">
-                    <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
+                  <div className="mt-auto pt-4 border-t border-zinc-800/50 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
+                    <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest truncate w-full sm:w-auto text-center sm:text-left">
                       <span className="text-neon-purple">{event._count?.orders || 0}</span> Órdenes
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center sm:justify-end gap-2 shrink-0 w-full sm:w-auto">
                       <button onClick={() => window.open(`/events/${event.id}`, '_blank')} className="p-2 bg-zinc-900 rounded-lg text-zinc-400 hover:text-white transition-colors" title="Ver en Pista">
                         <Eye className="w-4 h-4" />
                       </button>

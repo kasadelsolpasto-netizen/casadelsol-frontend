@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { QrCode, CalendarPlus, Users, Activity, Ticket, ArrowLeft, DoorOpen, ShoppingBag, Zap } from 'lucide-react';
+import { QrCode, CalendarPlus, Users, Activity, Ticket, ArrowLeft, DoorOpen, ShoppingBag, Zap, Menu, X } from 'lucide-react';
 import AdminLogoutButton from '@/components/AdminLogoutButton';
 import AdminNotifications from '@/components/admin/AdminNotifications';
 
@@ -10,6 +10,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     // Si estamos en la página de login de admin, no aplicar el bloqueo
@@ -49,9 +54,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen flex bg-[#050505]">
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#050505]">
+      {/* Mobile Header Menu Button */}
+      <div className="md:hidden flex items-center justify-between p-4 border-b border-zinc-800 bg-black sticky top-0 z-[40]">
+        <Link href="/">
+          <h2 className="text-xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-br from-neon-purple to-neon-green">
+            Kasa / Admin
+          </h2>
+        </Link>
+        <button 
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="p-2 text-zinc-400 hover:text-white transition-colors"
+        >
+          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+
+      {/* Mobile Overlay */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[45] md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar Navigation */}
-      <aside className="hidden md:flex w-64 border-r border-zinc-800 bg-black/80 backdrop-blur fixed h-full flex-col pt-8 z-50">
+      <aside className={`fixed md:static inset-y-0 left-0 transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out w-64 border-r border-zinc-800 bg-black/95 md:bg-black/80 backdrop-blur h-full flex flex-col pt-8 z-50`}>
         <div className="px-6 mb-8">
           <Link href="/">
             <h2 className="text-2xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-br from-neon-purple to-neon-green hover:animate-glow transition-all">
@@ -101,7 +129,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content Area */}
-      <main className="md:ml-64 flex-1 w-full bg-[#050505]">
+      <main className="flex-1 w-full bg-[#050505] min-w-0">
         {children}
       </main>
       <AdminNotifications />
