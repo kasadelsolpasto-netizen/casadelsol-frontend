@@ -3,15 +3,18 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { 
   Calendar, MapPin, Loader2, ArrowRight, ShoppingBag, 
-  TrendingUp, Clock, CreditCard, Users, DollarSign, X, CheckCircle 
+  TrendingUp, Clock, CreditCard, Users, DollarSign, X, CheckCircle,
+  AlertTriangle, Shield, RotateCcw
 } from 'lucide-react';
 
 export default function AdminSalesPage() {
-  const [activeTab, setActiveTab] = useState<'events' | 'shop'>('events');
+  const [activeTab, setActiveTab] = useState<'events' | 'shop' | 'rescue'>('events');
   const [events, setEvents] = useState<any[]>([]);
   const [shopMetrics, setShopMetrics] = useState<any>(null);
+  const [pendingOrders, setPendingOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [recovering, setRecovering] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -25,7 +28,7 @@ export default function AdminSalesPage() {
           headers: { 'Authorization': `Bearer ${authToken}` }
         });
         if (res.ok) setEvents(await res.json());
-      } else {
+      } else if (activeTab === 'shop') {
         const res = await fetch(`${API}/shop/orders/admin/metrics`, {
           headers: { 'Authorization': `Bearer ${authToken}` }
         });
@@ -36,6 +39,11 @@ export default function AdminSalesPage() {
           const errData = await res.json().catch(() => ({}));
           console.error('Error details:', errData);
         }
+      } else if (activeTab === 'rescue') {
+        const res = await fetch(`${API}/orders/admin/pending`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (res.ok) setPendingOrders(await res.json());
       }
     } catch (e) {
       console.error('Fetch operation failed:', e);
@@ -63,7 +71,46 @@ export default function AdminSalesPage() {
     } catch(e) { console.error(e); }
   };
 
+  const recoverOrder = async (orderId: string) => {
+    if (!confirm('¿Estás seguro de recuperar esta orden? Esto generará los QR y completará la venta.')) return;
+    setRecovering(orderId);
+    try {
+      const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
+      const authToken = tokenRow ? tokenRow.split('=')[1] : null;
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/orders/admin/recover-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+        body: JSON.stringify({ orderId })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        alert(`✅ Orden recuperada. ${data.qrCount || 0} QR(s) generados. El usuario ya puede ver sus entradas.`);
+        fetchData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(`Error: ${err.message || 'No se pudo recuperar'}`);
+      }
+    } catch (e) { alert('Error de conexión.'); }
+    finally { setRecovering(null); }
+  };
+
   useEffect(() => { fetchData(); }, [activeTab]);
+
+  // Pre-load pending count for badge
+  useEffect(() => {
+    const loadPendingCount = async () => {
+      try {
+        const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
+        const authToken = tokenRow ? tokenRow.split('=')[1] : null;
+        const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const res = await fetch(`${API}/orders/admin/pending`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (res.ok) setPendingOrders(await res.json());
+      } catch {}
+    };
+    loadPendingCount();
+  }, []);
 
   return (
     <div className="min-h-screen p-6 md:p-12 max-w-7xl mx-auto pb-32">
@@ -86,6 +133,15 @@ export default function AdminSalesPage() {
            >
              <ShoppingBag className="w-4 h-4" /> Ventas Tienda
            </button>
+           <button 
+             onClick={() => setActiveTab('rescue')}
+             className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === 'rescue' ? 'bg-red-950 text-red-400 shadow-xl border border-red-900/50' : 'text-zinc-600 hover:text-red-400'}`}
+           >
+             <AlertTriangle className="w-4 h-4" /> Rescate
+             {pendingOrders.length > 0 && (
+               <span className="w-5 h-5 rounded-full bg-red-600 text-white text-[8px] font-black flex items-center justify-center animate-pulse">{pendingOrders.length}</span>
+             )}
+           </button>
         </div>
       </header>
 
@@ -93,6 +149,106 @@ export default function AdminSalesPage() {
         <div className="flex flex-col items-center justify-center p-32 gap-4">
           <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
           <span className="text-[10px] font-black text-zinc-700 uppercase tracking-widest">Sincronizando Bóveda...</span>
+        </div>
+      ) : activeTab === 'rescue' ? (
+        // ── RESCUE / PENDING ORDERS VIEW ──────────────────────────────
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {/* Warning Header */}
+          <div className="bg-red-950/30 border border-red-900/50 rounded-[2rem] p-8 mb-8 flex items-start gap-5">
+            <div className="w-14 h-14 rounded-2xl bg-red-900/30 flex items-center justify-center shrink-0 border border-red-900/50">
+              <Shield className="w-7 h-7 text-red-500" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-widest text-red-400 mb-2">Centro de Rescate de Ventas</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Estas órdenes están en estado <span className="text-red-400 font-bold">PENDING</span> — el usuario pudo haber pagado pero no recibió su QR por un fallo del webhook de Wompi.
+                Verifica en el <a href="https://comercios.wompi.co" target="_blank" rel="noreferrer" className="text-red-400 underline hover:text-red-300">Dashboard de Wompi</a> si el pago fue aprobado antes de recuperar.
+              </p>
+            </div>
+          </div>
+
+          {pendingOrders.length === 0 ? (
+            <div className="p-20 text-center border-2 border-zinc-900 border-dashed rounded-[3rem] flex flex-col items-center">
+              <CheckCircle className="w-16 h-16 text-neon-green/30 mb-4" />
+              <p className="text-zinc-600 font-black uppercase tracking-widest text-xs">No hay ventas perdidas. Todo limpio.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pendingOrders.map((order: any) => (
+                <div key={order.id} className="bg-zinc-950 border border-red-900/30 rounded-[2rem] overflow-hidden hover:border-red-800/60 transition-all">
+                  <div className="p-6 md:p-8">
+                    {/* Top Row: User + Event + Time */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="w-12 h-12 rounded-2xl bg-red-900/20 flex items-center justify-center text-red-500 border border-red-900/40 shrink-0">
+                          <Users className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-white font-black text-sm uppercase tracking-wider truncate">{order.user?.name || 'Desconocido'}</p>
+                          <p className="text-zinc-500 text-[10px] font-bold truncate">{order.user?.email || 'Sin email'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="px-3 py-1.5 bg-red-950/50 text-red-400 text-[8px] font-black uppercase tracking-widest rounded-lg border border-red-900/40">PENDING</span>
+                        <span className="px-3 py-1.5 bg-zinc-900 text-zinc-400 text-[8px] font-black uppercase tracking-widest rounded-lg border border-zinc-800">
+                          <Clock className="w-3 h-3 inline mr-1" />{order.hours_ago}h
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Middle: Event + Tickets */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      <div className="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800">
+                        <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-1">Evento</p>
+                        <p className="text-xs font-black text-white uppercase truncate">{order.event?.title || 'N/A'}</p>
+                        <p className="text-[10px] text-zinc-500 mt-1">{order.event?.date ? new Date(order.event.date).toLocaleDateString('es-CO') : ''}</p>
+                      </div>
+                      <div className="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800">
+                        <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-1">Tickets</p>
+                        {order.items?.map((item: any, i: number) => (
+                          <p key={i} className="text-xs text-white font-bold">{item.quantity}x {item.ticket_name}</p>
+                        ))}
+                      </div>
+                      <div className="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800">
+                        <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-1">Total</p>
+                        <p className="text-lg font-black text-white">{Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(order.total)}</p>
+                      </div>
+                    </div>
+
+                    {/* Attendees */}
+                    {Array.isArray(order.attendees) && order.attendees.length > 0 && (
+                      <div className="mb-6 bg-zinc-900/30 p-4 rounded-xl border border-zinc-800">
+                        <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-3">Asistentes Registrados</p>
+                        <div className="flex flex-wrap gap-2">
+                          {(order.attendees as any[]).map((att: any, i: number) => (
+                            <span key={i} className="text-[10px] bg-zinc-800 text-zinc-300 px-3 py-1 rounded-lg font-bold border border-zinc-700">
+                              {att.attendee_name || 'Sin nombre'}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Bottom: Order ID + Recover Button */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-zinc-800">
+                      <p className="text-[9px] text-zinc-600 font-mono truncate max-w-[300px]">ID: {order.id}</p>
+                      <button
+                        onClick={() => recoverOrder(order.id)}
+                        disabled={recovering === order.id}
+                        className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-black uppercase text-[10px] tracking-widest rounded-xl transition-all shadow-[0_10px_20px_rgba(220,38,38,0.3)] hover:shadow-[0_10px_30px_rgba(220,38,38,0.5)] disabled:opacity-50 shrink-0"
+                      >
+                        {recovering === order.id ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Recuperando...</>
+                        ) : (
+                          <><RotateCcw className="w-4 h-4" /> Recuperar Orden</>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : activeTab === 'events' ? (
         // ── EVENT SALES VIEW ──────────────────────────────────────────
