@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { Image as ImageIcon, Upload, Plus, Trash2, ArrowLeft, Loader2, Save } from 'lucide-react';
 import { AdminGuard } from '@/components/AdminGuard';
+import SeoPanel from '@/components/SeoPanel';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,6 +20,7 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
   });
   const [ticketTypes, setTicketTypes] = useState<any[]>([]);
   const [flyerUrl, setFlyerUrl] = useState<string>('');
+  const [seo, setSeo]           = useState({ seo_title: '', seo_description: '', seo_slug: '' });
   const [uploading, setUploading] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -46,6 +48,11 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
             status: event.status
           });
           setFlyerUrl(event.flyer_url || '');
+          setSeo({
+            seo_title:       event.seo_title       || '',
+            seo_description: event.seo_description || '',
+            seo_slug:        event.seo_slug        || '',
+          });
           setTicketTypes(event.ticket_types.map((t: any) => ({
              ...t,
              sale_start: formatForInput(t.sale_start),
@@ -128,6 +135,7 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
         },
         body: JSON.stringify({
            ...formData,
+           ...seo,
            date: new Date(formData.date).toISOString(),
            flyer_url: flyerUrl,
            ticket_types: ticketTypes.map((t: any) => ({
@@ -296,6 +304,15 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
                  ))}
                </div>
             </section>
+
+            {/* SEO Panel — como Shopify */}
+            <SeoPanel
+              title={formData.title}
+              content={formData.description}
+              value={seo}
+              onChange={setSeo}
+              baseUrl="kasadelsol.co"
+            />
 
             {submitError && <div className="text-red-500 text-xs font-bold uppercase tracking-widest mt-4 bg-red-500/10 p-4 rounded-xl border border-red-500/20">{submitError}</div>}
             {saveSuccess && <div className="text-neon-green text-xs font-bold uppercase tracking-widest mt-4 bg-neon-green/10 p-4 rounded-xl border border-neon-green/20">✅ Cambios guardados correctamente</div>}

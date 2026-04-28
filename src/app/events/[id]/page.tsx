@@ -1,391 +1,149 @@
-"use client";
-import Link from 'next/link';
-import { ArrowLeft, Calendar, MapPin } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Script from 'next/script';
-import Image from 'next/image';
-import CheckoutWizard from '@/components/CheckoutWizard';
-import { WhatsAppButton } from '@/components/WhatsAppButton';
+// SERVER COMPONENT — sin "use client"
+// Genera <title>, <meta>, Open Graph y JSON-LD Event (rich results en Google)
+import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import EventDetailClient from './EventDetailClient';
 
-export default function EventDetail({ params }: { params: { id: string } }) {
-  const router = useRouter();
-  const [event, setEvent] = useState<any>(null);
-  const [selectedTicket, setSelectedTicket] = useState<any>(null);
-  const [showWizard, setShowWizard] = useState(false);
-  const [wizardLoading, setWizardLoading] = useState(false);
-  const [wizardError, setWizardError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [showVaultAnim, setShowVaultAnim] = useState(false);
+const API      = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
+const SITE_URL = 'https://kasadelsol.co';
+const SITE_NAME = 'Kasa del Sol';
 
-  useEffect(() => {
-    let apiEndpoint = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
-    if (apiEndpoint.includes('localhost')) apiEndpoint = apiEndpoint.replace('localhost', '127.0.0.1');
-
-    // View Tracking
-    const trackedKey = `kasa_event_view_${params.id}`;
-    if (!sessionStorage.getItem(trackedKey)) {
-      sessionStorage.setItem(trackedKey, 'true');
-      fetch(`${apiEndpoint}/events/${params.id}/view`, { method: 'POST' }).catch(() => {});
-    }
-
-    fetch(`${apiEndpoint}/events/${params.id}`)
-      .then(res => res.json())
-      .then(setEvent)
-      .catch(console.error);
-  }, [params.id]);
-
-  if (!event) {
-    return (
-      <div className="fixed inset-0 z-50 bg-[#070000] flex flex-col items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-10 pointer-events-none opacity-90" style={{ backgroundImage: 'repeating-linear-gradient(transparent, transparent 1px, rgba(12,0,0,0.9) 2px, rgba(12,0,0,0.9) 4px)' }} />
-        <div className="relative z-20 flex flex-col items-center w-full px-6">
-          <div className="text-xl sm:text-3xl md:text-5xl font-black uppercase tracking-widest sm:tracking-[0.4em] flex flex-col text-center relative w-full items-center justify-center">
-            <span className="text-red-900 animate-bounce absolute opacity-80 blur-[2px] translate-x-1 -translate-y-1">INJECTING PAYLOAD</span>
-            <span className="text-red-600 absolute -translate-x-[2px] translate-y-[2px] mix-blend-screen opacity-90 animate-ping">INJECTING PAYLOAD</span>
-            <span className="text-zinc-400 mix-blend-screen relative z-10">INJECTING PAYLOAD</span>
-          </div>
-          <div className="mt-12 w-full max-w-sm border border-red-900/50 p-1 bg-black/80">
-            <div className="h-2 bg-red-600 animate-[pulse_0.3s_infinite] w-3/4 shadow-[0_0_15px_rgba(220,38,38,0.8)]" />
-          </div>
-        </div>
-      </div>
-    );
+// ── Fetch compartido ─────────────────────────────────────────────────────────
+async function getEvent(id: string) {
+  try {
+    const res = await fetch(`${API}/events/${id}`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
   }
+}
 
-  const handleLaunchWompi = async (attendees: any[], hp: string, recaptchaToken: string, promoterCode?: string) => {
-    setWizardError('');
-    setWizardLoading(true);
-    try {
-      const tokenRow = document.cookie.split('; ').find(r => r.startsWith('kasa_auth_token='));
-      const token = tokenRow ? tokenRow.split('=')[1] : null;
-      if (!token) { setWizardError('Sesión expirada. Por favor recarga.'); return; }
+// ── generateMetadata ─────────────────────────────────────────────────────────
+export async function generateMetadata(
+  { params }: { params: { id: string } }
+): Promise<Metadata> {
+  const event = await getEvent(params.id);
+  if (!event) return { title: `Evento no encontrado | ${SITE_NAME}` };
 
-      const payloadAttendees = attendees.map(att => ({
-        ...att,
-        ticket_type_id: selectedTicket.id
-      }));
+  const title       = event.seo_title       || `${event.title} | ${SITE_NAME}`;
+  const description = event.seo_description || event.description?.slice(0, 160) || '';
+  const slug        = event.seo_slug        || event.id;
+  const canonical   = `${SITE_URL}/events/${slug}`;
+  const image       = event.flyer_url       || `${SITE_URL}/og-default.jpg`;
+  const eventDate   = new Date(event.date);
 
-      const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title,
+      description,
+      url:       canonical,
+      siteName:  SITE_NAME,
+      type:      'website',
+      images:    [{ url: image, width: 1200, height: 630, alt: event.title }],
+    },
+    twitter: {
+      card:        'summary_large_image',
+      title,
+      description,
+      images:      [image],
+      site:        '@kasadelsol',
+    },
+    robots: {
+      index:  event.status === 'PUBLISHED',
+      follow: event.status === 'PUBLISHED',
+    },
+  };
+}
 
-      // ── FLUJO GRATUITO ────────────────────────────────────────────
-      if (selectedTicket.price === 0) {
-        const res = await fetch(`${API}/orders/checkout-free`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'recaptcha-token': recaptchaToken
-          },
-          body: JSON.stringify({ attendees: payloadAttendees, hp })
-        });
+// ── Página principal (Server) ────────────────────────────────────────────────
+export default async function EventPage({ params }: { params: { id: string } }) {
+  const event = await getEvent(params.id);
+  if (!event || event.status !== 'PUBLISHED') notFound();
 
-        if (!res.ok) {
-          const errData = await res.json().catch(() => null);
-          throw new Error(errData?.message || 'Error al registrar tu entrada gratuita.');
-        }
+  const slug      = event.seo_slug        || event.id;
+  const title     = event.seo_title       || `${event.title} | ${SITE_NAME}`;
+  const desc      = event.seo_description || event.description?.slice(0, 160) || '';
+  const canonical = `${SITE_URL}/events/${slug}`;
+  const image     = event.flyer_url       || `${SITE_URL}/og-default.jpg`;
+  const startDate = new Date(event.date).toISOString();
 
-        setWizardLoading(false);
-        setShowWizard(false);
-        setShowVaultAnim(true);
-        setTimeout(() => {
-          const userPayload = JSON.parse(decodeURIComponent(escape(atob(token.split('.')[1]))));
-          router.push(`/profile/${userPayload.id || userPayload.sub}`);
-        }, 2000);
-        return;
-      }
+  // Precio mínimo de los tickets para el schema (Google lo muestra en los resultados)
+  const activeTickets = (event.ticket_types || []).filter(
+    (t: any) => t.available > 0 && (!t.sale_end || new Date(t.sale_end) > new Date())
+  );
+  const minPrice = activeTickets.length
+    ? Math.min(...activeTickets.map((t: any) => t.price))
+    : null;
 
-      // ── FLUJO WOMPI (tickets de pago) ─────────────────────────────
-      const res = await fetch(`${API}/orders/checkout-wompi`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${token}`,
-          'recaptcha-token': recaptchaToken
-        },
-        body: JSON.stringify({ attendees: payloadAttendees, hp, promoter_code: promoterCode })
-      });
+  // ── JSON-LD: schema.org Event ────────────────────────────────────────────
+  // Este schema activa los "Event Rich Results" de Google:
+  // aparece con fecha, lugar, precio y botón de entradas directamente en la SERP
+  const jsonLd: any = {
+    '@context': 'https://schema.org',
+    '@type': 'Event',
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null);
-        throw new Error(errData?.message || 'Error al inicializar el pago.');
-      }
+    // Campos obligatorios para rich results
+    name:      event.title,
+    startDate,
+    location: {
+      '@type': 'Place',
+      name:    event.venue,
+      address: {
+        '@type':           'PostalAddress',
+        addressLocality:   event.venue,
+        addressCountry:    'CO',
+      },
+    },
 
-      const data = await res.json();
-      const orderId: string = data.reference;
+    // Campos altamente recomendados
+    description: desc,
+    image:       [image],
+    url:         canonical,
+    organizer: {
+      '@type': 'Organization',
+      name:    SITE_NAME,
+      url:     SITE_URL,
+    },
+    eventStatus:         'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
 
-      if (typeof (window as any).WidgetCheckout !== 'function') {
-         throw new Error('Cargando servidor seguro de pagos... por favor intenta nuevamente en unos segundos.');
-      }
+    // Ofertas de tickets — esto activa el precio en los rich results
+    ...(activeTickets.length > 0 && {
+      offers: activeTickets.map((t: any) => ({
+        '@type':         'Offer',
+        name:            t.name,
+        price:           t.price,
+        priceCurrency:   'COP',
+        availability:    t.available > 0
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/SoldOut',
+        url:             canonical,
+        validFrom:       t.sale_start ? new Date(t.sale_start).toISOString() : startDate,
+        ...(t.sale_end && { validThrough: new Date(t.sale_end).toISOString() }),
+      })),
+    }),
 
-      const buyer = attendees[0];
-      const customerData: Record<string, string> = {};
-      if (buyer?.attendee_email) customerData.email = buyer.attendee_email;
-      if (buyer?.attendee_name) customerData.fullName = buyer.attendee_name;
-
-      const widgetConfig = {
-        currency: 'COP',
-        amountInCents: data.amountInCents,
-        reference: orderId,
-        publicKey: data.publicKey,
-        signature: { integrity: data.signature },
-        ...(Object.keys(customerData).length > 0 && { customerData }),
-      };
-
-      const checkout = new (window as any).WidgetCheckout(widgetConfig);
-
-      checkout.open(async (result: any) => {
-        setWizardLoading(false);
-        const tx = result.transaction;
-        setShowWizard(false);
-
-        if (tx.status === 'APPROVED') {
-          // Mostrar animación de bóveda inmediatamente
-          setShowWizard(false);
-          setShowVaultAnim(true);
-          try {
-            const confirmRes = await fetch(`${API}/orders/confirm-ticket-payment`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-              body: JSON.stringify({ orderId, wompiTransactionId: tx.id }),
-            });
-            if (!confirmRes.ok) console.error('[ticket-confirm] Error:', await confirmRes.text());
-          } catch (confirmErr) { console.error('[ticket-confirm] Error:', confirmErr); }
-          setTimeout(() => {
-            const userPayload = JSON.parse(decodeURIComponent(escape(atob(token.split('.')[1]))));
-            router.push(`/profile/${userPayload.id || userPayload.sub}`);
-          }, 2000);
-        } else {
-          setWizardError(`Estado: ${tx.status}. Intenta de nuevo.`);
-        }
-      });
-
-    } catch (err: any) {
-      console.error('[Checkout] ERROR:', err);
-      setWizardError(err.message);
-      setWizardLoading(false);
-    }
+    // Performer (opcional pero mejora visibilidad)
+    performer: {
+      '@type': 'PerformingGroup',
+      name:    SITE_NAME,
+    },
   };
 
-
-
-  // ── Animación de bóveda ──────────────────────────────────────
-  if (showVaultAnim) {
-    return (
-      <div className="fixed inset-0 z-[999] bg-black flex flex-col items-center justify-center overflow-hidden">
-        {/* Scanlines */}
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(transparent, transparent 2px, rgba(0,0,0,0.4) 2px, rgba(0,0,0,0.4) 4px)' }} />
-        
-        {/* Red portal rings */}
-        <div className="absolute w-[600px] h-[600px] rounded-full border border-red-900/10 animate-ping" style={{ animationDuration: '3s' }} />
-        <div className="absolute w-[400px] h-[400px] rounded-full border border-red-700/20 animate-ping" style={{ animationDelay: '0.5s', animationDuration: '3s' }} />
-        <div className="absolute w-[200px] h-[200px] rounded-full border border-red-500/30 animate-ping" style={{ animationDelay: '1s', animationDuration: '3s' }} />
-
-        {/* Diabolical Core / Monolith */}
-        <div className="w-32 h-48 border-2 border-red-600 bg-black shadow-[0_0_100px_rgba(220,38,38,0.6)] flex items-center justify-center relative mb-12 overflow-hidden transform skew-x-[-5deg]">
-           <div className="absolute inset-2 border border-red-800 shadow-[inset_0_0_50px_rgba(220,38,38,0.8)]"></div>
-           <div className="absolute inset-4 bg-gradient-to-t from-red-600/50 to-black animate-pulse" style={{ animationDuration: '1.5s' }}></div>
-           
-           {/* Sharp Spinners */}
-           <div className="w-16 h-16 border-2 border-red-600 border-t-red-900 animate-spin absolute top-1/3"></div>
-           <div className="w-8 h-8 border-2 border-red-800 border-b-red-500 animate-spin absolute top-1/3" style={{ animationDirection: 'reverse', animationDuration: '0.5s' }}></div>
-        </div>
-
-        {/* Texto glitch Virus */}
-        <div className="relative text-center font-mono">
-          <span className="absolute text-red-700 text-3xl font-black uppercase tracking-[0.3em] blur-[4px] translate-x-[4px] -translate-y-[4px] opacity-70">ABRIENDO LA BÓVEDA</span>
-          <span className="absolute text-red-500 text-3xl font-black uppercase tracking-[0.3em] blur-[2px] -translate-x-[2px] translate-y-[2px] mix-blend-screen">ABRIENDO LA BÓVEDA</span>
-          <span className="relative text-red-600 text-3xl font-black uppercase tracking-[0.3em] [text-shadow:0_0_20px_#dc2626]">ABRIENDO LA BÓVEDA</span>
-        </div>
-        <p className="mt-6 text-red-800 text-xs uppercase tracking-[0.5em] font-mono animate-pulse font-bold">Ejecutando script de acceso…</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen pb-20">
-      <Script src="https://checkout.wompi.co/widget.js" strategy="afterInteractive" />
-
-      {/* Hero */}
-      <div className="relative w-full min-h-[60vh] border-b border-zinc-800 flex items-center justify-center p-6 md:p-12 overflow-hidden">
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          {event.flyer_url && <Image src={event.flyer_url} alt="background" fill priority sizes="100vw" className="object-cover blur-3xl opacity-30 transform scale-125" />}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
-        </div>
-
-        <div className="relative z-10 w-full max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-10 lg:gap-20">
-          <div className="w-full md:w-1/2 flex flex-col justify-center order-2 md:order-1 pt-4 md:pt-0">
-            <Link href="/" className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors uppercase text-xs tracking-widest font-semibold mb-6 w-fit">
-              <ArrowLeft className="w-4 h-4" /> Volver
-            </Link>
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-black uppercase tracking-widest text-white mb-6 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] neon-text-primary">
-              {event.title}
-            </h1>
-            <div className="flex flex-col sm:flex-row w-fit gap-4 sm:gap-6 text-sm font-semibold uppercase tracking-wider">
-              <div className="flex items-center gap-2 py-2 px-4 bg-black/50 backdrop-blur rounded border border-zinc-800">
-                <Calendar className="w-4 h-4 text-neon-green" /> {new Date(event.date).toLocaleDateString('es-CO')}
-              </div>
-              <div className="flex items-center gap-2 py-2 px-4 bg-black/50 backdrop-blur rounded border border-zinc-800">
-                <MapPin className="w-4 h-4 text-neon-purple" /> {event.venue}
-              </div>
-            </div>
-          </div>
-
-          <div className="w-full md:w-1/2 order-1 md:order-2 flex justify-center md:justify-end">
-            <div className="relative w-full max-w-sm aspect-[4/5] shadow-[0_0_50px_rgba(0,0,0,0.7)] group transform md:rotate-3 hover:rotate-0 transition-all duration-500 rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800/50 p-[2px]">
-              {/* Controles de la animación neón envolvente */}
-              <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(from_0deg,transparent_75%,#39ff14_90%,#bf00ff_100%)] opacity-40 group-hover:opacity-100 transition-opacity duration-1000 z-0 pointer-events-none"></div>
-              
-              <div className="relative w-full h-full rounded-xl overflow-hidden bg-black z-10">
-                {event.flyer_url && <Image src={event.flyer_url} alt={event.title} fill priority sizes="(max-width: 768px) 100vw, 400px" className="object-cover group-hover:scale-105 transition-transform duration-1000" />}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 mt-12 grid grid-cols-1 lg:grid-cols-3 gap-12">
-        <div className="lg:col-span-2 space-y-8">
-          <section>
-            <h3 className="text-xl font-bold uppercase tracking-widest text-zinc-300 border-b border-zinc-800 pb-2 mb-4">
-              Acerca del Evento
-            </h3>
-            <div className="w-full overflow-hidden">
-              <p className="text-zinc-400 leading-relaxed whitespace-pre-line break-words break-all">{event.description}</p>
-            </div>
-          </section>
-        </div>
-
-        {/* Tickets panel */}
-        <div id="tickets-section" className="lg:col-span-1 scroll-mt-24">
-          <div className="glass-panel rounded-2xl p-6 sticky top-24">
-            <h3 className="text-lg font-bold uppercase tracking-widest text-white mb-6 flex items-center justify-between">
-              Entradas
-              <span className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
-            </h3>
-
-            {success && (
-              <div className="mb-4 p-3 bg-neon-green/10 border border-neon-green/30 rounded-xl text-neon-green text-xs font-black uppercase text-center">
-                {success}
-              </div>
-            )}
-
-            <div className="space-y-3">
-              {event.ticket_types.map((ticket: any) => {
-                const now = new Date();
-                const isStarted = !ticket.sale_start || new Date(ticket.sale_start) <= now;
-                const isEnded = ticket.sale_end && new Date(ticket.sale_end) <= now;
-                const isAvailable = ticket.available > 0;
-                const canBuy = isAvailable && isStarted && !isEnded;
-                const isSelected = selectedTicket?.id === ticket.id;
-
-                return (
-                  <div
-                    key={ticket.id}
-                    onClick={() => canBuy && setSelectedTicket(ticket)}
-                    className={`border rounded-xl p-4 transition-all relative overflow-hidden ${
-                      canBuy
-                        ? `cursor-pointer ${isSelected
-                            ? 'border-neon-green bg-neon-green/10 shadow-[0_0_20px_rgba(57,255,20,0.2)]'
-                            : 'border-zinc-700 hover:border-zinc-500 bg-black/40 hover:bg-black/60'}`
-                        : 'border-zinc-900 bg-zinc-950 opacity-50 cursor-not-allowed'
-                    }`}
-                  >
-                    {/* Indicador de Activo Neón */}
-                    {canBuy && !isSelected && (
-                      <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none opacity-20">
-                         <div className="absolute top-0 right-0 w-2 h-2 rounded-full bg-neon-green animate-ping" />
-                      </div>
-                    )}
-
-                    <div className="flex justify-between items-center relative z-10 gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center flex-wrap gap-2">
-                          <h4 className={`font-bold uppercase tracking-wider text-sm ${isSelected ? 'text-neon-green' : canBuy ? 'text-zinc-200' : 'text-zinc-600 line-through'}`}>
-                            {ticket.name}
-                          </h4>
-                          {!isStarted && <span className="bg-zinc-800 text-zinc-400 text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-widest shrink-0">PRÓXIMAMENTE</span>}
-                          {isEnded && <span className="bg-red-900/40 text-red-500 text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-widest border border-red-900 shrink-0">CERRADO</span>}
-                          {!isAvailable && isStarted && !isEnded && <span className="bg-zinc-800 text-zinc-500 text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-widest shrink-0">SOLD OUT</span>}
-                          {canBuy && (
-                             <span className="bg-neon-green/10 text-neon-green text-[8px] px-2 py-0.5 rounded font-black uppercase tracking-[0.2em] border border-neon-green/20 animate-pulse shrink-0 flex-initial">DISPONIBLE AHORA</span>
-                          )}
-                        </div>
-                        <p className={`text-xs mt-1 font-medium ${canBuy && ticket.hide_stock && ticket.available <= 20 ? 'text-orange-400 font-bold' : 'text-zinc-500'}`}>
-                          {!canBuy ? 'No disponible para compra' : 
-                           ticket.hide_stock ? (ticket.available > 20 ? 'Disponible ahora' : `¡Últimas ${ticket.available} entradas!`) : 
-                           `${ticket.available} disponibles`}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className={`font-black text-lg ${canBuy ? (ticket.price === 0 ? 'text-neon-green' : 'text-white') : 'text-zinc-600'}`}>
-                          {ticket.price === 0
-                            ? 'GRATIS'
-                            : Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(ticket.price)}
-                        </span>
-                        {canBuy && (
-                          <div className={`w-5 h-5 rounded-full border-2 transition-all shrink-0 ${isSelected ? 'border-neon-green bg-neon-green' : 'border-zinc-600'}`} />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <button
-              onClick={() => { 
-                if (selectedTicket) {
-                  // Track Checkout Click
-                  const trackedClickKey = `kasa_event_click_${params.id}`;
-                  if (!sessionStorage.getItem(trackedClickKey)) {
-                    sessionStorage.setItem(trackedClickKey, 'true');
-                    const apiEndpoint = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
-                    fetch(`${apiEndpoint}/events/${params.id}/click`, { method: 'POST' }).catch(() => {});
-                  }
-                  setShowWizard(true); 
-                }
-              }}
-              disabled={!selectedTicket}
-              className="w-full mt-6 bg-neon-green text-black font-black uppercase tracking-widest py-4 rounded-xl hover:shadow-[0_0_20px_rgba(57,255,20,0.4)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {selectedTicket ? `Comprar — ${selectedTicket.name}` : 'Selecciona una entrada'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Floating CTA for mobile */}
-      <div className="fixed bottom-6 w-full flex justify-center z-40 lg:hidden pointer-events-none px-4">
-        <button
-          onClick={() => document.getElementById('tickets-section')?.scrollIntoView({ behavior: 'smooth' })}
-          className="pointer-events-auto relative overflow-hidden group bg-[#050505]/80 backdrop-blur-md border border-purple-900/50 hover:border-purple-500/80 shadow-[0_0_30px_rgba(0,0,0,0.9)] hover:shadow-[0_0_50px_rgba(168,85,247,0.4)] px-8 py-3.5 rounded-full transition-all duration-300 transform hover:-translate-y-1 active:scale-95 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-500"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-900/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out blur-md" />
-          <span className="relative flex w-2 h-2">
-            <span className="absolute animate-ping w-3 h-3 rounded-full bg-purple-600 opacity-60" />
-            <span className="relative w-2 h-2 rounded-full bg-purple-400" />
-          </span>
-          <span className="relative text-zinc-300 font-black uppercase tracking-[0.2em] text-[11px] group-hover:text-white transition-colors">
-            Obtener Entrada
-          </span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="relative text-purple-800 group-hover:text-purple-400 transition-colors group-hover:translate-x-1">
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-        </button>
-      </div>
-
-      <CheckoutWizard
-        isOpen={showWizard}
-        onClose={() => { setShowWizard(false); setWizardError(''); }}
-        ticketType={selectedTicket}
-        onLaunchWompi={handleLaunchWompi}
-        isLoading={wizardLoading}
-        error={wizardError}
+    <>
+      {/* JSON-LD inyectado en el <head> — activa Event Rich Results en Google */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      
-      <WhatsAppButton className="bottom-[90px] lg:bottom-6 right-4 lg:right-6" />
-    </div>
+
+      {/* Toda la interactividad (checkout, wizard, etc.) en el client component */}
+      <EventDetailClient params={params} />
+    </>
   );
 }

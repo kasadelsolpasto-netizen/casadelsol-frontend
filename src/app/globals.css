@@ -46,3 +46,166 @@ body {
 .grecaptcha-badge { 
   visibility: hidden !important; 
 }
+
+/* ── RICH EDITOR (Tiptap) ──────────────────────────────────────────────── */
+.rich-editor-content .tiptap {
+  outline: none;
+  min-height: 300px;
+  line-height: 1.75;
+  color: #e4e4e7;
+}
+
+/* Placeholder */
+.rich-editor-content .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #3f3f46;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+/* Headings en el editor */
+.rich-editor-content .tiptap h1 { font-size: 2rem;   font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em; color: #fff; margin: 1.5rem 0 0.5rem; line-height: 1.1; }
+.rich-editor-content .tiptap h2 { font-size: 1.5rem; font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; color: #fff; margin: 1.25rem 0 0.4rem; }
+.rich-editor-content .tiptap h3 { font-size: 1.15rem;font-weight: 800; text-transform: uppercase; color: #a1a1aa; margin: 1rem 0 0.35rem; }
+.rich-editor-content .tiptap h4 { font-size: 1rem;   font-weight: 700; text-transform: uppercase; color: #71717a; margin: 0.75rem 0 0.3rem; }
+
+/* Párrafos */
+.rich-editor-content .tiptap p { margin: 0.5rem 0; }
+
+/* Listas */
+.rich-editor-content .tiptap ul { list-style: disc;    padding-left: 1.5rem; margin: 0.75rem 0; }
+.rich-editor-content .tiptap ol { list-style: decimal; padding-left: 1.5rem; margin: 0.75rem 0; }
+.rich-editor-content .tiptap li { margin: 0.25rem 0; color: #d4d4d8; }
+
+/* Blockquote */
+.rich-editor-content .tiptap blockquote {
+  border-left: 3px solid #bf00ff;
+  padding: 0.5rem 1rem;
+  margin: 1rem 0;
+  background: rgba(191,0,255,0.05);
+  border-radius: 0 0.5rem 0.5rem 0;
+  color: #a1a1aa;
+  font-style: italic;
+}
+
+/* Código inline */
+.rich-editor-content .tiptap code {
+  background: rgba(57,255,20,0.08);
+  border: 1px solid rgba(57,255,20,0.15);
+  color: #39ff14;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+  font-family: 'Courier New', monospace;
+}
+
+/* Bloque de código */
+.rich-editor-content .tiptap pre {
+  background: #0a0a0a;
+  border: 1px solid #27272a;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+.rich-editor-content .tiptap pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #39ff14;
+}
+
+/* Línea divisoria */
+.rich-editor-content .tiptap hr {
+  border: none;
+  border-top: 1px solid #27272a;
+  margin: 1.5rem 0;
+}
+
+/* Imágenes insertadas */
+.rich-editor-content .tiptap img {
+  max-width: 100%;
+  border-radius: 0.75rem;
+  margin: 0.75rem 0;
+  display: block;
+  border: 1px solid #27272a;
+}
+.rich-editor-content .tiptap img.ProseMirror-selectednode {
+  outline: 2px solid #bf00ff;
+  outline-offset: 2px;
+}
+
+/* Links */
+.rich-editor-content .tiptap a {
+  color: #bf00ff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.rich-editor-content .tiptap a:hover { color: #39ff14; }
+
+/* Strong / Em */
+.rich-editor-content .tiptap strong { color: #fff; font-weight: 800; }
+.rich-editor-content .tiptap em     { color: #a1a1aa; font-style: italic; }
+.rich-editor-content .tiptap s      { color: #52525b; text-decoration: line-through; }
+
+
+/* ── PROSE — renderizado público de posts ──────────────────────────────── */
+.post-content h1 { font-size: 2.25rem; font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em; color: #fff; margin: 2rem 0 0.75rem; line-height: 1.1; }
+.post-content h2 { font-size: 1.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; color: #fff; margin: 1.75rem 0 0.6rem; }
+.post-content h3 { font-size: 1.25rem; font-weight: 800; text-transform: uppercase; color: #a1a1aa; margin: 1.5rem 0 0.5rem; }
+.post-content h4 { font-size: 1.05rem; font-weight: 700; text-transform: uppercase; color: #71717a; margin: 1.25rem 0 0.4rem; }
+.post-content p  { margin: 0.75rem 0; color: #d4d4d8; line-height: 1.8; font-size: 1.05rem; }
+
+.post-content ul { list-style: disc;    padding-left: 1.75rem; margin: 1rem 0; }
+.post-content ol { list-style: decimal; padding-left: 1.75rem; margin: 1rem 0; }
+.post-content li { margin: 0.4rem 0; color: #d4d4d8; line-height: 1.7; }
+
+.post-content blockquote {
+  border-left: 3px solid #bf00ff;
+  padding: 0.75rem 1.25rem;
+  margin: 1.5rem 0;
+  background: rgba(191,0,255,0.06);
+  border-radius: 0 0.75rem 0.75rem 0;
+  color: #a1a1aa;
+  font-style: italic;
+  font-size: 1.1rem;
+}
+
+.post-content code {
+  background: rgba(57,255,20,0.08);
+  border: 1px solid rgba(57,255,20,0.15);
+  color: #39ff14;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.3rem;
+  font-size: 0.85em;
+  font-family: 'Courier New', monospace;
+}
+
+.post-content pre {
+  background: #0a0a0a;
+  border: 1px solid #27272a;
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+  margin: 1.25rem 0;
+  overflow-x: auto;
+}
+.post-content pre code { background: transparent; border: none; padding: 0; color: #39ff14; }
+
+.post-content hr { border: none; border-top: 1px solid #27272a; margin: 2rem 0; }
+
+.post-content img {
+  max-width: 100%;
+  border-radius: 1rem;
+  margin: 1.25rem 0;
+  display: block;
+  border: 1px solid #27272a;
+}
+
+.post-content a { color: #bf00ff; text-decoration: underline; text-underline-offset: 3px; }
+.post-content a:hover { color: #39ff14; }
+
+.post-content strong { color: #fff; font-weight: 800; }
+.post-content em     { color: #a1a1aa; }
+.post-content s      { color: #52525b; }
+

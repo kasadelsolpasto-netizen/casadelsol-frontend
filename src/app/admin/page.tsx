@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { QrCode, CalendarPlus, Loader2, Users, ShoppingBag, DoorOpen } from 'lucide-react';
+import { QrCode, CalendarPlus, Loader2, Users, ShoppingBag, DoorOpen, Newspaper } from 'lucide-react';
 import { AdminGuard } from '@/components/AdminGuard';
 import { useEffect, useState } from 'react';
 
@@ -122,6 +122,17 @@ export default function AdminDashboard() {
                <div>
                   <h3 className="font-black uppercase tracking-widest text-white mb-2 group-hover:neon-text-orange transition-all">Inventario de Shop</h3>
                   <p className="text-xs text-zinc-400 font-bold max-w-xs">Crea productos, ajusta precios, gestiona categorías y controla el stock de la barra.</p>
+               </div>
+            </Link>
+
+            <Link href="/admin/publicaciones" className="group glass-panel bg-black/60 p-8 rounded-2xl hover:border-neon-purple transition-all flex flex-col items-center justify-center text-center gap-4 relative overflow-hidden border border-zinc-800">
+               <div className="absolute inset-x-0 bottom-0 h-1 bg-neon-purple transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+               <div className="w-16 h-16 rounded-full bg-neon-purple/10 flex items-center justify-center group-hover:bg-neon-purple/20 transition-all">
+                 <Newspaper className="w-8 h-8 text-neon-purple" />
+               </div>
+               <div>
+                  <h3 className="font-black uppercase tracking-widest text-white mb-2 group-hover:neon-text-secondary transition-all">Publicaciones</h3>
+                  <p className="text-xs text-zinc-400 font-bold max-w-xs">Crea anuncios, posts, foros y setlists. Gestiona el feed de contenido de la comunidad.</p>
                </div>
             </Link>
           </div>
