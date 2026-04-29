@@ -24,6 +24,13 @@ export default function CourtesiesAdminPage() {
   const [submitting, setSubmitting] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
+  // User search state
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userSearchResults, setUserSearchResults] = useState<any[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchDebounce, setSearchDebounce] = useState<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     fetchEvents();
   }, []);
@@ -72,6 +79,50 @@ export default function CourtesiesAdminPage() {
   const handleEventSelect = (ev: any) => {
     setSelectedEvent(ev);
     fetchEventDetails(ev.id);
+  };
+
+  // ── User community search ──────────────────────────────────
+  const searchUsers = async (query: string) => {
+    setSearchLoading(true);
+    const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
+    const token = tokenRow ? tokenRow.split('=')[1] : null;
+    try {
+      const apiEndpoint = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const url = query
+        ? `${apiEndpoint}/users/admin/all?search=${encodeURIComponent(query)}&limit=10`
+        : `${apiEndpoint}/users/admin/all?limit=10`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        setUserSearchResults(data.data || []);
+      }
+    } catch {}
+    setSearchLoading(false);
+  };
+
+  const handleUserSearchChange = (val: string) => {
+    setUserSearchQuery(val);
+    setShowDropdown(true);
+    if (searchDebounce) clearTimeout(searchDebounce);
+    setSearchDebounce(setTimeout(() => searchUsers(val), 300));
+  };
+
+  const handleUserSearchFocus = () => {
+    setShowDropdown(true);
+    if (userSearchResults.length === 0) searchUsers('');
+  };
+
+  const selectUser = (user: any) => {
+    setSingleForm(f => ({ ...f, name: user.name || '', email: user.email || '', dni: f.dni }));
+    setUserSearchQuery(user.name || user.email);
+    setShowDropdown(false);
+  };
+
+  const clearUserSelection = () => {
+    setUserSearchQuery('');
+    setSingleForm(f => ({ ...f, name: '', email: '' }));
+    setUserSearchResults([]);
+    setShowDropdown(false);
   };
 
   const parseBulkText = () => {
@@ -298,6 +349,65 @@ export default function CourtesiesAdminPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {mode === 'SINGLE' ? (
                   <>
+                    {/* Community User Search */}
+                    <div>
+                      <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Buscar en la Comunidad</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={userSearchQuery}
+                          onChange={e => handleUserSearchChange(e.target.value)}
+                          onFocus={handleUserSearchFocus}
+                          onBlur={() => setTimeout(() => setShowDropdown(false), 180)}
+                          className="w-full bg-black border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-purple transition-colors"
+                          placeholder="Buscar por nombre o correo..."
+                          autoComplete="off"
+                        />
+                        {/* Indicators */}
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                          {searchLoading && <Loader2 className="w-4 h-4 text-zinc-500 animate-spin" />}
+                          {userSearchQuery && !searchLoading && (
+                            <button type="button" onClick={clearUserSelection} className="text-zinc-600 hover:text-white transition-colors">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Dropdown */}
+                        {showDropdown && (
+                          <div className="absolute z-50 w-full mt-1 bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.7)]">
+                            {userSearchResults.length === 0 && !searchLoading ? (
+                              <div className="px-4 py-3 text-zinc-500 text-xs font-bold uppercase tracking-widest">Sin resultados — ingresa datos manualmente</div>
+                            ) : (
+                              userSearchResults.map(user => (
+                                <button
+                                  key={user.id}
+                                  type="button"
+                                  onMouseDown={() => selectUser(user)}
+                                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-800 transition-colors text-left border-b border-zinc-900 last:border-0"
+                                >
+                                  <div className="w-8 h-8 rounded-full bg-neon-purple/20 border border-neon-purple/30 flex items-center justify-center shrink-0">
+                                    <span className="text-xs font-black text-neon-purple uppercase">{(user.name || user.email)?.[0]}</span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-white font-bold text-sm truncate">{user.name || '—'}</p>
+                                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest truncate">{user.email}</p>
+                                  </div>
+                                  {user.rating && (
+                                    <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 shrink-0">
+                                      ★ {user.rating}
+                                    </span>
+                                  )}
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-zinc-600 mt-1.5 font-bold uppercase tracking-widest">Selecciona para autocompletar · O ingresa manualmente abajo</p>
+                    </div>
+
+                    {/* Manual fields */}
                     <div>
                       <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Nombre Completo</label>
                       <input type="text" required value={singleForm.name} onChange={e => setSingleForm({...singleForm, name: e.target.value})} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-purple transition-colors" placeholder="Ej. John Doe" />

@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { ArrowLeft, Calendar, MapPin, QrCode as QrCodeIcon, MessageCircle, X } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, QrCode as QrCodeIcon, X, Copy, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
@@ -19,8 +19,6 @@ export default function EventDetailClient({ params }: { params: { id: string } }
   const [success, setSuccess] = useState('');
   const [showVaultAnim, setShowVaultAnim] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
-  const [showInstaModal, setShowInstaModal] = useState(false);
-  const [instaOption, setInstaOption] = useState<'historia'|'publicacion'|'mensaje'|null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [pageUrl, setPageUrl] = useState('https://kasadelsol.co');
 
@@ -248,22 +246,56 @@ export default function EventDetailClient({ params }: { params: { id: string } }
               </div>
             </div>
 
-            {/* Share Buttons */}
-            <div className="w-full max-w-sm flex items-center justify-center md:justify-center gap-3">
-              <button onClick={() => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('¡Mira este evento en Kasa del Sol! ' + event.title + ' ' + pageUrl)}`, '_blank')} className="flex-1 flex items-center justify-center gap-2 p-3 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366] hover:text-black rounded-xl transition-all shadow-[0_0_15px_rgba(37,211,102,0.1)] hover:shadow-[0_0_20px_rgba(37,211,102,0.4)] font-black uppercase tracking-widest text-[9px]">
-                <MessageCircle className="w-4 h-4" /> WhatsApp
+            {/* Share Buttons — todos del mismo tamaño */}
+            <div className="w-full max-w-sm grid grid-cols-5 gap-2">
+              {/* WhatsApp */}
+              <button
+                onClick={() => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('¡Mira este evento! ' + event.title + ' — ' + pageUrl)}`, '_blank')}
+                className="flex flex-col items-center justify-center gap-1.5 p-3 aspect-square bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366] hover:text-black rounded-xl transition-all"
+                title="Compartir en WhatsApp"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 1C5.924 1 1 5.925 1 12.001c0 1.943.505 3.771 1.392 5.362L1 23l5.75-1.375A10.95 10.95 0 0012 23c6.075 0 11-4.925 11-11S18.075 1 12 1zm0 20.095a9.055 9.055 0 01-4.612-1.262l-.33-.197-3.416.817.848-3.327-.215-.342A9.059 9.059 0 012.904 12c0-4.998 4.097-9.095 9.096-9.095 4.998 0 9.095 4.097 9.095 9.095s-4.097 9.095-9.096 9.095z"/></svg>
+                <span className="text-[8px] font-black uppercase tracking-wider">WA</span>
               </button>
-              <button onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`, '_blank')} className="flex items-center justify-center p-3 bg-[#1877F2]/10 border border-[#1877F2]/30 text-[#1877F2] hover:bg-[#1877F2] hover:text-white rounded-xl transition-all shadow-[0_0_15px_rgba(24,119,242,0.1)] hover:shadow-[0_0_20px_rgba(24,119,242,0.4)]">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+
+              {/* Facebook */}
+              <button
+                onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`, '_blank')}
+                className="flex flex-col items-center justify-center gap-1.5 p-3 aspect-square bg-[#1877F2]/10 border border-[#1877F2]/30 text-[#1877F2] hover:bg-[#1877F2] hover:text-white rounded-xl transition-all"
+                title="Compartir en Facebook"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                <span className="text-[8px] font-black uppercase tracking-wider">FB</span>
               </button>
-              <button onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('¡No te pierdas ' + event.title + ' en Kasa del Sol!')}&url=${encodeURIComponent(pageUrl)}`, '_blank')} className="flex items-center justify-center p-3 bg-zinc-800/50 border border-zinc-700 text-zinc-300 hover:bg-black hover:text-white rounded-xl transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:border-zinc-500">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.639L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>
+
+              {/* X / Twitter */}
+              <button
+                onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('¡No te pierdas ' + event.title + ' en Kasa del Sol!')}&url=${encodeURIComponent(pageUrl)}`, '_blank')}
+                className="flex flex-col items-center justify-center gap-1.5 p-3 aspect-square bg-zinc-800/50 border border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-white rounded-xl transition-all"
+                title="Compartir en X"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.639L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>
+                <span className="text-[8px] font-black uppercase tracking-wider">X</span>
               </button>
-              <button onClick={() => setShowInstaModal(true)} className="flex items-center justify-center p-3 rounded-xl transition-all border bg-gradient-to-tr from-[#f9ce34]/10 via-[#e1306c]/10 to-[#833ab4]/10 border-[#e1306c]/30 text-[#e1306c] hover:bg-[#e1306c] hover:text-white">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+
+              {/* Copy Link */}
+              <button
+                onClick={() => { navigator.clipboard.writeText(pageUrl); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000); }}
+                className={`flex flex-col items-center justify-center gap-1.5 p-3 aspect-square rounded-xl border transition-all ${ copiedLink ? 'bg-neon-green border-neon-green text-black' : 'bg-zinc-800/50 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-white' }`}
+                title="Copiar enlace"
+              >
+                {copiedLink ? <Check className="w-5 h-5" /> : <Link className="w-5 h-5" />}
+                <span className="text-[8px] font-black uppercase tracking-wider">{copiedLink ? 'Ok' : 'Link'}</span>
               </button>
-              <button onClick={() => setShowQrModal(true)} className="flex items-center justify-center p-3 bg-neon-purple/10 border border-neon-purple/30 text-neon-purple hover:bg-neon-purple hover:text-black rounded-xl transition-all shadow-[0_0_15px_rgba(191,0,255,0.1)] hover:shadow-[0_0_20px_rgba(191,0,255,0.4)]">
-                <QrCodeIcon className="w-4 h-4" />
+
+              {/* QR */}
+              <button
+                onClick={() => setShowQrModal(true)}
+                className="flex flex-col items-center justify-center gap-1.5 p-3 aspect-square bg-neon-purple/10 border border-neon-purple/30 text-neon-purple hover:bg-neon-purple hover:text-black rounded-xl transition-all"
+                title="Generar QR"
+              >
+                <QrCodeIcon className="w-5 h-5" />
+                <span className="text-[8px] font-black uppercase tracking-wider">QR</span>
               </button>
             </div>
           </div>
@@ -437,90 +469,7 @@ export default function EventDetailClient({ params }: { params: { id: string } }
         </div>
       )}
       
-      {/* Instagram Share Modal */}
-      {showInstaModal && (
-        <div className="fixed inset-0 z-[1001] flex items-end sm:items-center justify-center p-4 bg-black/85 backdrop-blur-md" onClick={() => { setShowInstaModal(false); setInstaOption(null); }}>
-          <div className="w-full max-w-sm bg-[#050505] rounded-3xl overflow-hidden shadow-[0_0_60px_rgba(225,48,108,0.25)] animate-in fade-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
-            {/* Header */}
-            <div className="p-5 border-b border-zinc-800 flex items-center justify-between" style={{background:'linear-gradient(135deg,#f9ce3406,#e1306c08,#833ab406)'}}>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:'linear-gradient(135deg,#f9ce34,#fd5e53,#e1306c,#833ab4)'}}>
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-                </div>
-                <div>
-                  <p className="text-white font-black uppercase tracking-widest text-sm">Compartir en Instagram</p>
-                  <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">{event?.title}</p>
-                </div>
-              </div>
-              <button onClick={() => { setShowInstaModal(false); setInstaOption(null); }} className="text-zinc-500 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
-            </div>
 
-            {/* Option selector */}
-            {!instaOption ? (
-              <div className="p-5 space-y-3">
-                <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest mb-4">\u00bfD\u00f3nde quieres compartir?</p>
-                {[
-                  { id: 'historia', label: 'Historia', desc: 'Comparte el link en tu historia', icon: '📖', gradient: 'from-orange-500 to-pink-600' },
-                  { id: 'publicacion', label: 'Publicaci\u00f3n', desc: 'Crea un post con el link', icon: '🖼️', gradient: 'from-pink-500 to-purple-600' },
-                  { id: 'mensaje', label: 'Mensaje Directo', desc: 'Env\u00edalo por DM a alguien', icon: '✉️', gradient: 'from-purple-500 to-indigo-600' },
-                ].map(opt => (
-                  <button key={opt.id} onClick={() => setInstaOption(opt.id as any)} className="w-full flex items-center gap-4 p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-600 rounded-2xl transition-all group text-left">
-                    <span className="text-2xl">{opt.icon}</span>
-                    <div className="flex-1">
-                      <p className="text-white font-black uppercase tracking-wider text-sm">{opt.label}</p>
-                      <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-0.5">{opt.desc}</p>
-                    </div>
-                    <svg className="w-4 h-4 text-zinc-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="p-5">
-                <button onClick={() => setInstaOption(null)} className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest mb-5">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg> Volver
-                </button>
-
-                <div className="text-center mb-5">
-                  <span className="text-4xl">{instaOption === 'historia' ? '📖' : instaOption === 'publicacion' ? '🖼️' : '✉️'}</span>
-                  <p className="text-white font-black uppercase tracking-widest mt-2">
-                    {instaOption === 'historia' ? 'Historia de Instagram' : instaOption === 'publicacion' ? 'Publicaci\u00f3n de Instagram' : 'Mensaje Directo'}
-                  </p>
-                </div>
-
-                {/* Link box */}
-                <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-3 mb-4 flex items-center gap-3">
-                  <p className="flex-1 text-zinc-300 text-xs font-bold truncate">{pageUrl}</p>
-                  <button
-                    onClick={() => { navigator.clipboard.writeText(pageUrl); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2500); }}
-                    className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${ copiedLink ? 'bg-neon-green text-black' : 'bg-zinc-700 hover:bg-zinc-600 text-white' }`}
-                  >
-                    {copiedLink ? '\u2713 Copiado' : 'Copiar'}
-                  </button>
-                </div>
-
-                {/* Instructions */}
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 mb-4">
-                  <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest leading-relaxed">
-                    {instaOption === 'historia' && '1. Copia el link de arriba\n2. Abre Instagram\n3. Crea una nueva historia\n4. Usa el sticker de \"Enlace\" y pega el link\n5. Publica tu historia'}
-                    {instaOption === 'publicacion' && '1. Copia el link de arriba\n2. Abre Instagram\n3. Crea una nueva publicaci\u00f3n\n4. En el pie de foto pega el link\n5. Publica tu post'}
-                    {instaOption === 'mensaje' && '1. Copia el link de arriba\n2. Abre Instagram\n3. Ve a Mensajes Directos\n4. Selecciona a qui\u00e9n quieres enviarlo\n5. Pega el link y env\u00edalo'}
-                  </p>
-                </div>
-
-                {/* Open Instagram */}
-                <button
-                  onClick={() => { navigator.clipboard.writeText(pageUrl); setCopiedLink(true); window.open('https://www.instagram.com', '_blank'); }}
-                  className="w-full py-3.5 rounded-xl font-black uppercase tracking-widest text-[11px] text-white transition-all flex items-center justify-center gap-2"
-                  style={{background:'linear-gradient(135deg,#f9ce34,#fd5e53,#e1306c,#833ab4)'}}
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-                  Copiar link y abrir Instagram
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       <WhatsAppButton className="bottom-[90px] lg:bottom-6 right-4 lg:right-6" />
     </div>
