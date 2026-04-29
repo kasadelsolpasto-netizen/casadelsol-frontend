@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { QrCode, CalendarPlus, Users, Activity, Ticket, ArrowLeft, DoorOpen, ShoppingBag, Zap, Menu, X } from 'lucide-react';
+import { QrCode, CalendarPlus, Users, Activity, Ticket, ArrowLeft, DoorOpen, ShoppingBag, Zap, Menu, X, Newspaper } from 'lucide-react';
 import AdminLogoutButton from '@/components/AdminLogoutButton';
 import AdminNotifications from '@/components/admin/AdminNotifications';
 
@@ -99,6 +99,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
           <Link href="/admin/events" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group ${pathname.startsWith('/admin/events') ? 'bg-zinc-900 border border-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
             <CalendarPlus className={`w-4 h-4 ${pathname.startsWith('/admin/events') ? 'text-neon-purple' : 'group-hover:text-neon-purple'} transition-all`} /> Gestión Eventos
+          </Link>
+          <Link href="/admin/publicaciones" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group ${pathname.startsWith('/admin/publicaciones') ? 'bg-zinc-900 border border-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
+            <Newspaper className={`w-4 h-4 ${pathname.startsWith('/admin/publicaciones') ? 'text-neon-green' : 'group-hover:text-neon-green'} transition-all`} /> Publicaciones
           </Link>
           <Link href="/admin/shop" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group ${pathname.startsWith('/admin/shop') ? 'bg-zinc-900 border border-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
             <ShoppingBag className={`w-4 h-4 ${pathname.startsWith('/admin/shop') ? 'text-orange-500' : 'group-hover:text-orange-500'} transition-all`} /> Inventario Shop
