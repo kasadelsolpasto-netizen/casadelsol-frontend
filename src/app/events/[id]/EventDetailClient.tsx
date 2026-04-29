@@ -19,8 +19,10 @@ export default function EventDetailClient({ params }: { params: { id: string } }
   const [success, setSuccess] = useState('');
   const [showVaultAnim, setShowVaultAnim] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [pageUrl, setPageUrl] = useState('https://kasadelsol.co');
 
   useEffect(() => {
+    setPageUrl(window.location.href);
     let apiEndpoint = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
     if (apiEndpoint.includes('localhost')) apiEndpoint = apiEndpoint.replace('localhost', '127.0.0.1');
 
@@ -245,13 +247,13 @@ export default function EventDetailClient({ params }: { params: { id: string } }
 
             {/* Share Buttons */}
             <div className="w-full max-w-sm flex items-center justify-center md:justify-center gap-3">
-              <button onClick={() => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('¡Mira este evento en Kasa del Sol! ' + event.title + ' ' + (typeof window !== 'undefined' ? window.location.href : ''))}`, '_blank')} className="flex-1 flex items-center justify-center gap-2 p-3 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366] hover:text-black rounded-xl transition-all shadow-[0_0_15px_rgba(37,211,102,0.1)] hover:shadow-[0_0_20px_rgba(37,211,102,0.4)] font-black uppercase tracking-widest text-[9px]">
+              <button onClick={() => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('¡Mira este evento en Kasa del Sol! ' + event.title + ' ' + pageUrl)}`, '_blank')} className="flex-1 flex items-center justify-center gap-2 p-3 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366] hover:text-black rounded-xl transition-all shadow-[0_0_15px_rgba(37,211,102,0.1)] hover:shadow-[0_0_20px_rgba(37,211,102,0.4)] font-black uppercase tracking-widest text-[9px]">
                 <MessageCircle className="w-4 h-4" /> WhatsApp
               </button>
-              <button onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`, '_blank')} className="flex items-center justify-center p-3 bg-[#1877F2]/10 border border-[#1877F2]/30 text-[#1877F2] hover:bg-[#1877F2] hover:text-white rounded-xl transition-all shadow-[0_0_15px_rgba(24,119,242,0.1)] hover:shadow-[0_0_20px_rgba(24,119,242,0.4)]">
+              <button onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`, '_blank')} className="flex items-center justify-center p-3 bg-[#1877F2]/10 border border-[#1877F2]/30 text-[#1877F2] hover:bg-[#1877F2] hover:text-white rounded-xl transition-all shadow-[0_0_15px_rgba(24,119,242,0.1)] hover:shadow-[0_0_20px_rgba(24,119,242,0.4)]">
                 <Facebook className="w-4 h-4" />
               </button>
-              <button onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('¡No te pierdas ' + event.title + ' en Kasa del Sol!')}&url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`, '_blank')} className="flex items-center justify-center p-3 bg-zinc-800/50 border border-zinc-700 text-zinc-300 hover:bg-black hover:text-white rounded-xl transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:border-zinc-500">
+              <button onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('¡No te pierdas ' + event.title + ' en Kasa del Sol!')}&url=${encodeURIComponent(pageUrl)}`, '_blank')} className="flex items-center justify-center p-3 bg-zinc-800/50 border border-zinc-700 text-zinc-300 hover:bg-black hover:text-white rounded-xl transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:border-zinc-500">
                 <Twitter className="w-4 h-4" />
               </button>
               <button onClick={() => setShowQrModal(true)} className="flex items-center justify-center p-3 bg-neon-purple/10 border border-neon-purple/30 text-neon-purple hover:bg-neon-purple hover:text-black rounded-xl transition-all shadow-[0_0_15px_rgba(191,0,255,0.1)] hover:shadow-[0_0_20px_rgba(191,0,255,0.4)]">
@@ -415,7 +417,7 @@ export default function EventDetailClient({ params }: { params: { id: string } }
             </h3>
             <div className="bg-white p-4 rounded-2xl shadow-[0_0_30px_rgba(57,255,20,0.3)] border-4 border-neon-green/20">
               <QRCodeSVG 
-                value={typeof window !== 'undefined' ? window.location.href : 'https://kasadelsol.co'} 
+                value={pageUrl} 
                 size={200}
                 bgColor="#ffffff"
                 fgColor="#000000"
