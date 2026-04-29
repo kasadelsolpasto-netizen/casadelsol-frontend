@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { ArrowLeft, Calendar, MapPin, Share2, QrCode as QrCodeIcon, MessageCircle, Twitter, Facebook, X } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, QrCode as QrCodeIcon, MessageCircle, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
@@ -251,10 +251,10 @@ export default function EventDetailClient({ params }: { params: { id: string } }
                 <MessageCircle className="w-4 h-4" /> WhatsApp
               </button>
               <button onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`, '_blank')} className="flex items-center justify-center p-3 bg-[#1877F2]/10 border border-[#1877F2]/30 text-[#1877F2] hover:bg-[#1877F2] hover:text-white rounded-xl transition-all shadow-[0_0_15px_rgba(24,119,242,0.1)] hover:shadow-[0_0_20px_rgba(24,119,242,0.4)]">
-                <Facebook className="w-4 h-4" />
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
               </button>
               <button onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('¡No te pierdas ' + event.title + ' en Kasa del Sol!')}&url=${encodeURIComponent(pageUrl)}`, '_blank')} className="flex items-center justify-center p-3 bg-zinc-800/50 border border-zinc-700 text-zinc-300 hover:bg-black hover:text-white rounded-xl transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:border-zinc-500">
-                <Twitter className="w-4 h-4" />
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.639L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>
               </button>
               <button onClick={() => setShowQrModal(true)} className="flex items-center justify-center p-3 bg-neon-purple/10 border border-neon-purple/30 text-neon-purple hover:bg-neon-purple hover:text-black rounded-xl transition-all shadow-[0_0_15px_rgba(191,0,255,0.1)] hover:shadow-[0_0_20px_rgba(191,0,255,0.4)]">
                 <QrCodeIcon className="w-4 h-4" />
