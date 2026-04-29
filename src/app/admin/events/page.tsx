@@ -116,7 +116,7 @@ export default function AdminEventsPage() {
                       <span className="text-neon-purple">{event._count?.orders || 0}</span> Órdenes
                     </div>
                     <div className="flex items-center justify-center sm:justify-end gap-2 shrink-0 w-full sm:w-auto">
-                      <button onClick={() => window.open(`/events/${event.id}`, '_blank')} className="p-2 bg-zinc-900 rounded-lg text-zinc-400 hover:text-white transition-colors" title="Ver en Pista">
+                      <button onClick={() => window.open(`/events/${event.seo_slug || event.id}`, '_blank')} className="p-2 bg-zinc-900 rounded-lg text-zinc-400 hover:text-white transition-colors" title="Ver en Pista">
                         <Eye className="w-4 h-4" />
                       </button>
                       <Link href={`/admin/events/edit/${event.id}`} className="p-2 bg-blue-900/20 text-blue-400 rounded-lg hover:bg-blue-900/40 hover:text-blue-300 transition-colors" title="Editar Información">

@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { Image as ImageIcon, Upload, Plus, Trash2, ArrowLeft, Loader2 } from 'lucide-react';
 import { AdminGuard } from '@/components/AdminGuard';
+import SeoPanel from '@/components/SeoPanel';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,6 +18,7 @@ export default function NewEventPage() {
     title: '', description: '', date: '', venue: ''
   });
   const [flyerUrl, setFlyerUrl] = useState<string>('');
+  const [seo, setSeo] = useState({ seo_title: '', seo_description: '', seo_slug: '' });
   const [ticketTypes, setTicketTypes] = useState([{ name: 'General', price: 60000, capacity: 100, sale_start: '', sale_end: '', hide_stock: false }]);
   const [uploading, setUploading] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -85,6 +87,7 @@ export default function NewEventPage() {
         },
         body: JSON.stringify({
            ...formData,
+           ...seo,
            date: new Date(formData.date).toISOString(),
            flyer_url: flyerUrl,
            status: 'PUBLISHED',
@@ -261,6 +264,16 @@ export default function NewEventPage() {
                  ))}
                </div>
             </section>
+
+            {/* SEO Panel */}
+            <SeoPanel
+              title={formData.title}
+              content={formData.description}
+              value={seo}
+              onChange={setSeo}
+              baseUrl="kasadelsol.co"
+              type="event"
+            />
 
             {submitError && <div className="text-red-500 text-xs font-bold uppercase tracking-widest mt-4 bg-red-500/10 p-4 rounded-xl border border-red-500/20">{submitError}</div>}
             

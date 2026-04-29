@@ -48,7 +48,7 @@ export default async function Home() {
               ? Math.min(...event.ticket_types.map((t: any) => t.price))
               : 0;
             return (
-            <Link href={`/events/${event.id}`} key={event.id} className="group relative rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_0_30px_rgba(57,255,20,0.15)] transform hover:-translate-y-2 transition-all duration-300 block p-[1px] bg-zinc-800/50">
+            <Link href={`/events/${event.seo_slug || event.id}`} key={event.id} className="group relative rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_0_30px_rgba(57,255,20,0.15)] transform hover:-translate-y-2 transition-all duration-300 block p-[1px] bg-zinc-800/50">
               <div className="absolute top-[-150%] left-[-50%] w-[200%] h-[400%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(from_0deg,transparent_70%,#39ff14_85%,#bf00ff_100%)] opacity-30 group-hover:opacity-100 transition-opacity duration-1000 point-events-none" />
               <div className="relative bg-[#050505] rounded-[15px] overflow-hidden z-10 h-full flex flex-col glass-panel border border-zinc-800/80">
                 <div className="h-56 w-full bg-zinc-900 relative overflow-hidden shrink-0">
@@ -111,7 +111,7 @@ export default async function Home() {
                 const meta = TYPE_META[post.type] || TYPE_META.POST;
                 const isPinned = post.is_pinned;
                 return (
-                  <Link key={post.id} href={`/posts/${post.id}`}
+                  <Link key={post.id} href={`/posts/${post.seo_slug || post.id}`}
                     className={`group flex gap-4 p-5 rounded-2xl border transition-all hover:border-zinc-700 hover:-translate-y-0.5 ${isPinned ? 'bg-neon-purple/5 border-neon-purple/30' : 'bg-zinc-950 border-zinc-900'}`}>
                     {post.cover_url ? (
                       <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0">

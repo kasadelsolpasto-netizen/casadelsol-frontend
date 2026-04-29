@@ -128,7 +128,7 @@ export default function AdminPublicacionesPage() {
                     <Link href={`/admin/publicaciones/editar/${post.id}`} className="p-2 rounded-lg bg-zinc-900 hover:bg-neon-purple/20 text-zinc-500 hover:text-neon-purple transition-all">
                       <Pencil className="w-4 h-4" />
                     </Link>
-                    <Link href={`/posts/${post.id}`} target="_blank" className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-white transition-all">
+                    <Link href={`/posts/${post.seo_slug || post.id}`} target="_blank" className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-white transition-all">
                       <Eye className="w-4 h-4" />
                     </Link>
                     <button

@@ -312,6 +312,7 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
               value={seo}
               onChange={setSeo}
               baseUrl="kasadelsol.co"
+              type="event"
             />
 
             {submitError && <div className="text-red-500 text-xs font-bold uppercase tracking-widest mt-4 bg-red-500/10 p-4 rounded-xl border border-red-500/20">{submitError}</div>}

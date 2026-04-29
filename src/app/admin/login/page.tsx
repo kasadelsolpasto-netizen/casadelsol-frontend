@@ -14,7 +14,9 @@ export default function AdminLoginPage() {
   // Si ya hay sesión activa, redirigir al lugar correcto
   useEffect(() => {
     const rawUser = localStorage.getItem('kasa_user');
-    if (rawUser) {
+    const tokenExists = document.cookie.includes('kasa_auth_token=');
+
+    if (rawUser && tokenExists) {
       try {
         const user = JSON.parse(rawUser);
         if (user.role === 'OWNER') {
@@ -26,6 +28,10 @@ export default function AdminLoginPage() {
       } catch {
         localStorage.removeItem('kasa_user');
       }
+    } else if (rawUser && !tokenExists) {
+      // El token ha expirado o fue eliminado, pero el localStorage quedó. 
+      // Lo limpiamos para evitar un loop de redirección infinito.
+      localStorage.removeItem('kasa_user');
     }
   }, [router]);
 

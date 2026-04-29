@@ -14,6 +14,7 @@ interface SeoPanelProps {
   value: SeoData;
   onChange: (data: SeoData) => void;
   baseUrl?: string;
+  type?: 'post' | 'event';
 }
 
 // Strips HTML tags to get plain text excerpt
@@ -44,7 +45,7 @@ function CharCount({ current, max, warn = max * 0.8 }: { current: number; max: n
   );
 }
 
-export default function SeoPanel({ title, content, value, onChange, baseUrl = 'kasadelsol.co' }: SeoPanelProps) {
+export default function SeoPanel({ title, content, value, onChange, baseUrl = 'kasadelsol.co', type = 'post' }: SeoPanelProps) {
   const [open, setOpen]         = useState(false);
   const [manualTitle, setManualTitle]   = useState(false);
   const [manualDesc,  setManualDesc]    = useState(false);
@@ -74,7 +75,8 @@ export default function SeoPanel({ title, content, value, onChange, baseUrl = 'k
   const displayTitle = value.seo_title || `${title} | Kasa del Sol`;
   const displayDesc  = value.seo_description || stripHtml(content, 160) || 'Sin descripción.';
   const displaySlug  = value.seo_slug || slugify(title);
-  const displayUrl   = `https://${baseUrl}/posts/${displaySlug || '...'}`;
+  const prefix       = type === 'event' ? 'events' : 'posts';
+  const displayUrl   = `https://${baseUrl}/${prefix}/${displaySlug || '...'}`;
 
   const titleScore = displayTitle.length >= 40 && displayTitle.length <= 70;
   const descScore  = displayDesc.length  >= 100 && displayDesc.length  <= 160;
@@ -195,7 +197,7 @@ export default function SeoPanel({ title, content, value, onChange, baseUrl = 'k
             </div>
             <div className="flex items-center gap-0 bg-black border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-600 focus-within:border-neon-green transition-all">
               <span className="px-4 py-3 text-zinc-600 text-xs font-bold shrink-0 border-r border-zinc-800 bg-zinc-950">
-                /posts/
+                /{prefix}/
               </span>
               <input
                 type="text"
@@ -223,17 +225,17 @@ export default function SeoPanel({ title, content, value, onChange, baseUrl = 'k
               <span>{ }</span> Datos Estructurados (JSON-LD)
             </p>
             <p className="text-[11px] text-zinc-500 leading-relaxed">
-              Se genera automáticamente el schema <code className="text-neon-green bg-neon-green/5 px-1 rounded">Article</code> de Schema.org
+              Se genera automáticamente el schema <code className="text-neon-green bg-neon-green/5 px-1 rounded">{type === 'event' ? 'Event' : 'Article'}</code> de Schema.org
               al publicar — Google y otros motores lo leen para enriquecer los resultados con fecha, autor e imagen.
             </p>
             <div className="mt-3 bg-black/60 rounded-lg p-3 font-mono text-[10px] text-zinc-600 overflow-x-auto whitespace-pre">
 {`{
   "@context": "https://schema.org",
-  "@type": "Article",
-  "headline": "${displayTitle.slice(0, 50)}${displayTitle.length > 50 ? '...' : ''}",
+  "@type": "${type === 'event' ? 'Event' : 'Article'}",
+  "${type === 'event' ? 'name' : 'headline'}": "${displayTitle.slice(0, 50)}${displayTitle.length > 50 ? '...' : ''}",
   "description": "${displayDesc.slice(0, 60)}${displayDesc.length > 60 ? '...' : ''}",
   "url": "${displayUrl}",
-  "publisher": { "@type": "Organization",
+  "${type === 'event' ? 'organizer' : 'publisher'}": { "@type": "Organization",
     "name": "Kasa del Sol" }
 }`}
             </div>

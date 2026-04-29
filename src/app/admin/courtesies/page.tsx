@@ -198,7 +198,7 @@ export default function CourtesiesAdminPage() {
                       <p className="text-xl font-black text-white">{event.metrics.sent}</p>
                     </div>
                     <div className="bg-zinc-900 rounded-lg p-3">
-                      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Reclamadas</p>
+                      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1" title="Cortesías que los usuarios ya tienen en su cuenta">En Bóveda</p>
                       <p className="text-xl font-black text-neon-green">{event.metrics.claimed}</p>
                     </div>
                   </div>
@@ -261,7 +261,7 @@ export default function CourtesiesAdminPage() {
           <div className="bg-zinc-950 border border-zinc-900 p-6 rounded-2xl">
             <div className="flex items-center gap-3 mb-2 text-neon-green">
               <CheckCircle className="w-4 h-4" />
-              <h3 className="text-[10px] font-black uppercase tracking-widest">Reclamadas</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-widest" title="Cortesías que ya están en la cuenta del usuario">En Bóveda</h3>
             </div>
             <p className="text-4xl font-black text-white">{metrics.claimed}</p>
           </div>
@@ -378,9 +378,13 @@ export default function CourtesiesAdminPage() {
                           <span className="bg-zinc-900 text-zinc-400 text-[10px] px-2 py-1 rounded font-black uppercase tracking-widest">{c.ticket_type?.name}</span>
                         </td>
                         <td className="p-4">
-                          {c.claimed_at ? (
-                            <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-neon-green">
-                              <CheckCircle className="w-3 h-3" /> Reclamada
+                          {c.attended ? (
+                            <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-orange-500">
+                              <CheckCircle className="w-3 h-3" /> Usada / Asistió
+                            </span>
+                          ) : c.claimed_at ? (
+                            <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-neon-green" title="El usuario ya tiene la entrada en su cuenta (no ha sido escaneada aún)">
+                              <CheckCircle className="w-3 h-3" /> En Bóveda
                             </span>
                           ) : c.opened_at ? (
                             <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-blue-400">

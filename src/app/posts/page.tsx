@@ -170,7 +170,7 @@ export default function PostsFeedPage() {
                     <div className="flex items-center justify-between mt-5 gap-4">
                       {/* Reacciones inline — e.preventDefault evita navegar */}
                       <ReactionBar postId={post.id} initialCounts={post.reactionCounts || {}} />
-                      <Link href={`/posts/${post.id}`} className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white flex items-center gap-1 transition-colors shrink-0">
+                      <Link href={`/posts/${post.seo_slug || post.id}`} className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white flex items-center gap-1 transition-colors shrink-0">
                         Leer más <ArrowRight className="w-3 h-3" />
                       </Link>
                     </div>
@@ -187,12 +187,12 @@ export default function PostsFeedPage() {
                   className="group bg-zinc-950 border border-zinc-900 rounded-3xl overflow-hidden flex flex-col sm:flex-row hover:border-zinc-700 transition-all animate-in fade-in duration-500"
                   style={{ animationDelay: `${i * 50}ms` }}>
                   {post.cover_url && (
-                    <Link href={`/posts/${post.id}`} className="w-full sm:w-48 h-40 sm:h-auto shrink-0 overflow-hidden block">
+                    <Link href={`/posts/${post.seo_slug || post.id}`} className="w-full sm:w-48 h-40 sm:h-auto shrink-0 overflow-hidden block">
                       <img src={post.cover_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                     </Link>
                   )}
                   <div className="p-6 flex flex-col flex-1 min-w-0">
-                    <Link href={`/posts/${post.id}`} className="block">
+                    <Link href={`/posts/${post.seo_slug || post.id}`} className="block">
                       <div className="flex items-center gap-2 mb-3">
                         <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${meta.tag}`}>{meta.label}</span>
                         <span className="text-zinc-600 text-[10px] font-bold">{new Date(post.published_at).toLocaleDateString('es-CO')}</span>
@@ -203,7 +203,7 @@ export default function PostsFeedPage() {
                     {/* Reacciones en la parte inferior — fuera del Link para no propagar */}
                     <div className="flex items-center justify-between mt-4">
                       <ReactionBar postId={post.id} initialCounts={post.reactionCounts || {}} />
-                      <Link href={`/posts/${post.id}`} className="text-[10px] text-zinc-600 group-hover:text-neon-purple transition-colors flex items-center gap-1 font-bold">
+                      <Link href={`/posts/${post.seo_slug || post.id}`} className="text-[10px] text-zinc-600 group-hover:text-neon-purple transition-colors flex items-center gap-1 font-bold">
                         Leer más <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                       </Link>
                     </div>
