@@ -1,10 +1,11 @@
 "use client";
 import Link from 'next/link';
-import { ArrowLeft, Calendar, MapPin } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Share2, QrCode as QrCodeIcon, MessageCircle, Twitter, Facebook, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import Image from 'next/image';
+import { QRCodeSVG } from 'qrcode.react';
 import CheckoutWizard from '@/components/CheckoutWizard';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 
@@ -17,6 +18,7 @@ export default function EventDetailClient({ params }: { params: { id: string } }
   const [wizardError, setWizardError] = useState('');
   const [success, setSuccess] = useState('');
   const [showVaultAnim, setShowVaultAnim] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
 
   useEffect(() => {
     let apiEndpoint = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
@@ -231,7 +233,7 @@ export default function EventDetailClient({ params }: { params: { id: string } }
             </div>
           </div>
 
-          <div className="w-full md:w-1/2 order-1 md:order-2 flex justify-center md:justify-end">
+          <div className="w-full md:w-1/2 order-1 md:order-2 flex flex-col justify-center items-center md:items-end gap-6 pt-4 md:pt-0">
             <div className="relative w-full max-w-sm aspect-[4/5] shadow-[0_0_50px_rgba(0,0,0,0.7)] group transform md:rotate-3 hover:rotate-0 transition-all duration-500 rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800/50 p-[2px]">
               {/* Controles de la animación neón envolvente */}
               <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(from_0deg,transparent_75%,#39ff14_90%,#bf00ff_100%)] opacity-40 group-hover:opacity-100 transition-opacity duration-1000 z-0 pointer-events-none"></div>
@@ -239,6 +241,22 @@ export default function EventDetailClient({ params }: { params: { id: string } }
               <div className="relative w-full h-full rounded-xl overflow-hidden bg-black z-10">
                 {event.flyer_url && <Image src={event.flyer_url} alt={event.title} fill priority sizes="(max-width: 768px) 100vw, 400px" className="object-cover group-hover:scale-105 transition-transform duration-1000" />}
               </div>
+            </div>
+
+            {/* Share Buttons */}
+            <div className="w-full max-w-sm flex items-center justify-center md:justify-center gap-3">
+              <button onClick={() => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('¡Mira este evento en Kasa del Sol! ' + event.title + ' ' + (typeof window !== 'undefined' ? window.location.href : ''))}`, '_blank')} className="flex-1 flex items-center justify-center gap-2 p-3 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366] hover:text-black rounded-xl transition-all shadow-[0_0_15px_rgba(37,211,102,0.1)] hover:shadow-[0_0_20px_rgba(37,211,102,0.4)] font-black uppercase tracking-widest text-[9px]">
+                <MessageCircle className="w-4 h-4" /> WhatsApp
+              </button>
+              <button onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`, '_blank')} className="flex items-center justify-center p-3 bg-[#1877F2]/10 border border-[#1877F2]/30 text-[#1877F2] hover:bg-[#1877F2] hover:text-white rounded-xl transition-all shadow-[0_0_15px_rgba(24,119,242,0.1)] hover:shadow-[0_0_20px_rgba(24,119,242,0.4)]">
+                <Facebook className="w-4 h-4" />
+              </button>
+              <button onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('¡No te pierdas ' + event.title + ' en Kasa del Sol!')}&url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`, '_blank')} className="flex items-center justify-center p-3 bg-zinc-800/50 border border-zinc-700 text-zinc-300 hover:bg-black hover:text-white rounded-xl transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:border-zinc-500">
+                <Twitter className="w-4 h-4" />
+              </button>
+              <button onClick={() => setShowQrModal(true)} className="flex items-center justify-center p-3 bg-neon-purple/10 border border-neon-purple/30 text-neon-purple hover:bg-neon-purple hover:text-black rounded-xl transition-all shadow-[0_0_15px_rgba(191,0,255,0.1)] hover:shadow-[0_0_20px_rgba(191,0,255,0.4)]">
+                <QrCodeIcon className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
@@ -384,6 +402,32 @@ export default function EventDetailClient({ params }: { params: { id: string } }
         isLoading={wizardLoading}
         error={wizardError}
       />
+      
+      {/* QR Code Modal */}
+      {showQrModal && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" onClick={() => setShowQrModal(false)}>
+          <div className="bg-[#050505] border border-neon-purple/50 p-8 rounded-3xl max-w-xs w-full animate-in fade-in zoom-in-95 shadow-[0_0_50px_rgba(191,0,255,0.2)] flex flex-col items-center relative" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowQrModal(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-green mb-6 text-center">
+              Escanear Evento
+            </h3>
+            <div className="bg-white p-4 rounded-2xl shadow-[0_0_30px_rgba(57,255,20,0.3)] border-4 border-neon-green/20">
+              <QRCodeSVG 
+                value={typeof window !== 'undefined' ? window.location.href : 'https://kasadelsol.co'} 
+                size={200}
+                bgColor="#ffffff"
+                fgColor="#000000"
+                level="H"
+              />
+            </div>
+            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-6 text-center">
+              Comparte este código para llevar a otros directamente a la página del evento.
+            </p>
+          </div>
+        </div>
+      )}
       
       <WhatsAppButton className="bottom-[90px] lg:bottom-6 right-4 lg:right-6" />
     </div>
