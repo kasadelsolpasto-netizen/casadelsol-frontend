@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { ArrowLeft, Calendar, MapPin, QrCode as QrCodeIcon, X, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, QrCode as QrCodeIcon, X, Copy, Check, Link2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
@@ -284,7 +284,7 @@ export default function EventDetailClient({ params }: { params: { id: string } }
                 className={`flex flex-col items-center justify-center gap-1.5 p-3 aspect-square rounded-xl border transition-all ${ copiedLink ? 'bg-neon-green border-neon-green text-black' : 'bg-zinc-800/50 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-white' }`}
                 title="Copiar enlace"
               >
-                {copiedLink ? <Check className="w-5 h-5" /> : <Link className="w-5 h-5" />}
+                {copiedLink ? <Check className="w-5 h-5" /> : <Link2 className="w-5 h-5" />}
                 <span className="text-[8px] font-black uppercase tracking-wider">{copiedLink ? 'Ok' : 'Link'}</span>
               </button>
 

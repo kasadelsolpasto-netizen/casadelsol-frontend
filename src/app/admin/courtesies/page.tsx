@@ -413,8 +413,8 @@ export default function CourtesiesAdminPage() {
                       <input type="text" required value={singleForm.name} onChange={e => setSingleForm({...singleForm, name: e.target.value})} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-purple transition-colors" placeholder="Ej. John Doe" />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Cédula</label>
-                      <input type="text" required value={singleForm.dni} onChange={e => setSingleForm({...singleForm, dni: e.target.value})} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-purple transition-colors" placeholder="Ej. 1000000000" />
+                      <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Cédula <span className="text-zinc-700 normal-case font-bold">(opcional)</span></label>
+                      <input type="text" value={singleForm.dni} onChange={e => setSingleForm({...singleForm, dni: e.target.value})} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-purple transition-colors" placeholder="Ej. 1000000000" />
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Correo Electrónico</label>
