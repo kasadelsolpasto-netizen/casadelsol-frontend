@@ -246,57 +246,51 @@ export default function EventDetailClient({ params }: { params: { id: string } }
               </div>
             </div>
 
-            {/* Share Buttons — todos del mismo tamaño */}
-            <div className="w-full max-w-sm grid grid-cols-5 gap-2">
-              {/* WhatsApp */}
-              <button
-                onClick={() => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('¡Mira este evento! ' + event.title + ' — ' + pageUrl)}`, '_blank')}
-                className="flex flex-col items-center justify-center gap-1.5 p-3 aspect-square bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366] hover:text-black rounded-xl transition-all"
-                title="Compartir en WhatsApp"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 1C5.924 1 1 5.925 1 12.001c0 1.943.505 3.771 1.392 5.362L1 23l5.75-1.375A10.95 10.95 0 0012 23c6.075 0 11-4.925 11-11S18.075 1 12 1zm0 20.095a9.055 9.055 0 01-4.612-1.262l-.33-.197-3.416.817.848-3.327-.215-.342A9.059 9.059 0 012.904 12c0-4.998 4.097-9.095 9.096-9.095 4.998 0 9.095 4.097 9.095 9.095s-4.097 9.095-9.096 9.095z"/></svg>
-                <span className="text-[8px] font-black uppercase tracking-wider">WA</span>
-              </button>
-
-              {/* Facebook */}
-              <button
-                onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`, '_blank')}
-                className="flex flex-col items-center justify-center gap-1.5 p-3 aspect-square bg-[#1877F2]/10 border border-[#1877F2]/30 text-[#1877F2] hover:bg-[#1877F2] hover:text-white rounded-xl transition-all"
-                title="Compartir en Facebook"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                <span className="text-[8px] font-black uppercase tracking-wider">FB</span>
-              </button>
-
-              {/* X / Twitter */}
-              <button
-                onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('¡No te pierdas ' + event.title + ' en Kasa del Sol!')}&url=${encodeURIComponent(pageUrl)}`, '_blank')}
-                className="flex flex-col items-center justify-center gap-1.5 p-3 aspect-square bg-zinc-800/50 border border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-white rounded-xl transition-all"
-                title="Compartir en X"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.639L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>
-                <span className="text-[8px] font-black uppercase tracking-wider">X</span>
-              </button>
-
-              {/* Copy Link */}
-              <button
-                onClick={() => { navigator.clipboard.writeText(pageUrl); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000); }}
-                className={`flex flex-col items-center justify-center gap-1.5 p-3 aspect-square rounded-xl border transition-all ${ copiedLink ? 'bg-neon-green border-neon-green text-black' : 'bg-zinc-800/50 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-white' }`}
-                title="Copiar enlace"
-              >
-                {copiedLink ? <Check className="w-5 h-5" /> : <Link2 className="w-5 h-5" />}
-                <span className="text-[8px] font-black uppercase tracking-wider">{copiedLink ? 'Ok' : 'Link'}</span>
-              </button>
-
-              {/* QR */}
-              <button
-                onClick={() => setShowQrModal(true)}
-                className="flex flex-col items-center justify-center gap-1.5 p-3 aspect-square bg-neon-purple/10 border border-neon-purple/30 text-neon-purple hover:bg-neon-purple hover:text-black rounded-xl transition-all"
-                title="Generar QR"
-              >
-                <QrCodeIcon className="w-5 h-5" />
-                <span className="text-[8px] font-black uppercase tracking-wider">QR</span>
-              </button>
+            {/* Share row — minimal */}
+            <div className="w-full max-w-sm">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600 mb-2 text-center">Compartir</p>
+              <div className="flex items-center justify-center gap-2">
+                {/* WhatsApp */}
+                <button
+                  onClick={() => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('¡Mira este evento! ' + event.title + ' — ' + pageUrl)}`, '_blank')}
+                  title="WhatsApp"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-[#25D366]/10 border border-[#25D366]/25 text-[#25D366] hover:bg-[#25D366] hover:text-black transition-all"
+                >
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 1C5.924 1 1 5.925 1 12.001c0 1.943.505 3.771 1.392 5.362L1 23l5.75-1.375A10.95 10.95 0 0012 23c6.075 0 11-4.925 11-11S18.075 1 12 1zm0 20.095a9.055 9.055 0 01-4.612-1.262l-.33-.197-3.416.817.848-3.327-.215-.342A9.059 9.059 0 012.904 12c0-4.998 4.097-9.095 9.096-9.095 4.998 0 9.095 4.097 9.095 9.095s-4.097 9.095-9.096 9.095z"/></svg>
+                </button>
+                {/* Facebook */}
+                <button
+                  onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`, '_blank')}
+                  title="Facebook"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-[#1877F2]/10 border border-[#1877F2]/25 text-[#1877F2] hover:bg-[#1877F2] hover:text-white transition-all"
+                >
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                </button>
+                {/* X */}
+                <button
+                  onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('¡No te pierdas ' + event.title + ' en Kasa del Sol!')}&url=${encodeURIComponent(pageUrl)}`, '_blank')}
+                  title="X / Twitter"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 hover:bg-zinc-700 hover:text-white transition-all"
+                >
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.639L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>
+                </button>
+                {/* Copy link */}
+                <button
+                  onClick={() => { navigator.clipboard.writeText(pageUrl); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000); }}
+                  title="Copiar enlace"
+                  className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all ${copiedLink ? 'bg-neon-green border-neon-green text-black' : 'bg-zinc-800/60 border-zinc-700/50 text-zinc-400 hover:bg-zinc-700 hover:text-white'}`}
+                >
+                  {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
+                </button>
+                {/* QR */}
+                <button
+                  onClick={() => setShowQrModal(true)}
+                  title="Código QR"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-neon-purple/10 border border-neon-purple/25 text-neon-purple hover:bg-neon-purple hover:text-black transition-all"
+                >
+                  <QrCodeIcon className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
