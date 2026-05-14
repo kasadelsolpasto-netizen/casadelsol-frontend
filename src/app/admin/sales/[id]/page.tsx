@@ -8,6 +8,32 @@ export default function EventSalesStatsPage({ params }: { params: { id: string }
   const [walkIns, setWalkIns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [revokingOrder, setRevokingOrder] = useState<string | null>(null);
+
+  const handleRevokeOrder = async (orderId: string) => {
+    if (!confirm('¿Estás seguro de que deseas revocar esta orden de promotor? Esto eliminará los QR y revertirá la disponibilidad de tickets.')) return;
+    
+    setRevokingOrder(orderId);
+    try {
+      const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
+      const authToken = tokenRow ? tokenRow.split('=')[1] : null;
+      const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      
+      const res = await fetch(`${API}/promoters/orders/${orderId}/revoke`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      
+      if (!res.ok) throw new Error('Error al revocar orden');
+      
+      // Recargar la página para actualizar los datos
+      window.location.reload();
+    } catch (err: any) {
+      alert(err.message || 'Error al revocar orden');
+    } finally {
+      setRevokingOrder(null);
+    }
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -148,33 +174,58 @@ export default function EventSalesStatsPage({ params }: { params: { id: string }
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-800 bg-zinc-900/50">
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 whitespace-nowrap">Cliente</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 whitespace-nowrap">Tickets</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 whitespace-nowrap">Monto</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 hidden sm:table-cell whitespace-nowrap">Ref.</th>
+                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 whitespace-nowrap">Cliente</th>
+                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 whitespace-nowrap">Tickets</th>
+                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 whitespace-nowrap">Monto</th>
+                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 hidden sm:table-cell whitespace-nowrap">Ref.</th>
+                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-zinc-400 whitespace-nowrap">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800">
                   {data.orders.map((order: any) => (
                     <tr key={order.id} className="hover:bg-zinc-900/30 transition-colors">
-                      <td className="p-4 whitespace-nowrap">
-                        <div className="font-bold text-white text-sm">{order.user?.name || 'Invitado'}</div>
-                        <div className="text-xs text-zinc-500">{order.user?.email || 'N/A'}</div>
-                      </td>
-                      <td className="p-4 whitespace-nowrap">
-                        {order.order_items.map((item: any, idx: number) => (
-                          <div key={idx} className="text-xs font-bold">{item.quantity}x <span className="text-neon-purple">{item.ticket_type?.name}</span></div>
-                        ))}
-                      </td>
-                      <td className="p-4 whitespace-nowrap"><div className="text-sm font-black text-neon-green">${order.total.toLocaleString()}</div></td>
-                      <td className="p-4 hidden sm:table-cell whitespace-nowrap">
-                        <div className="text-xs font-mono text-zinc-500 bg-zinc-900 p-1.5 rounded">{order.payment_ref?.substring(0, 12) || 'N/A'}</div>
-                      </td>
-                    </tr>
+                       <td className="p-4 whitespace-nowrap">
+                         <div className="font-bold text-white text-sm">{order.user?.name || 'Invitado'}</div>
+                         <div className="text-xs text-zinc-500">{order.user?.email || 'N/A'}</div>
+                         {order.promoter_code && (
+                           <div className="text-[10px] font-black uppercase tracking-widest text-neon-green mt-1">
+                             Promotor: {order.promoter_code.promoter?.name || order.promoter_code.code}
+                           </div>
+                         )}
+                       </td>
+                       <td className="p-4 whitespace-nowrap">
+                         {order.order_items.map((item: any, idx: number) => (
+                           <div key={idx} className="text-xs font-bold">{item.quantity}x <span className="text-neon-purple">{item.ticket_type?.name}</span></div>
+                         ))}
+                       </td>
+                       <td className="p-4 whitespace-nowrap">
+                         <div className="text-sm font-black text-neon-green">${order.total.toLocaleString()}</div>
+                         {order.payment_ref?.startsWith('CASH_PROMOTER') && (
+                           <div className={`text-[10px] font-black uppercase tracking-widest ${order.payment_ref.includes('_PAID_') ? 'text-green-500' : 'text-orange-500'}`}>
+                             {order.payment_ref.includes('_PAID_') ? 'LIQUIDADO' : 'PENDIENTE'}
+                           </div>
+                         )}
+                       </td>
+                       <td className="p-4 hidden sm:table-cell whitespace-nowrap">
+                         <div className="text-xs font-mono text-zinc-500 bg-zinc-900 p-1.5 rounded">{order.payment_ref?.substring(0, 12) || 'N/A'}</div>
+                       </td>
+                       <td className="p-4 whitespace-nowrap">
+                         {order.payment_ref?.startsWith('CASH_PROMOTER') && !order.payment_ref.includes('_PAID_') && (
+                           <button 
+                             onClick={() => handleRevokeOrder(order.id)}
+                             disabled={revokingOrder === order.id}
+                             className="text-[10px] font-black uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/30 px-2 py-1 rounded hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
+                             title="Revocar orden (eliminar QR)"
+                           >
+                             {revokingOrder === order.id ? 'Revocando...' : 'Revocar'}
+                           </button>
+                         )}
+                       </td>
+                     </tr>
                   ))}
-                  {data.orders.length === 0 && (
-                    <tr><td colSpan={4} className="p-8 text-center text-zinc-500 text-sm font-bold uppercase tracking-widest">Sin compras online registradas</td></tr>
-                  )}
+                   {data.orders.length === 0 && (
+                     <tr><td colSpan={5} className="p-8 text-center text-zinc-500 text-sm font-bold uppercase tracking-widest">Sin compras online registradas</td></tr>
+                   )}
                 </tbody>
               </table>
             </div>
