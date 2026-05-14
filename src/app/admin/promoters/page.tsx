@@ -149,6 +149,25 @@ export default function PromotersAdminPage() {
     }
   };
 
+  const handleLiquidate = async (promoterId: string, eventId: string | null) => {
+    if (!confirm('¿Estás seguro de que recibiste el efectivo y deseas liquidar la deuda de este promotor?')) return;
+    
+    try {
+      const res = await fetch(`${API}/promoters/${promoterId}/liquidate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({ eventId: eventId === '__global__' ? null : eventId })
+      });
+      if (!res.ok) throw new Error('Error al liquidar deuda');
+      fetchData();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
   return (
     <div className="p-8 pb-24 text-white max-w-7xl mx-auto">
       <header className="mb-10">
@@ -472,6 +491,7 @@ export default function PromotersAdminPage() {
                                 <TrendingUp className="w-3 h-3" /> Conversión
                               </div>
                             </th>
+                            <th className="py-2.5 px-4 font-bold text-center">Deuda (Efectivo)</th>
                             <th className="py-2.5 px-4 font-bold">Estado</th>
                           </tr>
                         </thead>
@@ -513,6 +533,27 @@ export default function PromotersAdminPage() {
                                   p.conversion >= 5 ? 'bg-yellow-400/20 text-yellow-400' :
                                   'bg-zinc-800 text-zinc-500'
                                 }`}>{p.conversion}%</span>
+                              </td>
+                              {/* Deuda / Efectivo */}
+                              <td className="py-3 px-4 text-center">
+                                <div className="flex flex-col items-center gap-1">
+                                  <span className={`text-xs font-black ${p.cash_debt > 0 ? 'text-orange-500' : 'text-zinc-500'}`}>
+                                    Deuda: {Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(p.cash_debt || 0)}
+                                  </span>
+                                  {p.cash_paid > 0 && (
+                                    <span className="text-[10px] text-green-500 font-bold">
+                                      Pagado: {Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(p.cash_paid)}
+                                    </span>
+                                  )}
+                                  {p.cash_debt > 0 && (
+                                    <button 
+                                      onClick={() => handleLiquidate(p.promoter_id, group.event.id)}
+                                      className="text-[9px] font-black uppercase tracking-widest bg-orange-500/10 text-orange-500 border border-orange-500/30 px-2 py-1 rounded mt-1 hover:bg-orange-500 hover:text-black transition-all"
+                                    >
+                                      Liquidar
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                               {/* Estado */}
                               <td className="py-3 px-4">

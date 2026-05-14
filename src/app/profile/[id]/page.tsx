@@ -296,8 +296,15 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
            <div className="text-center md:text-left">
               <h1 className="text-4xl md:text-5xl font-black uppercase text-white mb-2">{profile?.name}</h1>
               <p className="text-zinc-500 font-bold">{profile?.email}</p>
-              <div className="mt-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-neon-purple/10 border border-neon-purple/30 text-neon-purple text-[10px] font-black uppercase tracking-widest">
-                 <Star className="w-3 h-3" /> Raver VIP
+              <div className="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-3">
+                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-neon-purple/10 border border-neon-purple/30 text-neon-purple text-[10px] font-black uppercase tracking-widest">
+                    <Star className="w-3 h-3" /> Raver VIP
+                 </div>
+                 {profile?.promoter_codes?.length > 0 && (
+                   <Link href="/profile/promoter" className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-neon-green/10 border border-neon-green/30 text-neon-green text-[10px] font-black uppercase tracking-widest hover:bg-neon-green/20 transition-all">
+                      <DollarSign className="w-3 h-3" /> Panel de Ventas
+                   </Link>
+                 )}
               </div>
            </div>
         </header>
