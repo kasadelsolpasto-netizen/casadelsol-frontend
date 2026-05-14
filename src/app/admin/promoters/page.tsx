@@ -10,6 +10,8 @@ interface PromoterCode {
   discount_perc: number;
   uses_count: number;
   clicks_count: number;
+  ticket_limit?: number | null;
+  tickets_sold?: number;
   is_active: boolean;
   created_at: string;
   promoter: { name: string; email: string };
@@ -24,12 +26,12 @@ export default function PromotersAdminPage() {
 
   // Formulario crear
   const [formData, setFormData] = useState({
-    code: '', promoter_email: '', discount_perc: 0, event_id: '',
+    code: '', promoter_email: '', discount_perc: 0, event_id: '', ticket_limit: '' as number | string
   });
 
   // Edición inline
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editData, setEditData] = useState({ code: '', discount_perc: 0, event_id: '' });
+  const [editData, setEditData] = useState({ code: '', discount_perc: 0, event_id: '', ticket_limit: '' as number | string });
   const [editLoading, setEditLoading] = useState(false);
 
   // Confirmación borrado
@@ -76,13 +78,14 @@ export default function PromotersAdminPage() {
           promoter_email: formData.promoter_email.trim(),
           discount_perc: Number(formData.discount_perc),
           event_id: formData.event_id || undefined,
+          ticket_limit: formData.ticket_limit ? Number(formData.ticket_limit) : null,
         })
       });
       if (!res.ok) {
         const err = await res.json().catch(() => null);
         throw new Error(err?.message || 'Error al crear código');
       }
-      setFormData({ code: '', promoter_email: '', discount_perc: 0, event_id: '' });
+      setFormData({ code: '', promoter_email: '', discount_perc: 0, event_id: '', ticket_limit: '' });
       fetchData();
     } catch (error: any) {
       alert(error.message);
@@ -103,7 +106,7 @@ export default function PromotersAdminPage() {
 
   const startEdit = (c: PromoterCode) => {
     setEditingId(c.id);
-    setEditData({ code: c.code, discount_perc: c.discount_perc, event_id: c.event_id || '' });
+    setEditData({ code: c.code, discount_perc: c.discount_perc, event_id: c.event_id || '', ticket_limit: c.ticket_limit || '' });
     setDeleteConfirmId(null);
   };
 
@@ -117,6 +120,7 @@ export default function PromotersAdminPage() {
           code: editData.code,
           discount_perc: Number(editData.discount_perc),
           event_id: editData.event_id || null,
+          ticket_limit: editData.ticket_limit ? Number(editData.ticket_limit) : null,
         })
       });
       if (!res.ok) {
@@ -213,6 +217,16 @@ export default function PromotersAdminPage() {
                 </div>
               </div>
               <div>
+                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Límite de Entradas (Opcional)</label>
+                <div className="relative">
+                  <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                  <input type="number" min="1" placeholder="Ilimitado"
+                    value={formData.ticket_limit}
+                    onChange={e => setFormData({ ...formData, ticket_limit: e.target.value })}
+                    className="w-full bg-black border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-sm focus:border-neon-purple outline-none" />
+                </div>
+              </div>
+              <div>
                 <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Evento Específico (Opcional)</label>
                 <select value={formData.event_id}
                   onChange={e => setFormData({ ...formData, event_id: e.target.value })}
@@ -294,6 +308,24 @@ export default function PromotersAdminPage() {
                             c.discount_perc > 0
                               ? <span className="bg-neon-purple/20 text-neon-purple px-2 py-1 rounded text-xs font-bold">{c.discount_perc}% OFF</span>
                               : <span className="text-zinc-600 text-xs">Sin descuento</span>
+                          )}
+                        </div>
+
+                        {/* Stats / Limite */}
+                        <div className="text-center w-16">
+                          {isEditing ? (
+                            <input type="number" min="1" placeholder="∞"
+                                value={editData.ticket_limit}
+                                onChange={e => setEditData({ ...editData, ticket_limit: e.target.value })}
+                                className="bg-black border border-neon-purple/50 rounded-lg px-2 py-1.5 text-sm w-full outline-none text-center"
+                              />
+                          ) : (
+                            <>
+                              <div className="text-zinc-300 font-bold text-sm">
+                                {c.ticket_limit ? `${c.tickets_sold || 0}/${c.ticket_limit}` : '∞'}
+                              </div>
+                              <div className="text-[9px] text-zinc-600 uppercase tracking-widest">Límite</div>
+                            </>
                           )}
                         </div>
 
