@@ -1,16 +1,17 @@
 "use client";
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   Home, 
   Ticket, 
   ShoppingBag, 
   Tag, 
   Shield, 
-  User, 
   LogOut, 
   LayoutDashboard,
   Settings,
-  ChevronDown
+  ChevronDown,
+  DollarSign
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -19,20 +20,43 @@ import { UserAvatar } from '@/components/UserAvatar';
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{id: string; name: string; role: string; avatar?: string} | null>(null);
+  const [userProfile, setUserProfile] = useState<{promoter_codes?: Array<{id: string}>} | null>(null);
   const [mounted, setMounted] = useState(false);
   const [brandLogo, setBrandLogo] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    const syncUser = () => {
+    const syncUser = async () => {
       const stored = localStorage.getItem('kasa_user');
       if (stored) {
         try {
-          setUser(JSON.parse(stored));
-        } catch(e) {}
+          const userData = JSON.parse(stored);
+          setUser(userData);
+          
+          // Cargar perfil completo para verificar si es promotor
+          const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
+          const token = tokenRow ? tokenRow.split('=')[1] : null;
+          
+          if (token && userData.id) {
+            try {
+              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/${userData.id}/profile`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              if (res.ok) {
+                const profileData = await res.json();
+                setUserProfile(profileData);
+              }
+            } catch (e) {
+              console.error('Error loading user profile:', e);
+            }
+          }
+        } catch(error) {
+          console.error('Error loading user:', error);
+        }
       } else {
         setUser(null);
+        setUserProfile(null);
       }
     };
 
@@ -49,7 +73,9 @@ export function Navbar() {
              localStorage.setItem('kasa_brand_logo', data.logoBase64);
           }
         }
-      } catch(e) {}
+         } catch(error) {
+           console.error('Error fetching brand logo:', error);
+         }
     };
 
     syncUser();
@@ -75,11 +101,11 @@ export function Navbar() {
       {/* NIVEL 1: BRANDING & PROFILE */}
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between border-b border-zinc-900/50">
         <Link href="/" className="flex items-center gap-3 group">
-          {brandLogo ? (
-            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(255,255,255,0.1)] group-hover:shadow-neon-green/30 transition-all duration-500">
-               <img src={brandLogo} alt="Logo" className="w-full h-full object-cover" />
-            </div>
-          ) : (
+           {brandLogo ? (
+             <div className="w-10 h-10 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(255,255,255,0.1)] group-hover:shadow-neon-green/30 transition-all duration-500">
+                <Image src={brandLogo} alt="Logo" width={40} height={40} className="w-full h-full object-cover" />
+             </div>
+           ) : (
             <div className="w-10 h-10" />
           )}
           <span className="font-black uppercase tracking-[0.2em] text-sm text-white group-hover:text-neon-green transition-colors">
@@ -124,14 +150,22 @@ export function Navbar() {
                     </>
                   )}
 
-                  {user.role === 'STAFF' && (
-                    <Link href="/scanner" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item">
-                       <Settings className="w-4 h-4 text-orange-500 group-hover/item:scale-110 transition-transform" />
-                       <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Modo Trabajador</span>
-                    </Link>
-                  )}
+                   {user.role === 'STAFF' && (
+                     <Link href="/scanner" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item">
+                        <Settings className="w-4 h-4 text-orange-500 group-hover/item:scale-110 transition-transform" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Modo Trabajador</span>
+                     </Link>
+                   )}
 
-                  <button onClick={logout} className="w-full flex items-center gap-3 px-5 py-4 hover:bg-red-500/10 transition-colors group/item text-left">
+                   {/* Opción Promotor */}
+                   {userProfile?.promoter_codes?.length > 0 && (
+                     <Link href="/profile/promoter" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item border-t border-zinc-900">
+                        <DollarSign className="w-4 h-4 text-neon-green group-hover/item:scale-110 transition-transform" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Panel de Promotor</span>
+                     </Link>
+                   )}
+
+                   <button onClick={logout} className="w-full flex items-center gap-3 px-5 py-4 hover:bg-red-500/10 transition-colors group/item text-left">
                      <LogOut className="w-4 h-4 text-red-500 group-hover/item:scale-110 transition-transform" />
                      <span className="text-[10px] font-black uppercase tracking-widest text-red-500">Cerrar Sesión</span>
                   </button>
