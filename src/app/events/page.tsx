@@ -24,8 +24,16 @@ export default async function EventsFeed() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {events.map((event: any) => {
-            const minPrice = event.ticket_types && event.ticket_types.length > 0
-              ? Math.min(...event.ticket_types.map((t: any) => t.price))
+            const activeTickets = (event.ticket_types || []).filter((t: any) => {
+              if (t.available <= 0) return false;
+              const now = new Date();
+              if (t.sale_start && new Date(t.sale_start) > now) return false;
+              if (t.sale_end && new Date(t.sale_end) < now) return false;
+              return true;
+            });
+            const ticketsToUse = activeTickets.length > 0 ? activeTickets : (event.ticket_types || []);
+            const minPrice = ticketsToUse.length > 0
+              ? Math.min(...ticketsToUse.map((t: any) => t.price))
               : 0;
             return (
           <Link href={`/events/${event.id}`} key={event.id} className="group glass-panel rounded-2xl overflow-hidden hover:neon-border-primary transition-all duration-300">

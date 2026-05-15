@@ -51,8 +51,16 @@ export default async function Home() {
         {/* Grid de eventos */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {events.map((event: any) => {
-            const minPrice = event.ticket_types && event.ticket_types.length > 0
-              ? Math.min(...event.ticket_types.map((t: any) => t.price))
+            const activeTickets = (event.ticket_types || []).filter((t: any) => {
+              if (t.available <= 0) return false;
+              const now = new Date();
+              if (t.sale_start && new Date(t.sale_start) > now) return false;
+              if (t.sale_end && new Date(t.sale_end) < now) return false;
+              return true;
+            });
+            const ticketsToUse = activeTickets.length > 0 ? activeTickets : (event.ticket_types || []);
+            const minPrice = ticketsToUse.length > 0
+              ? Math.min(...ticketsToUse.map((t: any) => t.price))
               : 0;
             return (
             <Link href={`/events/${event.seo_slug || event.id}`} key={event.id} className="group relative rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_0_30px_rgba(57,255,20,0.15)] transform hover:-translate-y-2 transition-all duration-300 block p-[1px] bg-zinc-800/50">
