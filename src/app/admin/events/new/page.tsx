@@ -6,6 +6,13 @@ import Link from 'next/link';
 import { Image as ImageIcon, Upload, Plus, Trash2, ArrowLeft, Loader2 } from 'lucide-react';
 import { AdminGuard } from '@/components/AdminGuard';
 import SeoPanel from '@/components/SeoPanel';
+import dynamic from 'next/dynamic';
+
+const RichEditor = dynamic(() => import('@/components/RichEditor'), { ssr: false, loading: () => (
+  <div className="rounded-2xl border border-zinc-800 bg-black h-40 flex items-center justify-center">
+    <span className="text-zinc-600 text-xs font-bold uppercase tracking-widest">Cargando editor...</span>
+  </div>
+) });
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,6 +25,7 @@ export default function NewEventPage() {
     title: '', description: '', date: '', venue: ''
   });
   const [flyerUrl, setFlyerUrl] = useState<string>('');
+  const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const [seo, setSeo] = useState({ seo_title: '', seo_description: '', seo_slug: '' });
   const [ticketTypes, setTicketTypes] = useState([{ name: 'General', price: 60000, capacity: 100, sale_start: '', sale_end: '', hide_stock: false }]);
   const [uploading, setUploading] = useState(false);
@@ -43,6 +51,28 @@ export default function NewEventPage() {
        setFlyerUrl(url);
     }
     setUploading(false);
+  };
+
+  const handleSubidaMedia = async (e: any) => {
+    const files = Array.from(e.target.files) as File[];
+    if (files.length === 0) return;
+    setUploading(true);
+    
+    const newUrls: string[] = [];
+    for (const file of files) {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random()}.${fileExt}`;
+      const { error } = await supabase.storage.from('flyers').upload(fileName, file);
+      if (!error) {
+        newUrls.push(supabase.storage.from('flyers').getPublicUrl(fileName).data.publicUrl);
+      }
+    }
+    setMediaUrls(prev => [...prev, ...newUrls]);
+    setUploading(false);
+  };
+
+  const removerMedia = (index: number) => {
+    setMediaUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleTicketChange = (index: number, field: string, value: any) => {
@@ -90,6 +120,7 @@ export default function NewEventPage() {
            ...seo,
            date: new Date(formData.date).toISOString(),
            flyer_url: flyerUrl,
+           media_urls: mediaUrls,
            status: 'PUBLISHED',
            ticket_types: ticketTypes.map((t: any) => ({
              ...t,
@@ -158,8 +189,11 @@ export default function NewEventPage() {
 
                 <div className="md:col-span-2 space-y-2">
                   <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black ml-1">Descripción de la Experiencia</label>
-                  <textarea rows={3} placeholder="Música, vibras y techno hasta el amanecer..." className="w-full bg-black border border-zinc-800 rounded-xl py-4 px-5 text-white placeholder:text-zinc-700 hover:border-zinc-500 focus:border-neon-purple focus:ring-1 focus:ring-neon-purple outline-none transition-all resize-none" 
-                     value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                  <RichEditor
+                    value={formData.description}
+                    onChange={(html: string) => setFormData({...formData, description: html})}
+                    placeholder="Música, vibras y techno hasta el amanecer..."
+                  />
                 </div>
               </div>
             </section>
@@ -179,6 +213,40 @@ export default function NewEventPage() {
                   </div>
                 </div>
             </div>
+
+            {/* SECCIÓN GALERÍA MULTIMEDIA */}
+            <section className="glass-panel p-6 rounded-2xl border border-zinc-800 bg-zinc-900/20 space-y-6">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center border border-pink-500/30">
+                  <ImageIcon className="w-4 h-4 text-pink-500" />
+                </div>
+                <h2 className="text-sm font-black uppercase tracking-widest text-zinc-300">Galería Extra (Fotos / Videos)</h2>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {mediaUrls.map((url, i) => {
+                  const isVideo = url.endsWith('.mp4') || url.endsWith('.mov') || url.endsWith('.webm');
+                  return (
+                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-black border border-zinc-800 group">
+                      {isVideo ? (
+                        <video src={url} className="w-full h-full object-cover opacity-80" muted loop autoPlay playsInline />
+                      ) : (
+                        <img src={url} alt={`media-${i}`} className="w-full h-full object-cover opacity-80" />
+                      )}
+                      <button onClick={() => removerMedia(i)} className="absolute top-2 right-2 p-1.5 bg-red-500/80 hover:bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  );
+                })}
+                
+                <div className="relative aspect-square rounded-xl border-2 border-dashed border-zinc-800 hover:border-pink-500 bg-zinc-900/40 flex flex-col items-center justify-center transition-colors group">
+                  <input type="file" multiple accept="image/*,video/*" onChange={handleSubidaMedia} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                  <Upload className="w-6 h-6 text-zinc-500 group-hover:text-pink-500 mb-2 transition-colors" />
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 group-hover:text-pink-500 transition-colors text-center px-2">Subir Más</span>
+                </div>
+              </div>
+            </section>
 
             {/* SECCIÓN 3: BOLETERÍA POR FASES */}
             <section className="space-y-6">

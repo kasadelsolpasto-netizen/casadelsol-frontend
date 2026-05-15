@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
-import { ArrowLeft, Calendar, MapPin, QrCode as QrCodeIcon, X, Copy, Check, Link2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { ArrowLeft, Calendar, MapPin, QrCode as QrCodeIcon, X, Copy, Check, Link2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import Image from 'next/image';
@@ -21,6 +21,14 @@ export default function EventDetailClient({ params }: { params: { id: string } }
   const [showQrModal, setShowQrModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [pageUrl, setPageUrl] = useState('https://kasadelsol.co');
+  
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const scrollCarousel = (dir: 'left' | 'right') => {
+    if (carouselRef.current) {
+      const scrollAmount = carouselRef.current.clientWidth;
+      carouselRef.current.scrollBy({ left: dir === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     setPageUrl(window.location.href);
@@ -241,8 +249,58 @@ export default function EventDetailClient({ params }: { params: { id: string } }
               {/* Controles de la animación neón envolvente */}
               <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(from_0deg,transparent_75%,#39ff14_90%,#bf00ff_100%)] opacity-40 group-hover:opacity-100 transition-opacity duration-1000 z-0 pointer-events-none"></div>
               
-              <div className="relative w-full h-full rounded-xl overflow-hidden bg-black z-10">
-                {event.flyer_url && <Image src={event.flyer_url} alt={event.title} fill priority sizes="(max-width: 768px) 100vw, 400px" className="object-cover group-hover:scale-105 transition-transform duration-1000" />}
+              <div className="relative w-full h-full rounded-xl overflow-hidden bg-black z-10 group/carousel">
+                {(() => {
+                  const mediaUrls = [event.flyer_url, ...(event.media_urls || [])].filter(Boolean);
+                  
+                  return (
+                    <>
+                      <div 
+                        ref={carouselRef}
+                        className="w-full h-full flex overflow-x-auto snap-x snap-mandatory hide-scrollbar relative z-10 scroll-smooth"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                      >
+                        {mediaUrls.map((url: string, index: number) => {
+                          const isVideo = url.endsWith('.mp4') || url.endsWith('.mov') || url.endsWith('.webm');
+                          return (
+                            <div key={index} className="w-full h-full flex-shrink-0 snap-center relative">
+                              {isVideo ? (
+                                <video src={url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" autoPlay loop muted playsInline />
+                              ) : (
+                                <Image src={url} alt={`${event.title} - ${index}`} fill priority sizes="(max-width: 768px) 100vw, 400px" className="object-cover group-hover:scale-105 transition-transform duration-1000" />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Botones Flotantes Desktop (solo si hay más de 1 imagen) */}
+                      {mediaUrls.length > 1 && (
+                        <>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); scrollCarousel('left'); }}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-black/60 hover:bg-neon-purple text-white rounded-full flex items-center justify-center backdrop-blur-md opacity-0 group-hover/carousel:opacity-100 transition-all border border-white/10 hidden md:flex hover:shadow-[0_0_20px_rgba(191,0,255,0.6)]"
+                          >
+                            <ChevronLeft className="w-6 h-6" />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); scrollCarousel('right'); }}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-black/60 hover:bg-neon-green text-white hover:text-black rounded-full flex items-center justify-center backdrop-blur-md opacity-0 group-hover/carousel:opacity-100 transition-all border border-white/10 hidden md:flex hover:shadow-[0_0_20px_rgba(57,255,20,0.6)]"
+                          >
+                            <ChevronRight className="w-6 h-6" />
+                          </button>
+                          
+                          {/* Indicadores Paginación (Dots) mobile */}
+                          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2 md:hidden">
+                            {mediaUrls.map((_, i) => (
+                              <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
@@ -304,7 +362,10 @@ export default function EventDetailClient({ params }: { params: { id: string } }
               Acerca del Evento
             </h3>
             <div className="w-full overflow-hidden">
-              <p className="text-zinc-400 leading-relaxed whitespace-pre-line break-words break-all">{event.description}</p>
+              <div 
+                className="post-content text-zinc-400 leading-relaxed break-words" 
+                dangerouslySetInnerHTML={{ __html: event.description || '' }} 
+              />
             </div>
           </section>
         </div>
