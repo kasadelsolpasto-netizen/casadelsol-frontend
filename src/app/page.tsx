@@ -15,17 +15,23 @@ const TYPE_META: Record<string, { label: string; tag: string }> = {
 export default async function Home() {
   let events: any[] = [];
   let posts: any[] = [];
+  let brandConfig: any = {};
 
   try {
-    const [eventsRes, postsRes] = await Promise.all([
+    const [eventsRes, postsRes, brandRes] = await Promise.all([
       fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001'}/events`, { cache: 'no-store' }),
       fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001'}/posts?limit=4&skip=0`, { cache: 'no-store' }),
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001'}/settings/brand`, { cache: 'no-store' })
     ]);
     if (eventsRes.ok) events = await eventsRes.json();
     if (postsRes.ok) { const d = await postsRes.json(); posts = d.posts || []; }
+    if (brandRes.ok) brandConfig = await brandRes.json();
   } catch (error) {
     console.error('Error fetching home data:', error);
   }
+
+  const defaultTitle = 'Próximos <span class="text-white drop-shadow-[0_0_15px_rgba(57,255,20,0.8)] [text-shadow:0_0_20px_#39ff14]">Eventos</span>';
+  const defaultDesc = 'Navega por la cartelera de música electrónica oficial. Asegura tu entrada y vive la rave antes del Sold Out.';
 
   return (
     <div className="min-h-screen">
@@ -33,11 +39,12 @@ export default async function Home() {
       {/* Hero / Feed de Eventos */}
       <main className="max-w-7xl mx-auto px-6 py-16">
         <div className="mb-16">
-          <h1 className="text-4xl md:text-6xl font-black uppercase tracking-widest text-white mb-4">
-            Próximos <span className="text-white drop-shadow-[0_0_15px_rgba(57,255,20,0.8)] [text-shadow:0_0_20px_#39ff14]">Eventos</span>
-          </h1>
-          <p className="text-lg text-zinc-400 max-w-2xl text-balance">
-            Navega por la cartelera de música electrónica oficial. Asegura tu entrada y vive la rave antes del Sold Out.
+          <h1 
+            className="text-4xl md:text-6xl font-black uppercase tracking-widest text-white mb-4"
+            dangerouslySetInnerHTML={{ __html: brandConfig.homeTitle || defaultTitle }}
+          />
+          <p className="text-lg text-zinc-400 max-w-2xl text-balance whitespace-pre-line">
+            {brandConfig.homeDescription || defaultDesc}
           </p>
         </div>
 

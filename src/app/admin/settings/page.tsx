@@ -29,6 +29,8 @@ export default function SettingsPage() {
   // Brand / PWA state
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
   const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [homeTitle, setHomeTitle] = useState('');
+  const [homeDescription, setHomeDescription] = useState('');
   const [isSavingBrand, setIsSavingBrand] = useState(false);
   const [saveBrandMessage, setSaveBrandMessage] = useState('');
 
@@ -63,6 +65,8 @@ export default function SettingsPage() {
           if (brandData && brandData.whatsappNumber) {
             setWhatsappNumber(brandData.whatsappNumber.startsWith('57') ? brandData.whatsappNumber.slice(2) : brandData.whatsappNumber);
           }
+          if (brandData && brandData.homeTitle) setHomeTitle(brandData.homeTitle);
+          if (brandData && brandData.homeDescription) setHomeDescription(brandData.homeDescription);
         }
       } catch (err) {
         console.error("Error cargando configuración:", err);
@@ -133,7 +137,9 @@ export default function SettingsPage() {
         },
         body: JSON.stringify({ 
           logoBase64,
-          whatsappNumber: whatsappNumber ? `57${whatsappNumber}` : ''
+          whatsappNumber: whatsappNumber ? `57${whatsappNumber}` : '',
+          homeTitle,
+          homeDescription
         })
       });
 
@@ -423,6 +429,33 @@ export default function SettingsPage() {
                             className="w-full bg-black border border-zinc-700 rounded-r-xl py-3 px-4 text-white font-mono tracking-wider focus:border-neon-green focus:ring-1 focus:ring-neon-green outline-none text-sm transition-all"
                             placeholder="3001234567"
                             maxLength={10}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4 mt-6 bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-white mb-2 border-b border-zinc-800 pb-2">Textos del Inicio (Home)</h3>
+                        
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Título Principal</label>
+                          <input 
+                            type="text" 
+                            value={homeTitle} 
+                            onChange={e => setHomeTitle(e.target.value)}
+                            className="w-full bg-black border border-zinc-700 rounded-xl py-3 px-4 text-white focus:border-neon-green focus:ring-1 focus:ring-neon-green outline-none text-sm transition-all"
+                            placeholder='Próximos <span class="text-neon-green">Eventos</span>'
+                          />
+                          <p className="text-[10px] text-zinc-500">Puedes usar código HTML como &lt;span class="text-neon-green"&gt; para dar color verde a una palabra específica.</p>
+                        </div>
+
+                        <div className="space-y-2 mt-4">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Descripción Corta</label>
+                          <textarea 
+                            value={homeDescription} 
+                            onChange={e => setHomeDescription(e.target.value)}
+                            className="w-full bg-black border border-zinc-700 rounded-xl py-3 px-4 text-white focus:border-neon-green focus:ring-1 focus:ring-neon-green outline-none text-sm transition-all resize-none"
+                            placeholder="Navega por la cartelera de música electrónica oficial..."
+                            rows={3}
                           />
                         </div>
                       </div>
