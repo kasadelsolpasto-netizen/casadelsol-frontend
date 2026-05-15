@@ -28,17 +28,13 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
         window.location.href = '/';
         return;
       }
+      
+      // Es OWNER y ya tiene sesión activa (por localStorage) → Desbloqueado directamente
+      setUnlocked(true);
     } catch {
       localStorage.removeItem('kasa_user');
-      setChecking(false);
-      return;
     }
-
-    // Es OWNER → verificar si ya desbloqueó la sesión
-    const isUnlocked = sessionStorage.getItem('supremo_unlocked');
-    if (isUnlocked === 'true') {
-      setUnlocked(true);
-    }
+    
     setChecking(false);
   }, []);
 
