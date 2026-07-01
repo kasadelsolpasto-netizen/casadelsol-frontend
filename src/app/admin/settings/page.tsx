@@ -1,13 +1,13 @@
 "use client";
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Save, Lock, Link as LinkIcon, AlertTriangle, Key, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, CreditCard, Save, Lock, Link as LinkIcon, AlertTriangle, Key, Image as ImageIcon, FileText, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AdminGuard } from '@/components/AdminGuard';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'pagos' | 'brand' | 'seguridad'>('pagos');
+  const [activeTab, setActiveTab] = useState<'pagos' | 'brand' | 'seguridad' | 'dian'>('pagos');
   
   // Wompi config state
   const [publicKey, setPublicKey] = useState('');
@@ -33,6 +33,24 @@ export default function SettingsPage() {
   const [homeDescription, setHomeDescription] = useState('');
   const [isSavingBrand, setIsSavingBrand] = useState(false);
   const [saveBrandMessage, setSaveBrandMessage] = useState('');
+
+  // DIAN state
+  const [dianIsConfigured, setDianIsConfigured] = useState(false);
+  const [dianNit, setDianNit] = useState('');
+  const [dianRazonSocial, setDianRazonSocial] = useState('');
+  const [dianDireccion, setDianDireccion] = useState('');
+  const [dianCiudad, setDianCiudad] = useState('');
+  const [dianSoftwareId, setDianSoftwareId] = useState('');
+  const [dianTestSetId, setDianTestSetId] = useState('');
+  const [dianEnvironment, setDianEnvironment] = useState('habilitacion');
+  const [dianResolucionNumero, setDianResolucionNumero] = useState('');
+  const [dianResolucionPrefix, setDianResolucionPrefix] = useState('');
+  const [dianResolucionDesde, setDianResolucionDesde] = useState('');
+  const [dianResolucionHasta, setDianResolucionHasta] = useState('');
+  const [dianCertFile, setDianCertFile] = useState<File | null>(null);
+  const [dianCertPassword, setDianCertPassword] = useState('');
+  const [isSavingDian, setIsSavingDian] = useState(false);
+  const [saveDianMessage, setSaveDianMessage] = useState('');
 
   // Fetch initial config
   useEffect(() => {
@@ -67,6 +85,26 @@ export default function SettingsPage() {
           }
           if (brandData && brandData.homeTitle) setHomeTitle(brandData.homeTitle);
           if (brandData && brandData.homeDescription) setHomeDescription(brandData.homeDescription);
+        }
+
+        // Cargar config DIAN
+        const dianRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/settings/dian`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (dianRes.ok) {
+          const d = await dianRes.json();
+          setDianIsConfigured(d.isConfigured || false);
+          setDianNit(d.nitEmisor || '');
+          setDianRazonSocial(d.razonSocial || '');
+          setDianDireccion(d.direccion || '');
+          setDianCiudad(d.ciudad || '');
+          setDianSoftwareId(d.softwareId || '');
+          setDianTestSetId(d.testSetId || '');
+          setDianEnvironment(d.environment || 'habilitacion');
+          setDianResolucionNumero(d.resolucionNumero || '');
+          setDianResolucionPrefix(d.resolucionPrefix || '');
+          setDianResolucionDesde(d.resolucionDesde || '');
+          setDianResolucionHasta(d.resolucionHasta || '');
         }
       } catch (err) {
         console.error("Error cargando configuración:", err);
@@ -197,6 +235,61 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveDian = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingDian(true);
+    setSaveDianMessage('');
+
+    try {
+      const token = document.cookie.split('kasa_auth_token=')[1]?.split(';')[0];
+      const body: any = {
+        nitEmisor: dianNit,
+        razonSocial: dianRazonSocial,
+        direccion: dianDireccion,
+        ciudad: dianCiudad,
+        softwareId: dianSoftwareId,
+        testSetId: dianTestSetId,
+        environment: dianEnvironment,
+        resolucionNumero: dianResolucionNumero,
+        resolucionPrefix: dianResolucionPrefix,
+        resolucionDesde: dianResolucionDesde,
+        resolucionHasta: dianResolucionHasta,
+        certPassword: dianCertPassword || undefined,
+      };
+
+      // Si se subió un archivo .p12, convertirlo a Base64
+      if (dianCertFile) {
+        const certBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => resolve((ev.target?.result as string).split(',')[1]); // quita el prefijo data:...
+          reader.onerror = reject;
+          reader.readAsDataURL(dianCertFile);
+        });
+        body.certBase64 = certBase64;
+      }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/settings/dian`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body)
+      });
+
+      if (res.ok) {
+        setSaveDianMessage('Configuración DIAN guardada exitosamente.');
+        setDianIsConfigured(true);
+        setDianCertFile(null);
+        setDianCertPassword('');
+      } else {
+        setSaveDianMessage('Error al guardar. Revisa la consola del servidor.');
+      }
+    } catch (err) {
+      setSaveDianMessage('Error de conexión.');
+    } finally {
+      setIsSavingDian(false);
+      setTimeout(() => setSaveDianMessage(''), 5000);
+    }
+  };
+
   return (
     <AdminGuard>
       <div className="min-h-screen p-6 md:p-12 max-w-6xl mx-auto">
@@ -228,6 +321,13 @@ export default function SettingsPage() {
                className={`w-full text-left px-5 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-3 border ${activeTab === 'brand' ? 'bg-neon-green/10 border-neon-green text-neon-green shadow-[0_0_15px_rgba(57,255,20,0.2)]' : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'}`}
              >
                <ImageIcon className="w-4 h-4" /> Identidad
+             </button>
+             <button 
+               onClick={() => setActiveTab('dian')} 
+               className={`w-full text-left px-5 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-3 border ${activeTab === 'dian' ? 'bg-blue-900/20 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'}`}
+             >
+               <FileText className="w-4 h-4" /> Facturación DIAN
+               {dianIsConfigured && <CheckCircle className="w-3 h-3 text-blue-400 ml-auto" />}
              </button>
              <button 
                onClick={() => setActiveTab('seguridad')} 
@@ -470,6 +570,171 @@ export default function SettingsPage() {
                           className="flex items-center gap-2 bg-neon-green text-black px-8 py-3 rounded text-sm font-black uppercase tracking-widest hover:shadow-[0_0_20px_rgba(57,255,20,0.5)] transition-all disabled:opacity-50 hover:bg-white"
                         >
                           <Save className="w-4 h-4" /> {isSavingBrand ? 'Guardando...' : 'Guardar Identidad'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                {activeTab === 'dian' && (
+                  <div className="glass-panel p-8 rounded-2xl border-t-2 border-t-blue-500 animate-in fade-in slide-in-from-bottom-4 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-900/10 blur-3xl rounded-full"></div>
+
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-12 h-12 rounded-xl bg-blue-900/30 flex items-center justify-center border border-blue-500/50">
+                        <FileText className="w-6 h-6 text-blue-400" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-black uppercase tracking-widest text-white">Facturación Electrónica DIAN</h2>
+                        <p className="text-xs text-zinc-400 mt-1 uppercase tracking-widest font-bold">Software Propio — Modelo de Habilitación</p>
+                      </div>
+                      {dianIsConfigured && (
+                        <div className="ml-auto flex items-center gap-2 bg-blue-900/30 border border-blue-500/50 rounded-full px-4 py-1.5">
+                          <CheckCircle className="w-4 h-4 text-blue-400" />
+                          <span className="text-xs font-bold uppercase tracking-widest text-blue-400">Configurado</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-zinc-900/50 p-4 rounded-lg flex items-start gap-4 border border-blue-900/50 mb-8">
+                      <AlertTriangle className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                      <p className="text-xs text-zinc-300">
+                        Antes de configurar este módulo, debes registrar tu empresa en el portal DIAN bajo la modalidad <b className="text-white">"Software Propio"</b> y obtener tu Certificado Digital (.p12) de una entidad certificadora autorizada (Certicámara, GSE, etc.).
+                      </p>
+                    </div>
+
+                    <form onSubmit={handleSaveDian} className="space-y-8 relative z-10">
+
+                      {/* Datos del Emisor */}
+                      <div className="space-y-4">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-blue-400 border-b border-blue-900/50 pb-2">1. Datos de tu Empresa (Emisor)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">NIT (sin dígito de verificación)</label>
+                            <input type="text" value={dianNit} onChange={e => setDianNit(e.target.value)}
+                              className="w-full bg-black border border-zinc-800 rounded py-2.5 px-3 text-white font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm transition-all"
+                              placeholder="Ej: 900123456" />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Razón Social</label>
+                            <input type="text" value={dianRazonSocial} onChange={e => setDianRazonSocial(e.target.value)}
+                              className="w-full bg-black border border-zinc-800 rounded py-2.5 px-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm transition-all"
+                              placeholder="Kasa del Sol S.A.S." />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Dirección</label>
+                            <input type="text" value={dianDireccion} onChange={e => setDianDireccion(e.target.value)}
+                              className="w-full bg-black border border-zinc-800 rounded py-2.5 px-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm transition-all"
+                              placeholder="Cll 10 # 5-23" />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Ciudad</label>
+                            <input type="text" value={dianCiudad} onChange={e => setDianCiudad(e.target.value)}
+                              className="w-full bg-black border border-zinc-800 rounded py-2.5 px-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm transition-all"
+                              placeholder="Medellín" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Credenciales DIAN */}
+                      <div className="space-y-4">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-blue-400 border-b border-blue-900/50 pb-2">2. Credenciales de la DIAN (Portal MUISCA)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Software ID</label>
+                            <input type="text" value={dianSoftwareId} onChange={e => setDianSoftwareId(e.target.value)}
+                              className="w-full bg-black border border-zinc-800 rounded py-2.5 px-3 text-white font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm transition-all"
+                              placeholder="UUID que te da la DIAN" />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">TestSetID (Pruebas)</label>
+                            <input type="text" value={dianTestSetId} onChange={e => setDianTestSetId(e.target.value)}
+                              className="w-full bg-black border border-zinc-800 rounded py-2.5 px-3 text-white font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm transition-all"
+                              placeholder="Dejar en blanco si ya estás en producción" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-2">Entorno</label>
+                          <div className="flex gap-4">
+                            <label className={`flex-1 flex items-center justify-center p-3 border rounded cursor-pointer transition-all ${dianEnvironment === 'habilitacion' ? 'bg-yellow-500/10 border-yellow-500 text-yellow-400' : 'bg-black border-zinc-800 text-zinc-500'}`}>
+                              <input type="radio" value="habilitacion" checked={dianEnvironment === 'habilitacion'} onChange={() => setDianEnvironment('habilitacion')} className="hidden" />
+                              <span className="text-[10px] font-bold uppercase tracking-widest">Habilitación (Pruebas)</span>
+                            </label>
+                            <label className={`flex-1 flex items-center justify-center p-3 border rounded cursor-pointer transition-all ${dianEnvironment === 'produccion' ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-black border-zinc-800 text-zinc-500'}`}>
+                              <input type="radio" value="produccion" checked={dianEnvironment === 'produccion'} onChange={() => setDianEnvironment('produccion')} className="hidden" />
+                              <span className="text-[10px] font-bold uppercase tracking-widest">Producción (Real)</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Resolución de Facturación */}
+                      <div className="space-y-4">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-blue-400 border-b border-blue-900/50 pb-2">3. Resolución de Facturación (Cuando DIAN te la asigne)</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">N° Resolución</label>
+                            <input type="text" value={dianResolucionNumero} onChange={e => setDianResolucionNumero(e.target.value)}
+                              className="w-full bg-black border border-zinc-800 rounded py-2.5 px-3 text-white font-mono focus:border-blue-500 outline-none text-sm transition-all"
+                              placeholder="18760000001" />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Prefijo</label>
+                            <input type="text" value={dianResolucionPrefix} onChange={e => setDianResolucionPrefix(e.target.value)}
+                              className="w-full bg-black border border-zinc-800 rounded py-2.5 px-3 text-white font-mono focus:border-blue-500 outline-none text-sm transition-all"
+                              placeholder="SETP" />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Desde</label>
+                            <input type="text" value={dianResolucionDesde} onChange={e => setDianResolucionDesde(e.target.value)}
+                              className="w-full bg-black border border-zinc-800 rounded py-2.5 px-3 text-white font-mono focus:border-blue-500 outline-none text-sm transition-all"
+                              placeholder="1" />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Hasta</label>
+                            <input type="text" value={dianResolucionHasta} onChange={e => setDianResolucionHasta(e.target.value)}
+                              className="w-full bg-black border border-zinc-800 rounded py-2.5 px-3 text-white font-mono focus:border-blue-500 outline-none text-sm transition-all"
+                              placeholder="5000" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Certificado Digital */}
+                      <div className="space-y-4">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-blue-400 border-b border-blue-900/50 pb-2">4. Certificado Digital (.p12 / .pfx)</h3>
+                        <div className="bg-zinc-900/50 p-4 rounded-lg border border-zinc-800">
+                          {dianIsConfigured && (
+                            <p className="text-xs text-blue-400 font-bold mb-3 flex items-center gap-2">
+                              <CheckCircle className="w-4 h-4" /> Ya tienes un certificado cargado. Sube uno nuevo solo si deseas reemplazarlo.
+                            </p>
+                          )}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Archivo Certificado (.p12 / .pfx)</label>
+                              <input type="file" accept=".p12,.pfx"
+                                onChange={e => setDianCertFile(e.target.files?.[0] || null)}
+                                className="block w-full text-xs text-zinc-400 file:mr-3 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-widest file:bg-blue-900/40 file:text-blue-400 hover:file:bg-blue-900/60 cursor-pointer transition-all" />
+                              {dianCertFile && <p className="text-[10px] text-blue-400 mt-1">✓ {dianCertFile.name} seleccionado</p>}
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                                Contraseña del Certificado <Lock className="w-3 h-3 text-red-500" />
+                              </label>
+                              <input type="password" value={dianCertPassword} onChange={e => setDianCertPassword(e.target.value)}
+                                className="w-full bg-black border border-zinc-800 rounded py-2.5 px-3 text-white font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm transition-all"
+                                placeholder="••••••••" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-6 border-t border-zinc-800 flex items-center justify-between">
+                        <p className={`text-xs font-bold uppercase tracking-widest ${saveDianMessage.includes('Error') ? 'text-red-500' : 'text-blue-400'}`}>
+                          {saveDianMessage}
+                        </p>
+                        <button type="submit" disabled={isSavingDian}
+                          className="flex items-center gap-2 bg-blue-700 text-white px-8 py-3 rounded text-sm font-black uppercase tracking-widest hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] transition-all disabled:opacity-50 hover:bg-blue-600">
+                          <Save className="w-4 h-4" /> {isSavingDian ? 'Guardando...' : 'Guardar Configuración DIAN'}
                         </button>
                       </div>
                     </form>
