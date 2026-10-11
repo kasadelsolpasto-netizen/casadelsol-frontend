@@ -40,8 +40,12 @@ export default function StaffManagementPage() {
     fetchStaff();
   }, []);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
+    return submitStaff(false);
+  };
+
+  const submitStaff = async (convertExisting: boolean) => {
     setIsSubmitting(true);
     setError('');
 
@@ -55,12 +59,18 @@ export default function StaffManagementPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ name, email, password, classification })
+        body: JSON.stringify({ name, email, password, classification, ...(convertExisting ? { convert_existing: true } : {}) })
       });
 
       if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.message || 'Error al autorizar empleado.');
+        const d = await res.json().catch(() => ({} as any));
+        // El correo ya es de un cliente: ofrecer convertirlo en trabajador (conserva su contraseña actual).
+        if (d?.code === 'EMAIL_EXISTS' && d?.can_convert && !convertExisting) {
+          const ok = confirm(`${d.message}\n\n¿Convertir esa cuenta en trabajador?\nConservará su contraseña actual (la que escribiste aquí no se usará).`);
+          if (ok) return await submitStaff(true);
+          return;
+        }
+        throw new Error(Array.isArray(d?.message) ? d.message.join(', ') : (d?.message || 'Error al autorizar empleado.'));
       }
 
       setName(''); setEmail(''); setPassword('');

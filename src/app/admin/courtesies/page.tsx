@@ -170,13 +170,34 @@ export default function CourtesiesAdminPage() {
         body: JSON.stringify({ courtesies: payload })
       });
 
+      const resBody = await res.json().catch(() => null);
       if (res.ok) {
         setSingleForm({ name: '', dni: '', email: '', ticket_type_id: ticketTypes[0]?.id || '' });
         setBulkText('');
         fetchEventDetails(selectedEvent.id);
         fetchEvents(); // Update metrics on main screen
+        // El servidor responde por cada registro: avisar de los que no se pudieron crear.
+        const failed = Array.isArray(resBody) ? resBody.filter((r: any) => r?.status === 'error') : [];
+        // Creadas, pero el proveedor de correo rechazó el envío: hay que pasarles el enlace a mano.
+        const noMail = Array.isArray(resBody) ? resBody.filter((r: any) => r?.status !== 'error' && r?.email_sent === false) : [];
+        if (failed.length > 0 || noMail.length > 0) {
+          let msg = `Procesadas ${resBody.length - failed.length} de ${resBody.length}.`;
+          if (failed.length > 0) {
+            msg += '\n\nNo se pudieron crear:\n' + failed.map((r: any) => `• ${r.email || '(sin correo)'}: ${r.message}`).join('\n');
+          }
+          if (noMail.length > 0) {
+            msg += '\n\nSe crearon, pero el CORREO NO SALIÓ. Si es cuenta nueva, copia el enlace desde la lista y envíaselo tú; si ya tenía cuenta, la entrada ya está en su bóveda:\n' +
+              noMail.map((r: any) => `• ${r.email}`).join('\n');
+          }
+          alert(msg);
+        }
+      } else {
+        const msg = Array.isArray(resBody?.message) ? resBody.message.join(', ') : resBody?.message;
+        alert(`No se pudieron enviar las cortesías: ${msg || `error del servidor (${res.status})`}`);
       }
-    } catch (error) {}
+    } catch (error) {
+      alert('No se pudo conectar con el servidor. Revisa tu internet e inténtalo de nuevo.');
+    }
     setSubmitting(false);
   };
 
