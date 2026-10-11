@@ -1,53 +1,65 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getAuthToken, refreshSession } from '@/lib/session';
+
+const isStaffRole = (role?: string) => role === 'STAFF' || role === 'OWNER';
 
 export default function ScannerLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    const rawUser = localStorage.getItem('kasa_user');
-    if (!rawUser) {
-      router.push('/login');
-      return;
-    }
+    let cancelled = false;
 
-    try {
-      const user = JSON.parse(rawUser);
-      // HARD CLIENT-SIDE GUARD: BLOCK LOGICALLY EXCEPT OWNER AND STAFF
-      if (user.role !== 'OWNER' && user.role !== 'STAFF') {
-        router.push('/');
+    (async () => {
+      if (!getAuthToken()) {
+        router.push('/login?redirect=/scanner');
         return;
       }
-      setIsAuthorized(true);
 
-      // ASYNC VERIFICATION WITH DB: IN CASE THEY WERE TOGGLED TO "DESCANSO"
-      const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
-      const token = tokenRow ? tokenRow.split('=')[1] : null;
-      if (token) {
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/${user.id}/profile`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
-          if (data && data.role === 'USER') {
-            // Re-sync local storage to downgrade them
-            user.role = 'USER';
-            localStorage.setItem('kasa_user', JSON.stringify(user));
-            window.dispatchEvent(new Event('storage'));
-            router.push('/profile/' + user.id); // Kick them to their personal vault
-          }
-        })
-        .catch(() => {});
+      // La BASE DE DATOS manda: se renueva la sesión y se trae el rol REAL.
+      //  - Un usuario ascendido a STAFF entra sin tener que cerrar sesión (antes lo rebotaba a la home
+      //    porque su cookie/localStorage seguían diciendo USER).
+      //  - Quien está en "descanso" (rol USER) sale a su perfil.
+      //  - La sesión del staff se extiende cada vez que abre el scanner.
+      const result = await refreshSession();
+      if (cancelled) return;
+
+      if (result.ok) {
+        if (isStaffRole(result.user.role)) {
+          setIsAuthorized(true);
+        } else {
+          router.push(result.user.id ? '/profile/' + result.user.id : '/'); // descanso
+        }
+        return;
       }
-    } catch {
-      router.push('/login');
-    }
+
+      if (result.reason === 'expired') {
+        router.push('/login?redirect=/scanner');
+        return;
+      }
+
+      // Sin red o servidor dormido (Render): no se deja al staff afuera; se usa lo último que se sabe de su cuenta.
+      try {
+        const cached = JSON.parse(localStorage.getItem('kasa_user') || 'null');
+        if (cached && isStaffRole(cached.role)) {
+          setIsAuthorized(true);
+          return;
+        }
+      } catch {
+        /* sin datos locales */
+      }
+      router.push('/login?redirect=/scanner');
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   if (!isAuthorized) {
-    return <div className="min-h-screen bg-black text-red-600 font-black uppercase tracking-widest flex items-center justify-center animate-pulse">Bloqueo de Seguridad Activado...</div>;
+    return <div className="min-h-screen bg-black text-neon-green font-black uppercase tracking-widest flex items-center justify-center animate-pulse">Verificando acceso...</div>;
   }
 
   return <>{children}</>;

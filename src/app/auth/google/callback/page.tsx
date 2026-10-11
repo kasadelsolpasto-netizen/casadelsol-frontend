@@ -1,4 +1,5 @@
 "use client";
+import { setAuthCookie } from '@/lib/session';
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -23,7 +24,7 @@ function CallbackContent() {
       sessionStorage.removeItem('supremo_unlocked');
 
       // Guardar igual que el login normal
-      document.cookie = `kasa_auth_token=${token}; path=/; max-age=86400;`;
+      setAuthCookie(token);
       localStorage.setItem('kasa_user', JSON.stringify(user));
 
       // Redirigir según el rol con recarga completa para que el Navbar global detecte el usuario

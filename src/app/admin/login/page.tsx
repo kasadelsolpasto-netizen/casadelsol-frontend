@@ -1,4 +1,5 @@
 "use client";
+import { setAuthCookie } from '@/lib/session';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -57,7 +58,7 @@ export default function AdminLoginPage() {
         throw new Error('ACCESO DENEGADO: No tienes privilegios de administrador supremo.');
       }
       
-      document.cookie = `kasa_auth_token=${data.access_token}; path=/; max-age=86400;`;
+      setAuthCookie(data.access_token);
       localStorage.setItem('kasa_user', JSON.stringify(data.user));
 
       router.push('/admin');

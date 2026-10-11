@@ -1,4 +1,5 @@
 "use client";
+import { setAuthCookie } from '@/lib/session';
 import { useState, useEffect, useRef } from 'react';
 import {
   ArrowRight, ArrowLeft, Lock, Mail, User, X, Ticket,
@@ -199,7 +200,7 @@ export default function CheckoutWizard({
       });
       if (!r.ok) throw new Error('Email o contraseña inválidos.');
       const data = await r.json();
-      document.cookie = `kasa_auth_token=${data.access_token}; path=/; max-age=86400;`;
+      setAuthCookie(data.access_token);
       localStorage.setItem('kasa_user', JSON.stringify(data.user));
       setAttendees([{ attendee_name: data.user?.name || '', attendee_dni: '', attendee_email: data.user?.email || '' }]);
       setStep('quantity');

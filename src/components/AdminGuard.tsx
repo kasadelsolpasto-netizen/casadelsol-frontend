@@ -1,4 +1,5 @@
 "use client";
+import { setAuthCookie } from '@/lib/session';
 import { useEffect, useState } from 'react';
 import { Lock, ArrowRight, Loader2, Play } from 'lucide-react';
 import Link from 'next/link';
@@ -57,7 +58,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
         sessionStorage.setItem('supremo_unlocked', 'true');
         
         // Sincronizar las cookies y el localstorage para que JWT funcione
-        document.cookie = `kasa_auth_token=${data.token}; path=/; max-age=86400;`;
+        setAuthCookie(data.token);
         localStorage.setItem('kasa_user', JSON.stringify(data.user));
 
         setUnlocked(true);

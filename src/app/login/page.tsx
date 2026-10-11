@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, Suspense } from 'react';
 import { ArrowRight, Lock, Mail, Briefcase, Music, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import { setAuthCookie } from '@/lib/session';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
 function LoginContent() {
@@ -44,7 +45,10 @@ function LoginContent() {
       });
 
       if (!res.ok) {
-        throw new Error('Credenciales inválidas o error de conexión');
+        if (res.status === 429) throw new Error('Demasiados intentos desde esta red. Espera un minuto e inténtalo de nuevo.');
+        if (res.status === 403) throw new Error('No pudimos verificar la seguridad (reCAPTCHA). Recarga la página e inténtalo de nuevo.');
+        if (res.status === 401) throw new Error('Correo o contraseña incorrectos.');
+        throw new Error('No se pudo conectar con el servidor. Reintenta en unos segundos.');
       }
 
       const data = await res.json();
@@ -52,7 +56,7 @@ function LoginContent() {
       // Limpiar cualquier residuo de sesión de admin anterior
       sessionStorage.removeItem('supremo_unlocked');
 
-      document.cookie = `kasa_auth_token=${data.access_token}; path=/; max-age=86400;`;
+      setAuthCookie(data.access_token);
       localStorage.setItem('kasa_user', JSON.stringify(data.user));
 
       if (data.user?.role === 'OWNER') {
@@ -68,7 +72,7 @@ function LoginContent() {
         }
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(err instanceof TypeError ? 'Sin conexión con el servidor. Revisa tu internet e inténtalo de nuevo.' : err.message);
     } finally {
       setLoading(false);
     }

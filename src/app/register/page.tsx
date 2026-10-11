@@ -1,4 +1,5 @@
 "use client";
+import { setAuthCookie } from '@/lib/session';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -61,7 +62,7 @@ function RegisterContent() {
 
       if (res.ok) {
         const data = await res.json();
-        document.cookie = `kasa_auth_token=${data.access_token}; path=/; max-age=86400;`;
+        setAuthCookie(data.access_token);
         localStorage.setItem('kasa_user', JSON.stringify(data.user));
         if (redirectPath) {
           router.push(redirectPath);

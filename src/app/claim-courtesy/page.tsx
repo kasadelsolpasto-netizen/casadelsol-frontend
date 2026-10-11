@@ -1,4 +1,5 @@
 "use client";
+import { setAuthCookie } from '@/lib/session';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, Ticket, CheckCircle, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
@@ -60,7 +61,7 @@ function ClaimCourtesyContent() {
       
       const data = await res.json();
       if (res.ok && data.access_token) {
-        document.cookie = `kasa_auth_token=${data.access_token}; path=/; max-age=86400; SameSite=Lax`;
+        setAuthCookie(data.access_token);
         localStorage.setItem('kasa_user', JSON.stringify(data.user));
         
         // Redirigir a la bóveda

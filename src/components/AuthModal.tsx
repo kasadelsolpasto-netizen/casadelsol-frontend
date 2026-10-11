@@ -1,4 +1,5 @@
 "use client";
+import { setAuthCookie } from '@/lib/session';
 import { useState } from 'react';
 import { ArrowRight, Lock, Mail, User, X } from 'lucide-react';
 
@@ -47,7 +48,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       // Limpiar residuos de sesión de admin anterior
       sessionStorage.removeItem('supremo_unlocked');
 
-      document.cookie = `kasa_auth_token=${data.access_token}; path=/; max-age=86400;`;
+      setAuthCookie(data.access_token);
       localStorage.setItem('kasa_user', JSON.stringify(data.user));
 
       onSuccess();

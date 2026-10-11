@@ -51,10 +51,10 @@ export function middleware(request: NextRequest) {
     try {
       const pBase64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
       const payloadString = atob(pBase64 + '='.repeat((4 - pBase64.length % 4) % 4));
-      const payload = JSON.parse(decodeURIComponent(escape(payloadString)));
-      if (payload.role !== 'STAFF' && payload.role !== 'OWNER') {
-         return NextResponse.redirect(new URL('/', request.url));
-      }
+      JSON.parse(decodeURIComponent(escape(payloadString))); // solo valida que el token esté bien formado
+      // OJO: aquí NO se bloquea por rol. El rol del cookie puede estar desactualizado (p. ej. un usuario recién
+      // ascendido a STAFF) y esto sacaba al staff del scanner sin explicación. El layout de /scanner consulta el
+      // rol REAL al backend (/auth/refresh) y el backend rechaza con 403 a quien no sea STAFF/OWNER.
     } catch {
       return NextResponse.redirect(new URL('/login', request.url));
     }
