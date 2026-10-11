@@ -7,6 +7,7 @@ import Script from 'next/script';
 import Image from 'next/image';
 import { QRCodeSVG } from 'qrcode.react';
 import CheckoutWizard from '@/components/CheckoutWizard';
+import { openBoldCheckout } from '@/lib/bold';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 
 export default function EventDetailClient({ params }: { params: { id: string } }) {
@@ -126,6 +127,24 @@ export default function EventDetailClient({ params }: { params: { id: string } }
 
       const data = await res.json();
       const orderId: string = data.reference;
+
+      // ── FLUJO BOLD (pasarela elegida en el admin) ─────────────────
+      // Bold no tiene callback de éxito en JS: tras pagar vuelve a /checkout/bold-result,
+      // que confirma el pago con el servidor y muestra las entradas.
+      if (data.gateway === 'bold') {
+        const boldBuyer = attendees[0];
+        await openBoldCheckout({
+          ...data.bold,
+          redirectionUrl: `${window.location.origin}/checkout/bold-result`,
+          customerData: {
+            email: boldBuyer?.attendee_email,
+            fullName: boldBuyer?.attendee_name,
+          },
+        });
+        setWizardLoading(false);
+        setShowWizard(false);
+        return;
+      }
 
       if (typeof (window as any).WidgetCheckout !== 'function') {
          throw new Error('Cargando servidor seguro de pagos... por favor intenta nuevamente en unos segundos.');

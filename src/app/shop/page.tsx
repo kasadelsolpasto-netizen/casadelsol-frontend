@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
+import { openBoldCheckout } from '@/lib/bold';
 import {
   ShoppingBag, Plus, Minus, X, CreditCard,
   DollarSign, Loader2, Package, CheckCircle2,
@@ -116,12 +117,24 @@ export default function PublicShopPage() {
       if (res.ok) {
         const result = await res.json();
 
+        // Bold: se abre el pago en modal y el resultado se confirma en /checkout/bold-result
+        if (paymentType === 'VIRTUAL' && result.gateway === 'bold' && result.bold) {
+          try {
+            await openBoldCheckout({
+            ...result.bold,
+            redirectionUrl: `${window.location.origin}/checkout/bold-result`,
+          });
+          } catch (boldErr: any) {
+            alert(boldErr?.message || 'No se pudo abrir el pago con Bold.');
+            return;
+          }
+          setShowCart(false);
+          return;
+        }
+
         if (paymentType === 'VIRTUAL' && result.wompiData) {
           const userData = localStorage.getItem('kasa_user');
           const user = userData ? JSON.parse(userData) : null;
-          // Guardamos los items del resultado para usarlos después del pago
-          const shopItemsForConfirmation = result.items || [];
-          const shopTotalForConfirmation = result.total || 0;
 
           if (typeof (window as any).WidgetCheckout !== 'function') {
             alert('Cargando servidor seguro de pagos... por favor intenta nuevamente en unos segundos.');
@@ -135,12 +148,7 @@ export default function PublicShopPage() {
             reference: result.wompiData.reference,
             publicKey: result.wompiData.publicKey,
             signature: { integrity: result.wompiData.signature },
-            redirectUrl: user ? `${window.location.origin}/profile/${user.id}` : `${window.location.origin}/`,
-            extra: {
-              userId: user?.id || null,
-              items: JSON.stringify(result.items),
-              total: result.total
-            }
+            redirectUrl: user ? `${window.location.origin}/profile/${user.id}` : `${window.location.origin}/`
           });
           checkout.open(async (wompiResult: any) => {
             const transaction = wompiResult.transaction;
@@ -156,12 +164,7 @@ export default function PublicShopPage() {
                   },
                   body: JSON.stringify({
                     wompiRef: transaction.id,
-                    total: shopTotalForConfirmation,
-                    items: shopItemsForConfirmation.map((i: any) => ({
-                      product_id: i.product_id,
-                      quantity: i.quantity,
-                      unit_price: i.unit_price
-                    }))
+                    orderId: result.orderId
                   })
                 });
                 if (!confirmRes.ok) {

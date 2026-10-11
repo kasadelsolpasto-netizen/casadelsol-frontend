@@ -716,7 +716,7 @@ export default function CheckoutWizard({
                   }}
                   disabled={isLoading || !allConfirmValid}
                   className="flex-1 py-4 rounded-xl bg-neon-green text-black font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 hover:shadow-[0_0_25px_rgba(57,255,20,0.45)] disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.98]">
-                  {isLoading ? 'Abriendo Wompi...' : `Pagar ${fmt(totalPrice)}`}
+                  {isLoading ? 'Abriendo pasarela de pago...' : `Pagar ${fmt(totalPrice)}`}
                   {!isLoading && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
                 </button>
               </div>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft, CreditCard, Save, Lock, Link as LinkIcon, AlertTriangle, Key, Image as ImageIcon, FileText, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AdminGuard } from '@/components/AdminGuard';
+import PaymentGatewaySettings from '@/components/admin/PaymentGatewaySettings';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -314,7 +315,7 @@ export default function SettingsPage() {
                onClick={() => setActiveTab('pagos')} 
                className={`w-full text-left px-5 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-3 border ${activeTab === 'pagos' ? 'bg-neon-purple/10 border-neon-purple text-neon-purple shadow-[0_0_15px_rgba(191,0,255,0.2)]' : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'}`}
              >
-               <CreditCard className="w-4 h-4" /> Pasarela Wompi
+               <CreditCard className="w-4 h-4" /> Pagos
              </button>
              <button 
                onClick={() => setActiveTab('brand')} 
@@ -345,6 +346,7 @@ export default function SettingsPage() {
               </div>
             ) : (
               <>
+                {activeTab === 'pagos' && <PaymentGatewaySettings />}
                 {activeTab === 'pagos' && (
                   <div className="glass-panel p-8 rounded-2xl border-t-2 border-t-neon-purple animate-in fade-in slide-in-from-bottom-4 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-neon-purple/10 blur-3xl rounded-full"></div>
