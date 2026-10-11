@@ -168,3 +168,22 @@ export async function postScan(o: PostScanOptions): Promise<ScanResult> {
   }
   return finish(last);
 }
+
+/**
+ * Saca el token de lo que leyó la cámara. El QR de una entrada contiene el ENLACE público
+ * (https://…/ticket/<token>); también se acepta el token suelto. Tolera lo que añaden los lectores y
+ * las apps de mensajería: espacios, saltos de línea, "?utm=…", "#…" y "/" final.
+ * (El servidor aplica la misma regla; aquí se hace también para no depender de una versión vieja.)
+ */
+export function extractScanToken(raw: unknown): string {
+  if (typeof raw !== 'string') return '';
+  let t = raw.trim();
+  const m = t.match(/\/ticket\/([^/?#\s]+)/i);
+  if (m) t = m[1];
+  try {
+    t = decodeURIComponent(t);
+  } catch {
+    /* no estaba codificado */
+  }
+  return t.trim();
+}

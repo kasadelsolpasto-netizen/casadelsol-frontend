@@ -1,5 +1,6 @@
 "use client";
 import { useRouter } from 'next/navigation';
+import { clearOfflineTickets } from '@/lib/offline-tickets';
 import { LogOut } from 'lucide-react';
 
 export default function AdminLogoutButton() {
@@ -7,6 +8,7 @@ export default function AdminLogoutButton() {
 
   const handleLogout = () => {
     localStorage.removeItem('kasa_user');
+    clearOfflineTickets(); // la copia local de entradas contiene datos de asistentes: se borra al cerrar sesion
     sessionStorage.removeItem('supremo_unlocked');
     document.cookie = 'kasa_auth_token=; path=/; max-age=0;';
     router.push('/');

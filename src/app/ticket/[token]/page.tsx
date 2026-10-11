@@ -3,24 +3,54 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { Calendar, MapPin, Share2, MessageCircle, Mail, CheckCircle, XCircle, Download, ArrowLeft } from 'lucide-react';
+import { formatSavedAt, isTransientFailure, loadOffline, removeOffline, saveOffline } from '@/lib/offline-tickets';
 
 export default function PublicTicketPage({ params }: { params: { token: string } }) {
   const router = useRouter();
   const [ticket, setTicket] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [offlineSince, setOfflineSince] = useState<number | null>(null); // hora de la copia local mostrada sin conexión
 
   const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://casadelsol-frontend.vercel.app';
   const ticketUrl = `${BASE_URL}/ticket/${params.token}`;
 
   useEffect(() => {
+    let cancelled = false;
+    const cacheKey = `ticket_${params.token}`;
+
+    // Si ya abrió esta entrada antes, se muestra AL INSTANTE desde la copia local (el QR no necesita red);
+    // mientras tanto se consulta al servidor para refrescar. Así abre aunque Render esté dormido o no haya señal.
+    const saved = loadOffline(cacheKey);
+    if (saved) {
+      setTicket(saved.data);
+      setLoading(false);
+    }
+
     fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/orders/qr/${params.token}`)
       .then(async res => {
-        if (!res.ok) { setNotFound(true); return; }
-        setTicket(await res.json());
+        if (cancelled) return;
+        if (res.ok) {
+          const data = await res.json();
+          saveOffline(cacheKey, data);
+          if (!cancelled) { setTicket(data); setOfflineSince(null); setNotFound(false); }
+          return;
+        }
+        // 5xx / 429: el servidor está dormido o saturado, no es que la entrada no exista.
+        if (isTransientFailure(res.status)) throw new Error('transient');
+        removeOffline(cacheKey); // respuesta definitiva (404...): la copia ya no sirve
+        setTicket(null);
+        setNotFound(true);
       })
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (cancelled) return;
+        const copy = loadOffline(cacheKey);
+        if (copy) { setTicket(copy.data); setOfflineSince(copy.saved_at); }
+        else setNotFound(true);
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
   }, [params.token]);
 
   const goBack = () => {
@@ -142,16 +172,21 @@ export default function PublicTicketPage({ params }: { params: { token: string }
           </h1>
         </div>
 
-        {/* Badge de estado */}
-        <div className={`flex items-center justify-center gap-2 mb-5 py-2 px-4 rounded-full text-xs font-black uppercase tracking-widest w-fit mx-auto border ${
-          ticket.is_used
-            ? 'bg-red-900/20 border-red-500/40 text-red-400'
-            : 'bg-neon-green/10 border-neon-green/40 text-neon-green'
-        }`}>
-          {ticket.is_used
-            ? <><XCircle className="w-3.5 h-3.5" /> Ya utilizado</>
-            : <><CheckCircle className="w-3.5 h-3.5" /> Válido · Listo para usar</>}
-        </div>
+        {offlineSince ? (
+          <div className="mb-5 mx-auto rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-center text-[11px] leading-relaxed font-bold text-yellow-300">
+            Sin conexión con el servidor. Mostrando tu entrada guardada el {formatSavedAt(offlineSince)}. El QR sigue siendo el mismo; en la puerta lo validan ellos.
+          </div>
+        ) : (
+          <div className={`flex items-center justify-center gap-2 mb-5 py-2 px-4 rounded-full text-xs font-black uppercase tracking-widest w-fit mx-auto border ${
+            ticket.is_used
+              ? 'bg-red-900/20 border-red-500/40 text-red-400'
+              : 'bg-neon-green/10 border-neon-green/40 text-neon-green'
+          }`}>
+            {ticket.is_used
+              ? <><XCircle className="w-3.5 h-3.5" /> Ya utilizado</>
+              : <><CheckCircle className="w-3.5 h-3.5" /> Válido · Listo para usar</>}
+          </div>
+        )}
 
         {/* Tarjeta principal */}
         <div className={`relative rounded-2xl overflow-hidden border bg-[#0a0a0a] shadow-2xl ${ticket.is_used ? 'border-red-900/40' : 'border-zinc-800'}`}>

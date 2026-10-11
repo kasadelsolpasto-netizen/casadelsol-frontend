@@ -1,7 +1,7 @@
 // Pruebas del cliente de escaneo. Ejecutar:  npm run test:scan   (Node >= 22.18, sin dependencias extra)
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyResponse, postScan } from './scan-client.ts';
+import { classifyResponse, extractScanToken, postScan } from './scan-client.ts';
 
 const json = (status, body, headers = {}) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...headers } });
@@ -160,4 +160,29 @@ test('cédula (autoRetryUnsafe=false): tras un corte NO repite sola (evita quema
   const r = await postScan(base(f, { autoRetryUnsafe: false }));
   assert.equal(r.kind, 'network');
   assert.equal(f.sent.length, 1);
+});
+
+test('extractScanToken: enlace de la entrada, con dominio distinto, "#", "?", "/" final o espacios', () => {
+  const T = 'a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90';
+  for (const scanned of [
+    `https://casadelsol-frontend.vercel.app/ticket/${T}`,
+    `https://otro-dominio.com/ticket/${T}/`,
+    `https://casadelsol-frontend.vercel.app/ticket/${T}?utm_source=wa`,
+    `https://casadelsol-frontend.vercel.app/ticket/${T}#detalle`,
+    `  https://casadelsol-frontend.vercel.app/ticket/${T}\n`,
+    `HTTPS://CASADELSOL.APP/TICKET/${T}`,
+    `  ${T}\r\n`,
+    T,
+  ]) {
+    assert.equal(extractScanToken(scanned), T, JSON.stringify(scanned));
+  }
+});
+
+test('extractScanToken: lo que no es una entrada se deja intacto o vacío (los QR de la tienda siguen funcionando)', () => {
+  assert.equal(extractScanToken('KASA_SHOP_PAY:order-1:abc123'), 'KASA_SHOP_PAY:order-1:abc123');
+  assert.equal(extractScanToken('   '), '');
+  assert.equal(extractScanToken(null), '');
+  assert.equal(extractScanToken(undefined), '');
+  assert.equal(extractScanToken(42), '');
+  assert.equal(extractScanToken('%E0%A4%A'), '%E0%A4%A'); // codificación rota: no lanza
 });

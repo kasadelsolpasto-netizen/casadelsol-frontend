@@ -10,6 +10,7 @@ import {
 import { UserAvatar, AVATAR_OPTIONS } from '@/components/UserAvatar';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
+import { formatSavedAt, isTransientFailure, loadOffline, saveOffline } from '@/lib/offline-tickets';
 import { io } from 'socket.io-client';
 
 const BENEFIT_ICONS: Record<string, any> = {
@@ -37,8 +38,18 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   const [isFirstLoad, setIsFirstLoad] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [updatingAvatar, setUpdatingAvatar] = useState(false);
+  const [offlineSince, setOfflineSince] = useState<number | null>(null); // hora de la copia local mostrada sin conexión
 
   const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://casadelsol.app';
+
+  // Sin señal o con el servidor dormido (Render): se muestra la última copia guardada para que el QR siga a mano.
+  const showOfflineCopy = () => {
+    const copy = loadOffline(`profile_${params.id}`);
+    if (!copy) return;
+    setProfile((prev: any) => prev ?? copy.data);
+    setNewName((prev: string) => prev || copy.data?.name || '');
+    setOfflineSince(copy.saved_at);
+  };
 
   const fetchProfile = async () => {
     const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
@@ -58,6 +69,8 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
         setProfile(data);
         setNewName(data.name);
         sessionStorage.setItem(`kasa_profile_${params.id}`, JSON.stringify(data));
+        saveOffline(`profile_${params.id}`, data);
+        setOfflineSince(null);
         
         // Fetch Benefits
         try {
@@ -68,11 +81,15 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
             setBenefits(await bRes.json());
           }
         } catch(e) {}
+      } else if (isTransientFailure(res.status)) {
+        // 5xx / 429: el servidor está dormido o saturado. Antes esto te sacaba a /login aunque tu sesión fuera válida.
+        showOfflineCopy();
       } else {
         router.push('/login');
       }
     } catch (err) {
       console.error(err);
+      showOfflineCopy();
     } finally {
       setLoading(false);
     }
@@ -282,6 +299,11 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
       )}
 
       <main className="max-w-6xl mx-auto px-6 py-12">
+        {offlineSince && (
+          <div className="mb-8 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-center text-xs font-bold leading-relaxed text-yellow-300">
+            Sin conexión con el servidor. Mostrando tus entradas guardadas el {formatSavedAt(offlineSince)}. Los QR siguen siendo válidos; si ya usaste alguno en la puerta, el estado puede no estar actualizado.
+          </div>
+        )}
         <header className="flex flex-col md:flex-row items-center gap-8 mb-16 pb-12 border-b border-zinc-900">
            <div className="relative group/avatar w-32 h-32">
               <UserAvatar avatarId={profile?.avatar} className="w-full h-full border-2 border-neon-purple p-1" iconClassName="w-16 h-16 text-zinc-600" />

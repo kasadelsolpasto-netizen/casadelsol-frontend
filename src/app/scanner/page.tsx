@@ -4,7 +4,7 @@ import { CheckCircle, XCircle, ArrowLeft, Loader2, ShieldAlert, DoorOpen, QrCode
 import Link from 'next/link';
 import { StaffGuard } from '@/components/StaffGuard';
 import { API_URL as API, authFetch, getAuthToken, refreshSession } from '@/lib/session';
-import { postScan, type ScanResult } from '@/lib/scan-client';
+import { postScan, type ScanResult, extractScanToken } from '@/lib/scan-client';
 
 type ProblemKind = 'network' | 'server' | 'rate' | 'session' | 'forbidden';
 
@@ -336,7 +336,9 @@ export default function ScannerPage() {
       scanner.render((decodedText: string) => {
         if (cooldownRef.current) return;
         cooldownRef.current = true;
-        const token = decodedText.includes('/ticket/') ? decodedText.split('/ticket/')[1]?.split('?')[0]?.trim() : decodedText.trim();
+        // Acepta el enlace de la entrada con "#", "?" o "/" de sobra, o el token suelto.
+        const token = extractScanToken(decodedText);
+        if (!token) { cooldownRef.current = false; return; }
         runQrScanRef.current(token).then(finishScan).catch(() => { cooldownRef.current = false; });
       }, () => {});
     }).catch(err => console.error('html5-qrcode error:', err));

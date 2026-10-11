@@ -1,5 +1,6 @@
 "use client";
 import Link from 'next/link';
+import { clearOfflineTickets } from '@/lib/offline-tickets';
 import Image from 'next/image';
 import { 
   Home, 
@@ -86,6 +87,7 @@ export function Navbar() {
 
   const logout = () => {
     localStorage.removeItem('kasa_user');
+    clearOfflineTickets(); // la copia local de entradas contiene datos de asistentes: se borra al cerrar sesion
     sessionStorage.removeItem('supremo_unlocked');
     document.cookie = 'kasa_auth_token=; path=/; max-age=0;';
     setUser(null);
