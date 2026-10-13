@@ -67,7 +67,8 @@ export default function CheckoutWizard({
   };
 
   const [promoCode, setPromoCode] = useState(getInitialPromoCode);
-  const [discount, setDiscount] = useState<{perc: number, valid: boolean} | null>(null);
+  // remaining/until: solo si el código tiene escalones (cuántas entradas quedan al descuento vigente y hasta cuándo)
+  const [discount, setDiscount] = useState<{perc: number, valid: boolean, remaining?: number | null, until?: string | null} | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState('');
 
@@ -125,6 +126,8 @@ export default function CheckoutWizard({
   
   const baseTotalPrice = (ticketType?.price || 0) * attendees.length;
   const totalPrice = discount ? baseTotalPrice * (1 - discount.perc / 100) : baseTotalPrice;
+  // El servidor no parte una compra entre escalones: si piden más de lo que queda, se avisa antes de pagar.
+  const tierOverflow = discount?.remaining != null && attendees.length > discount.remaining;
 
   // ─── VALIDATE PROMO ────────────────────────────────────────────────────────
   const validatePromo = async () => {
@@ -146,7 +149,12 @@ export default function CheckoutWizard({
       }
       
       const data = await res.json();
-      setDiscount({ perc: data.discount_perc, valid: true });
+      setDiscount({
+        perc: data.discount_perc,
+        valid: true,
+        remaining: data.current_tier ? data.current_tier.remaining : null,
+        until: data.current_tier ? data.current_tier.valid_until : null,
+      });
     } catch (err: any) {
       setDiscount(null);
       setPromoError(err.message);
@@ -685,6 +693,13 @@ export default function CheckoutWizard({
                   </div>
                 )}
                 {promoError && <p className="text-red-400 text-xs mt-2 font-bold">{promoError}</p>}
+                {discount && discount.remaining != null && (
+                  <p className={`text-xs mt-2 font-bold ${tierOverflow ? 'text-yellow-300' : 'text-zinc-500'}`}>
+                    {tierOverflow
+                      ? `Con este código solo ${discount.remaining === 1 ? 'queda 1 entrada' : `quedan ${discount.remaining} entradas`} al ${discount.perc}% de descuento. Reduce la cantidad a ${discount.remaining} (o menos) y haz otra compra por el resto.`
+                      : `Descuento del ${discount.perc}% en las próximas ${discount.remaining} entradas con este código.`}
+                  </p>
+                )}
               </div>
 
               {/* Total bar */}
@@ -714,7 +729,7 @@ export default function CheckoutWizard({
                     const token = await executeRecaptcha('checkout');
                     onLaunchWompi(attendees, hp, token, discount ? promoCode : undefined); 
                   }}
-                  disabled={isLoading || !allConfirmValid}
+                  disabled={isLoading || !allConfirmValid || tierOverflow}
                   className="flex-1 py-4 rounded-xl bg-neon-green text-black font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 hover:shadow-[0_0_25px_rgba(57,255,20,0.45)] disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.98]">
                   {isLoading ? 'Abriendo pasarela de pago...' : `Pagar ${fmt(totalPrice)}`}
                   {!isLoading && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}

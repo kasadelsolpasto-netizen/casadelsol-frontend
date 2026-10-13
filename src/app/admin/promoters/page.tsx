@@ -1,6 +1,17 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { Plus, CheckCircle2, XCircle, Ticket, Activity, Percent, Pencil, Trash2, X, Save, AlertTriangle, ChevronDown, ChevronUp, Trophy, MousePointerClick, ShoppingCart, TrendingUp } from 'lucide-react';
+import TierEditor from '@/components/admin/TierEditor';
+import {
+  draftsFromTiers,
+  draftsToPayload,
+  formatTierDate,
+  tierStatus,
+  validateDrafts,
+  type TierDraft,
+  type TierRow,
+  type TierView,
+} from '@/lib/promoter-tiers';
 
 interface PromoterCode {
   id: string;
@@ -16,6 +27,8 @@ interface PromoterCode {
   created_at: string;
   promoter: { name: string; email: string };
   event?: { title: string };
+  tiers?: TierRow[];
+  current_tier?: TierView | null;
 }
 
 export default function PromotersAdminPage() {
@@ -33,6 +46,10 @@ export default function PromotersAdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState({ code: '', discount_perc: 0, event_id: '', ticket_limit: '' as number | string });
   const [editLoading, setEditLoading] = useState(false);
+
+  // Escalones de descuento (crear / editar)
+  const [formTiers, setFormTiers] = useState<TierDraft[]>([]);
+  const [editTiers, setEditTiers] = useState<TierDraft[]>([]);
 
   // Confirmación borrado
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -68,6 +85,8 @@ export default function PromotersAdminPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    const tierError = validateDrafts(formTiers);
+    if (tierError) { alert(tierError); return; }
     setFormLoading(true);
     try {
       const res = await fetch(`${API}/promoters`, {
@@ -79,6 +98,7 @@ export default function PromotersAdminPage() {
           discount_perc: Number(formData.discount_perc),
           event_id: formData.event_id || undefined,
           ticket_limit: formData.ticket_limit ? Number(formData.ticket_limit) : null,
+          tiers: draftsToPayload(formTiers),
         })
       });
       if (!res.ok) {
@@ -86,6 +106,7 @@ export default function PromotersAdminPage() {
         throw new Error(err?.message || 'Error al crear código');
       }
       setFormData({ code: '', promoter_email: '', discount_perc: 0, event_id: '', ticket_limit: '' });
+      setFormTiers([]);
       fetchData();
     } catch (error: any) {
       alert(error.message);
@@ -107,10 +128,13 @@ export default function PromotersAdminPage() {
   const startEdit = (c: PromoterCode) => {
     setEditingId(c.id);
     setEditData({ code: c.code, discount_perc: c.discount_perc, event_id: c.event_id || '', ticket_limit: c.ticket_limit || '' });
+    setEditTiers(draftsFromTiers(c.tiers));
     setDeleteConfirmId(null);
   };
 
   const handleUpdate = async (id: string) => {
+    const tierError = validateDrafts(editTiers);
+    if (tierError) { alert(tierError); return; }
     setEditLoading(true);
     try {
       const res = await fetch(`${API}/promoters/${id}`, {
@@ -121,6 +145,7 @@ export default function PromotersAdminPage() {
           discount_perc: Number(editData.discount_perc),
           event_id: editData.event_id || null,
           ticket_limit: editData.ticket_limit ? Number(editData.ticket_limit) : null,
+          tiers: draftsToPayload(editTiers),
         })
       });
       if (!res.ok) {
@@ -226,6 +251,7 @@ export default function PromotersAdminPage() {
                     className="w-full bg-black border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-sm focus:border-neon-purple outline-none" />
                 </div>
               </div>
+              <TierEditor tiers={formTiers} onChange={setFormTiers} />
               <div>
                 <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Evento Específico (Opcional)</label>
                 <select value={formData.event_id}
@@ -305,9 +331,13 @@ export default function PromotersAdminPage() {
                               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">%</span>
                             </div>
                           ) : (
-                            c.discount_perc > 0
-                              ? <span className="bg-neon-purple/20 text-neon-purple px-2 py-1 rounded text-xs font-bold">{c.discount_perc}% OFF</span>
-                              : <span className="text-zinc-600 text-xs">Sin descuento</span>
+                            c.tiers && c.tiers.length > 0
+                              ? (c.current_tier
+                                  ? <span className="bg-neon-purple/20 text-neon-purple px-2 py-1 rounded text-xs font-bold">{c.current_tier.discount_perc}% OFF</span>
+                                  : <span className="text-orange-400 text-[10px] font-bold uppercase leading-tight">Sin escalón vigente</span>)
+                              : c.discount_perc > 0
+                                ? <span className="bg-neon-purple/20 text-neon-purple px-2 py-1 rounded text-xs font-bold">{c.discount_perc}% OFF</span>
+                                : <span className="text-zinc-600 text-xs">Sin descuento</span>
                           )}
                         </div>
 
@@ -386,6 +416,25 @@ export default function PromotersAdminPage() {
                         </div>
                       </div>
 
+                      {/* Escalones del código */}
+                      {!isEditing && c.tiers && c.tiers.length > 0 && (
+                        <div className="px-5 pb-3 flex flex-wrap gap-2">
+                          {c.tiers.map((t, i) => {
+                            const st = tierStatus(t, c.tiers!);
+                            const style =
+                              st === 'current' ? 'border-neon-purple/60 bg-neon-purple/10 text-neon-purple'
+                              : st === 'waiting' ? 'border-zinc-700 text-zinc-300'
+                              : 'border-zinc-800 text-zinc-600 line-through';
+                            const tag = st === 'done' ? ' · agotado' : st === 'expired' ? ' · vencido' : '';
+                            return (
+                              <span key={t.id} className={`text-[10px] font-bold border rounded-full px-2.5 py-1 ${style}`}>
+                                {i + 1}) {t.sold}/{t.quantity} · {t.discount_perc}%{t.valid_until ? ` · hasta ${formatTierDate(t.valid_until)}` : ''}{tag}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       {/* Panel edición de evento */}
                       {isEditing && (
                         <div className="px-5 pb-4 bg-neon-purple/5 border-t border-neon-purple/20">
@@ -398,6 +447,9 @@ export default function PromotersAdminPage() {
                               <option key={ev.id} value={ev.id}>{ev.title} - {new Date(ev.date).toLocaleDateString('es-CO')}</option>
                             ))}
                           </select>
+                          <div className="mt-4">
+                            <TierEditor tiers={editTiers} onChange={setEditTiers} />
+                          </div>
                         </div>
                       )}
 

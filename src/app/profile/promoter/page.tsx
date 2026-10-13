@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Ticket, DollarSign, CheckCircle2, AlertTriangle, Loader2, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { discountedTotal, formatTierDate, tierMessage, tierStatus } from '@/lib/promoter-tiers';
 
 export default function PromoterDashboard() {
   const router = useRouter();
@@ -85,6 +86,10 @@ export default function PromoterDashboard() {
       setErrorMsg('Selecciona un evento y boleto válido.');
       return;
     }
+    if (noTier || overTier) {
+      setErrorMsg(noTier ? 'No tienes descuentos vigentes.' : 'La cantidad supera lo que queda en tu escalón actual.');
+      return;
+    }
     
     setErrorMsg('');
     setSuccessMsg('');
@@ -154,7 +159,13 @@ export default function PromoterDashboard() {
   }
 
   const myCode = profile?.promoter_codes?.[0];
-  const finalPrice = selectedTicket ? selectedTicket.price * (1 - myCode.discount_perc / 100) * quantity : 0;
+  // Con escalones se usa el vigente (lo calcula el servidor); sin escalones, el descuento del código de siempre.
+  const hasTiers = (myCode?.tiers?.length ?? 0) > 0;
+  const currentTier = myCode?.current_tier ?? null;
+  const activeDiscount: number | null = hasTiers ? (currentTier ? currentTier.discount_perc : null) : (myCode?.discount_perc ?? 0);
+  const noTier = hasTiers && !currentTier;
+  const overTier = hasTiers && currentTier != null && quantity > currentTier.remaining;
+  const finalPrice = selectedTicket && activeDiscount != null ? discountedTotal(selectedTicket.price, activeDiscount, quantity) : 0;
 
   return (
     <div className="min-h-screen pb-20 bg-[#050505]">
@@ -185,14 +196,36 @@ export default function PromoterDashboard() {
                   <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Total Ventas</p>
                   <p className="text-3xl font-black text-white">{myCode?.uses_count}</p>
                 </div>
-                {myCode?.discount_perc > 0 && (
+                {activeDiscount != null && activeDiscount > 0 && (
                   <div className="text-right">
                      <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Descuento</p>
-                     <p className="text-lg font-black text-neon-purple">{myCode?.discount_perc}% OFF</p>
+                     <p className="text-lg font-black text-neon-purple">{activeDiscount}% OFF</p>
                   </div>
                 )}
               </div>
             </div>
+
+            {hasTiers && (
+              <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6">
+                <h3 className="text-xs font-black text-zinc-500 uppercase tracking-widest mb-3">Tus descuentos</h3>
+                <p className="text-sm font-bold text-zinc-300 mb-4">{tierMessage(currentTier, myCode?.next_tier)}</p>
+                <div className="space-y-2">
+                  {myCode.tiers.map((t: any) => {
+                    const st = tierStatus(t, myCode.tiers);
+                    const style =
+                      st === 'current' ? 'border-neon-purple/50 bg-neon-purple/10 text-neon-purple'
+                      : st === 'waiting' ? 'border-zinc-800 text-zinc-300'
+                      : 'border-zinc-900 text-zinc-600 line-through';
+                    return (
+                      <div key={t.id} className={`flex justify-between items-center text-xs font-bold rounded-xl px-3 py-2 border ${style}`}>
+                        <span>{t.discount_perc}% OFF</span>
+                        <span>{t.sold}/{t.quantity}{t.valid_until ? ` · hasta ${formatTierDate(t.valid_until)}` : ''}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Formulario */}
@@ -262,6 +295,18 @@ export default function PromoterDashboard() {
                   </div>
                 )}
 
+                {noTier && (
+                  <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-sm font-bold text-red-400">
+                    No tienes descuentos vigentes. Habla con el administrador para que te asigne más entradas.
+                  </div>
+                )}
+                {overTier && currentTier && (
+                  <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-sm font-bold text-yellow-300">
+                    Con tu escalón actual solo {currentTier.remaining === 1 ? 'queda 1 entrada' : `quedan ${currentTier.remaining} entradas`} al {currentTier.discount_perc}%.
+                    {' '}Reduce la cantidad a {currentTier.remaining} (o menos) y haz otra venta por el resto.
+                  </div>
+                )}
+
                 <div className="pt-6 border-t border-zinc-900">
                   <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4">Datos del Cliente</h3>
                   <div className="space-y-4">
@@ -303,7 +348,7 @@ export default function PromoterDashboard() {
 
                 <button 
                   type="submit" 
-                  disabled={submitting}
+                  disabled={submitting || noTier || overTier}
                   className="w-full py-4 bg-neon-green hover:bg-neon-green/90 text-black text-sm font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(57,255,20,0.3)] disabled:opacity-50 flex justify-center items-center gap-2"
                 >
                   {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Generar Venta y QRs'}
