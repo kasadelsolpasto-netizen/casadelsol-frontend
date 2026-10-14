@@ -2,9 +2,100 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Ticket, DollarSign, CheckCircle2, AlertTriangle, Loader2, ChevronLeft } from 'lucide-react';
+import { Ticket, DollarSign, CheckCircle2, AlertTriangle, Loader2, ChevronLeft, MessageCircle, Copy } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
 import { discountedTotal, formatTierDate, tierMessage, tierStatus } from '@/lib/promoter-tiers';
+import { buildTicketsMessage, normalizeWhatsAppPhone, ticketUrl, whatsappLink } from '@/lib/whatsapp';
+
+type SoldInfo = {
+  buyerName: string;
+  buyerEmail: string;
+  eventTitle: string;
+  phone: string;
+  tickets: { token: string; attendee_name: string | null }[];
+};
+
+/**
+ * Entradas de la ÚLTIMA venta, para entregarlas en el momento: el QR en pantalla (el cliente lo escanea o le toma foto)
+ * y el envío por WhatsApp. Son las MISMAS entradas que ya le llegaron por correo (mismo enlace /ticket/<token>).
+ */
+function SoldTickets({ sold, onClose }: { sold: SoldInfo; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const urls = sold.tickets.map((t) => ticketUrl(origin, t.token));
+  const phone = normalizeWhatsAppPhone(sold.phone);
+  const phoneIgnored = sold.phone.trim() !== '' && !phone;
+  const waHref = whatsappLink(phone, buildTicketsMessage({ buyerName: sold.buyerName, eventTitle: sold.eventTitle, urls }));
+
+  const copyLinks = async () => {
+    try {
+      await navigator.clipboard.writeText(urls.join('\n'));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // Sin permiso para copiar: el enlace sigue disponible por WhatsApp
+    }
+  };
+
+  return (
+    <div className="mb-6 bg-zinc-950 border border-neon-green/30 rounded-3xl p-6 shadow-2xl">
+      <div className="flex items-start justify-between gap-4 mb-5">
+        <div>
+          <h2 className="text-lg font-black uppercase text-white flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-neon-green" /> {sold.tickets.length === 1 ? 'Entrada lista' : `${sold.tickets.length} entradas listas`}
+          </h2>
+          <p className="text-xs font-bold text-zinc-500 mt-1">
+            Para {sold.buyerName}. También se las enviamos a {sold.buyerEmail}.
+          </p>
+        </div>
+        <button type="button" onClick={onClose} className="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-widest shrink-0">
+          Cerrar
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+        {sold.tickets.map((t, i) => (
+          <div key={t.token} className="flex flex-col items-center gap-2">
+            <div className="p-3 rounded-2xl bg-white">
+              <QRCodeSVG value={urls[i]} size={176} level="H" includeMargin={false} bgColor="white" fgColor="#000000" />
+            </div>
+            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest text-center">
+              Entrada {i + 1}{t.attendee_name ? ` · ${t.attendee_name}` : ''}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3">
+        <a
+          href={waHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 py-3 bg-[#25D366] hover:bg-[#25D366]/90 text-black text-xs font-black uppercase tracking-widest rounded-xl transition-all flex justify-center items-center gap-2"
+        >
+          <MessageCircle className="w-4 h-4" /> Enviar por WhatsApp
+        </a>
+        <button
+          type="button"
+          onClick={copyLinks}
+          className="flex-1 py-3 bg-zinc-900 border border-zinc-800 hover:border-zinc-600 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all flex justify-center items-center gap-2"
+        >
+          <Copy className="w-4 h-4" /> {copied ? '¡Copiado!' : urls.length === 1 ? 'Copiar enlace' : 'Copiar enlaces'}
+        </button>
+      </div>
+
+      {phoneIgnored && (
+        <p className="mt-3 text-[11px] font-bold text-yellow-300">
+          No pude leer ese número de WhatsApp. Se abrirá WhatsApp para que elijas el contacto.
+        </p>
+      )}
+      <p className="mt-4 text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
+        Es el mismo QR del correo y se puede usar una sola vez en la puerta.
+      </p>
+    </div>
+  );
+}
 
 export default function PromoterDashboard() {
   const router = useRouter();
@@ -19,6 +110,8 @@ export default function PromoterDashboard() {
   const [buyerName, setBuyerName] = useState('');
   const [buyerEmail, setBuyerEmail] = useState('');
   const [buyerDni, setBuyerDni] = useState('');
+  const [buyerPhone, setBuyerPhone] = useState(''); // solo para abrir el chat de WhatsApp; no se guarda
+  const [sold, setSold] = useState<SoldInfo | null>(null); // entradas de la última venta
   
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
@@ -93,6 +186,7 @@ export default function PromoterDashboard() {
     
     setErrorMsg('');
     setSuccessMsg('');
+    setSold(null);
     setSubmitting(true);
 
     try {
@@ -124,7 +218,13 @@ export default function PromoterDashboard() {
         throw new Error(data.message || 'Error al registrar la venta.');
       }
 
-      setSuccessMsg(`Venta exitosa. QR(s) enviados a ${buyerEmail}`);
+      const soldTickets: { token: string; attendee_name: string | null }[] = Array.isArray(data?.tickets) ? data.tickets : [];
+      setSuccessMsg(`Venta registrada. Le enviamos ${soldTickets.length === 1 ? 'la entrada' : 'las entradas'} a ${buyerEmail}.`);
+      setSold(
+        soldTickets.length > 0
+          ? { buyerName, buyerEmail, eventTitle: data?.eventTitle || selectedEvent?.title || '', phone: buyerPhone, tickets: soldTickets }
+          : null
+      );
       
       // Reset form
       setSelectedEventId('');
@@ -133,6 +233,7 @@ export default function PromoterDashboard() {
       setBuyerName('');
       setBuyerEmail('');
       setBuyerDni('');
+      setBuyerPhone('');
 
       // Refresh profile to update stats
       const resProfile = await fetch(`${API_URL}/users/${profile.id}/profile`, {
@@ -230,6 +331,8 @@ export default function PromoterDashboard() {
 
           {/* Formulario */}
           <div className="md:col-span-2">
+            {sold && <SoldTickets key={sold.tickets[0].token} sold={sold} onClose={() => setSold(null)} />}
+
             <form onSubmit={handleSubmit} className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 shadow-2xl">
               <h2 className="text-xl font-black uppercase text-white flex items-center gap-3 mb-8">
                 <Ticket className="w-6 h-6 text-neon-green" /> Nueva Venta en Efectivo
@@ -331,6 +434,14 @@ export default function PromoterDashboard() {
                       <input 
                         type="text" placeholder="Número de documento"
                         value={buyerDni} onChange={e => setBuyerDni(e.target.value)}
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">WhatsApp del Cliente (Opcional, para mandarle la entrada)</label>
+                      <input
+                        type="tel" inputMode="tel" placeholder="Ej: 300 123 4567"
+                        value={buyerPhone} onChange={e => setBuyerPhone(e.target.value)}
                         className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
                       />
                     </div>

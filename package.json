@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:scan": "node --test src/lib/scan-client.test.mjs src/lib/offline-tickets.test.mjs src/lib/promoter-tiers.test.mjs"
+    "test:scan": "node --test src/lib/scan-client.test.mjs src/lib/offline-tickets.test.mjs src/lib/promoter-tiers.test.mjs src/lib/whatsapp.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.0",
