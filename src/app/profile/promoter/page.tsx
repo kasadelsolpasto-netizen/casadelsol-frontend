@@ -7,6 +7,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
 import { discountedTotal, formatTierDate, tierMessage, tierStatus } from '@/lib/promoter-tiers';
 import { buildTicketsMessage, normalizeWhatsAppPhone, ticketUrl, whatsappLink } from '@/lib/whatsapp';
+import { codesForEvent, pickPromoterCode } from '@/lib/promoter-codes';
 
 type SoldInfo = {
   buyerName: string;
@@ -106,6 +107,7 @@ export default function PromoterDashboard() {
   // Form state
   const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedTicketId, setSelectedTicketId] = useState('');
+  const [chosenCodeId, setChosenCodeId] = useState(''); // solo si el promotor tiene varios códigos que valen para el evento
   const [quantity, setQuantity] = useState(1);
   const [buyerName, setBuyerName] = useState('');
   const [buyerEmail, setBuyerEmail] = useState('');
@@ -179,6 +181,10 @@ export default function PromoterDashboard() {
       setErrorMsg('Selecciona un evento y boleto válido.');
       return;
     }
+    if (!myCode) {
+      setErrorMsg('No tienes un código activo que aplique a este evento. Habla con el administrador.');
+      return;
+    }
     if (noTier || overTier) {
       setErrorMsg(noTier ? 'No tienes descuentos vigentes.' : 'La cantidad supera lo que queda en tu escalón actual.');
       return;
@@ -208,7 +214,7 @@ export default function PromoterDashboard() {
           buyerEmail,
           buyerDni,
           attendees,
-          promoterCode: profile.promoter_codes[0].code
+          promoterCode: myCode.code
         })
       });
 
@@ -234,6 +240,7 @@ export default function PromoterDashboard() {
       setBuyerEmail('');
       setBuyerDni('');
       setBuyerPhone('');
+      setChosenCodeId('');
 
       // Refresh profile to update stats
       const resProfile = await fetch(`${API_URL}/users/${profile.id}/profile`, {
@@ -259,7 +266,9 @@ export default function PromoterDashboard() {
     );
   }
 
-  const myCode = profile?.promoter_codes?.[0];
+  // El código que vale para el evento elegido (antes siempre era el primero que devolviera la base de datos).
+  const eventCodes: any[] = codesForEvent<any>(profile?.promoter_codes, selectedEventId);
+  const myCode: any = pickPromoterCode<any>(profile?.promoter_codes, selectedEventId, chosenCodeId);
   // Con escalones se usa el vigente (lo calcula el servidor); sin escalones, el descuento del código de siempre.
   const hasTiers = (myCode?.tiers?.length ?? 0) > 0;
   const currentTier = myCode?.current_tier ?? null;
@@ -290,7 +299,7 @@ export default function PromoterDashboard() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-neon-purple/10 blur-[50px] pointer-events-none" />
               <h3 className="text-xs font-black text-zinc-500 uppercase tracking-widest mb-4">Tu Código</h3>
               <p className="text-2xl font-mono text-neon-green font-bold bg-zinc-900 p-3 rounded-xl text-center border border-zinc-800">
-                {myCode?.code}
+                {myCode ? myCode.code : 'SIN CÓDIGO'}
               </p>
               <div className="mt-6 flex justify-between items-end">
                 <div>
@@ -358,7 +367,7 @@ export default function PromoterDashboard() {
                   <select 
                     required
                     value={selectedEventId}
-                    onChange={(e) => { setSelectedEventId(e.target.value); setSelectedTicketId(''); }}
+                    onChange={(e) => { setSelectedEventId(e.target.value); setSelectedTicketId(''); setChosenCodeId(''); }}
                     className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
                   >
                     <option value="">Selecciona un evento</option>
@@ -395,6 +404,26 @@ export default function PromoterDashboard() {
                         className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
                       />
                     </div>
+                  </div>
+                )}
+
+                {selectedEvent && eventCodes.length > 1 && (
+                  <div>
+                    <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Código a usar</label>
+                    <select
+                      value={myCode?.id ?? ''}
+                      onChange={(e) => setChosenCodeId(e.target.value)}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
+                    >
+                      {eventCodes.map((c: any) => (
+                        <option key={c.id} value={c.id}>{c.code}{c.event_id ? '' : ' (todos los eventos)'}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {selectedEvent && !myCode && (
+                  <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-sm font-bold text-red-400">
+                    Ninguno de tus códigos activos aplica a este evento. Habla con el administrador.
                   </div>
                 )}
 
@@ -459,7 +488,7 @@ export default function PromoterDashboard() {
 
                 <button 
                   type="submit" 
-                  disabled={submitting || noTier || overTier}
+                  disabled={submitting || !myCode || noTier || overTier}
                   className="w-full py-4 bg-neon-green hover:bg-neon-green/90 text-black text-sm font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(57,255,20,0.3)] disabled:opacity-50 flex justify-center items-center gap-2"
                 >
                   {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Generar Venta y QRs'}
