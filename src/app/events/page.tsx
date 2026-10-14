@@ -39,11 +39,13 @@ export default async function EventsFeed() {
           <Link href={`/events/${event.id}`} key={event.id} className="group glass-panel rounded-2xl overflow-hidden hover:neon-border-primary transition-all duration-300">
             <div className="h-48 w-full bg-zinc-900 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10"></div>
-              <img 
-                src={event.flyer_url} 
-                alt={event.title}
-                className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100" 
-              />
+              {event.flyer_url && (
+                <img 
+                  src={event.flyer_url} 
+                  alt={event.title}
+                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100" 
+                />
+              )}
             </div>
             
             <div className="p-6">

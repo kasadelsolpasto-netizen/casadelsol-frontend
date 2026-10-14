@@ -9,10 +9,15 @@ import { QRCodeSVG } from 'qrcode.react';
 import CheckoutWizard from '@/components/CheckoutWizard';
 import { openBoldCheckout } from '@/lib/bold';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
+import { discountedTotal } from '@/lib/promoter-tiers';
+import { usePromoDiscount } from '@/lib/use-promo-discount';
+import { sortStages } from '@/lib/sale-stage';
 
 export default function EventDetailClient({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [event, setEvent] = useState<any>(null);
+  // Descuento del promotor que trae el enlace: solo para mostrar el precio tachado y el final (el cobro lo calcula el servidor).
+  const promo = usePromoDiscount(event?.id);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [showWizard, setShowWizard] = useState(false);
   const [wizardLoading, setWizardLoading] = useState(false);
@@ -404,7 +409,7 @@ export default function EventDetailClient({ params }: { params: { id: string } }
             )}
 
             <div className="space-y-3">
-              {event.ticket_types.map((ticket: any) => {
+              {sortStages<any>(event.ticket_types).map((ticket: any) => {
                 const now = new Date();
                 const isStarted = !ticket.sale_start || new Date(ticket.sale_start) <= now;
                 const isEnded = ticket.sale_end && new Date(ticket.sale_end) <= now;
@@ -451,11 +456,23 @@ export default function EventDetailClient({ params }: { params: { id: string } }
                         </p>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
-                        <span className={`font-black text-lg ${canBuy ? (ticket.price === 0 ? 'text-neon-green' : 'text-white') : 'text-zinc-600'}`}>
-                          {ticket.price === 0
-                            ? 'GRATIS'
-                            : Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(ticket.price)}
-                        </span>
+                        <div className="text-right">
+                          {promo && canBuy && ticket.price > 0 && (
+                            <span className="block text-xs font-bold text-zinc-500 line-through">
+                              {Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(ticket.price)}
+                            </span>
+                          )}
+                          <span className={`block font-black text-lg ${canBuy ? (ticket.price === 0 ? 'text-neon-green' : 'text-white') : 'text-zinc-600'}`}>
+                            {ticket.price === 0
+                              ? 'GRATIS'
+                              : Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(
+                                  promo && canBuy ? discountedTotal(ticket.price, promo.perc, 1) : ticket.price
+                                )}
+                          </span>
+                          {promo && canBuy && ticket.price > 0 && (
+                            <span className="block text-[9px] font-black text-neon-purple uppercase tracking-widest">-{promo.perc}% con tu enlace</span>
+                          )}
+                        </div>
                         {canBuy && (
                           <div className={`w-5 h-5 rounded-full border-2 transition-all shrink-0 ${isSelected ? 'border-neon-green bg-neon-green' : 'border-zinc-600'}`} />
                         )}

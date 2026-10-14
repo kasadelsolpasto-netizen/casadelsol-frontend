@@ -6,16 +6,21 @@ import { Ticket, DollarSign, CheckCircle2, AlertTriangle, Loader2, ChevronLeft, 
 import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
 import { discountedTotal, formatTierDate, tierMessage, tierStatus } from '@/lib/promoter-tiers';
-import { buildTicketsMessage, normalizeWhatsAppPhone, ticketUrl, whatsappLink } from '@/lib/whatsapp';
+import { buildTicketsMessage, ticketUrl, whatsappLink } from '@/lib/whatsapp';
 import { codesForEvent, pickPromoterCode } from '@/lib/promoter-codes';
+import { isEventSalesClosed, pickStage } from '@/lib/sale-stage';
 
 type SoldInfo = {
   buyerName: string;
   buyerEmail: string;
   eventTitle: string;
-  phone: string;
   tickets: { token: string; attendee_name: string | null }[];
 };
+
+const money = (n: number) =>
+  Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n);
+const fmtDateTime = (iso: string) =>
+  new Date(iso).toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'medium', timeStyle: 'short' });
 
 /**
  * Entradas de la ÚLTIMA venta, para entregarlas en el momento: el QR en pantalla (el cliente lo escanea o le toma foto)
@@ -25,9 +30,8 @@ function SoldTickets({ sold, onClose }: { sold: SoldInfo; onClose: () => void })
   const [copied, setCopied] = useState(false);
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const urls = sold.tickets.map((t) => ticketUrl(origin, t.token));
-  const phone = normalizeWhatsAppPhone(sold.phone);
-  const phoneIgnored = sold.phone.trim() !== '' && !phone;
-  const waHref = whatsappLink(phone, buildTicketsMessage({ buyerName: sold.buyerName, eventTitle: sold.eventTitle, urls }));
+  // Sin número: WhatsApp se abre en el celular de quien vende y ahí elige el chat del cliente.
+  const waHref = whatsappLink(null, buildTicketsMessage({ buyerName: sold.buyerName, eventTitle: sold.eventTitle, urls }));
 
   const copyLinks = async () => {
     try {
@@ -86,11 +90,9 @@ function SoldTickets({ sold, onClose }: { sold: SoldInfo; onClose: () => void })
         </button>
       </div>
 
-      {phoneIgnored && (
-        <p className="mt-3 text-[11px] font-bold text-yellow-300">
-          No pude leer ese número de WhatsApp. Se abrirá WhatsApp para que elijas el contacto.
-        </p>
-      )}
+      <p className="mt-3 text-[11px] font-bold text-zinc-500">
+        «Enviar por WhatsApp» abre tu WhatsApp con el mensaje y los enlaces ya escritos: elige el chat del cliente y envíalo.
+      </p>
       <p className="mt-4 text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
         Es el mismo QR del correo y se puede usar una sola vez en la puerta.
       </p>
@@ -106,13 +108,11 @@ export default function PromoterDashboard() {
   
   // Form state
   const [selectedEventId, setSelectedEventId] = useState('');
-  const [selectedTicketId, setSelectedTicketId] = useState('');
   const [chosenCodeId, setChosenCodeId] = useState(''); // solo si el promotor tiene varios códigos que valen para el evento
   const [quantity, setQuantity] = useState(1);
   const [buyerName, setBuyerName] = useState('');
   const [buyerEmail, setBuyerEmail] = useState('');
   const [buyerDni, setBuyerDni] = useState('');
-  const [buyerPhone, setBuyerPhone] = useState(''); // solo para abrir el chat de WhatsApp; no se guarda
   const [sold, setSold] = useState<SoldInfo | null>(null); // entradas de la última venta
   
   const [submitting, setSubmitting] = useState(false);
@@ -172,13 +172,34 @@ export default function PromoterDashboard() {
   }, [router]);
 
   const selectedEvent = events.find(e => e.id === selectedEventId);
-  const tickets = selectedEvent?.ticket_types?.filter((t: any) => t.price > 0 && t.available > 0) || [];
-  const selectedTicket = tickets.find((t: any) => t.id === selectedTicketId);
+  // El promotor no elige boleto: se vende la etapa que está abierta ahora (por fechas y cupos), igual que en la web.
+  const stage = selectedEvent ? pickStage<any>(selectedEvent.ticket_types) : null;
+  const selectedTicket: any = stage?.current ?? null;
+  const stageNotice: string = (() => {
+    if (!selectedEvent || selectedTicket) return '';
+    const opens = stage?.next?.sale_start
+      ? ` La siguiente etapa (${stage.next.name}) abre el ${fmtDateTime(stage.next.sale_start)}`
+      : '';
+    if (stage?.soldOut) return `La etapa actual está agotada.${opens}`;
+    return opens ? `Ninguna etapa está a la venta ahora.${opens}` : 'Este evento no tiene ninguna etapa a la venta ahora.';
+  })();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedEvent || !selectedTicket || quantity < 1) {
-      setErrorMsg('Selecciona un evento y boleto válido.');
+    if (!selectedEvent) {
+      setErrorMsg('Falta elegir el evento.');
+      return;
+    }
+    if (!selectedTicket) {
+      setErrorMsg(stageNotice);
+      return;
+    }
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      setErrorMsg('La cantidad debe ser 1 o más.');
+      return;
+    }
+    if (quantity > selectedTicket.available) {
+      setErrorMsg(`En esta etapa ${selectedTicket.available === 1 ? 'solo queda 1 entrada' : `solo quedan ${selectedTicket.available} entradas`}.`);
       return;
     }
     if (!myCode) {
@@ -187,6 +208,28 @@ export default function PromoterDashboard() {
     }
     if (noTier || overTier) {
       setErrorMsg(noTier ? 'No tienes descuentos vigentes.' : 'La cantidad supera lo que queda en tu escalón actual.');
+      return;
+    }
+    // Mismas reglas que aplica el servidor a cada entrada: así el error sale ANTES de enviar y dice qué campo es.
+    const dniClean = buyerDni.replace(/[\s.,\-_]/g, '');
+    const missing: string[] = [];
+    if (!buyerName.trim()) missing.push('el nombre completo');
+    if (!buyerEmail.trim()) missing.push('el correo electrónico');
+    if (!dniClean) missing.push('la cédula o documento');
+    if (missing.length > 0) {
+      setErrorMsg(`Falta ${missing.join(', ').replace(/, ([^,]*)$/, ' y $1')} del cliente.`);
+      return;
+    }
+    if (buyerName.trim().length > 120) {
+      setErrorMsg('El nombre del cliente es muy largo (máximo 120 letras).');
+      return;
+    }
+    if (!/^\S+@\S+\.\S+$/.test(buyerEmail.trim())) {
+      setErrorMsg('El correo del cliente no parece válido (ejemplo: nombre@correo.com).');
+      return;
+    }
+    if (/^0*$/.test(dniClean) || dniClean.length > 30) {
+      setErrorMsg('La cédula o documento del cliente no es válido (no puede ser solo ceros ni tener más de 30 caracteres).');
       return;
     }
     
@@ -228,18 +271,16 @@ export default function PromoterDashboard() {
       setSuccessMsg(`Venta registrada. Le enviamos ${soldTickets.length === 1 ? 'la entrada' : 'las entradas'} a ${buyerEmail}.`);
       setSold(
         soldTickets.length > 0
-          ? { buyerName, buyerEmail, eventTitle: data?.eventTitle || selectedEvent?.title || '', phone: buyerPhone, tickets: soldTickets }
+          ? { buyerName, buyerEmail, eventTitle: data?.eventTitle || selectedEvent?.title || '', tickets: soldTickets }
           : null
       );
       
       // Reset form
       setSelectedEventId('');
-      setSelectedTicketId('');
       setQuantity(1);
       setBuyerName('');
       setBuyerEmail('');
       setBuyerDni('');
-      setBuyerPhone('');
       setChosenCodeId('');
 
       // Refresh profile to update stats
@@ -248,6 +289,14 @@ export default function PromoterDashboard() {
       });
       if (resProfile.ok) {
         setProfile(await resProfile.json());
+      }
+
+      // Refrescar cupos y etapa vigente: la venta descuenta cupos y puede cerrar la etapa. Si falla, la venta ya quedó hecha.
+      try {
+        const resEvents = await fetch(`${API_URL}/events`);
+        if (resEvents.ok) setEvents(await resEvents.json());
+      } catch {
+        // se refresca solo en la próxima carga
       }
       
     } catch (err: any) {
@@ -276,6 +325,9 @@ export default function PromoterDashboard() {
   const noTier = hasTiers && !currentTier;
   const overTier = hasTiers && currentTier != null && quantity > currentTier.remaining;
   const finalPrice = selectedTicket && activeDiscount != null ? discountedTotal(selectedTicket.price, activeDiscount, quantity) : 0;
+  // Precio por entrada y total SIN descuento, para mostrarlos tachados cuando hay descuento.
+  const unitPrice: number = selectedTicket ? (activeDiscount != null ? discountedTotal(selectedTicket.price, activeDiscount, 1) : selectedTicket.price) : 0;
+  const baseTotal: number = selectedTicket ? discountedTotal(selectedTicket.price, 0, quantity) : 0;
 
   return (
     <div className="min-h-screen pb-20 bg-[#050505]">
@@ -342,7 +394,7 @@ export default function PromoterDashboard() {
           <div className="md:col-span-2">
             {sold && <SoldTickets key={sold.tickets[0].token} sold={sold} onClose={() => setSold(null)} />}
 
-            <form onSubmit={handleSubmit} className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 shadow-2xl">
+            <form onSubmit={handleSubmit} noValidate className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 shadow-2xl">
               <h2 className="text-xl font-black uppercase text-white flex items-center gap-3 mb-8">
                 <Ticket className="w-6 h-6 text-neon-green" /> Nueva Venta en Efectivo
               </h2>
@@ -367,43 +419,53 @@ export default function PromoterDashboard() {
                   <select 
                     required
                     value={selectedEventId}
-                    onChange={(e) => { setSelectedEventId(e.target.value); setSelectedTicketId(''); setChosenCodeId(''); }}
+                    onChange={(e) => { setSelectedEventId(e.target.value); setChosenCodeId(''); }}
                     className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
                   >
                     <option value="">Selecciona un evento</option>
-                    {events.map(ev => (
+                    {events.filter(ev => !isEventSalesClosed(ev.date)).map(ev => (
                       <option key={ev.id} value={ev.id}>{ev.title} - {new Date(ev.date).toLocaleDateString('es-CO')}</option>
                     ))}
                   </select>
                 </div>
 
-                {selectedEvent && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Tipo de Boleto</label>
-                      <select 
-                        required
-                        value={selectedTicketId}
-                        onChange={(e) => setSelectedTicketId(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
-                      >
-                        <option value="">Selecciona boleto</option>
-                        {tickets.map((t: any) => (
-                          <option key={t.id} value={t.id}>
-                            {t.name} - ${t.price} ({t.available} disp.)
-                          </option>
-                        ))}
-                      </select>
+                {selectedEvent && selectedTicket && (
+                  <div className="rounded-2xl border border-neon-green/30 bg-neon-green/5 p-5">
+                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Etapa en venta ahora</p>
+                    <div className="flex items-end justify-between gap-4">
+                      <p className="text-lg font-black text-white uppercase leading-tight">{selectedTicket.name}</p>
+                      <div className="text-right shrink-0">
+                        {activeDiscount != null && activeDiscount > 0 && (
+                          <p className="text-sm font-bold text-zinc-500 line-through">{money(selectedTicket.price)}</p>
+                        )}
+                        <p className="text-3xl font-black text-neon-green leading-none">{money(unitPrice)}</p>
+                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1">por entrada</p>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Cantidad</label>
-                      <input 
-                        type="number" min="1" max="10" required
-                        value={quantity}
-                        onChange={(e) => setQuantity(Number(e.target.value))}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
-                      />
-                    </div>
+                    {activeDiscount != null && activeDiscount > 0 && (
+                      <p className="mt-3 text-xs font-black text-neon-purple uppercase tracking-widest">
+                        Tu descuento del {activeDiscount}% ya está aplicado
+                      </p>
+                    )}
+                    {selectedTicket.sale_end && (
+                      <p className="mt-2 text-[11px] font-bold text-zinc-500">Esta etapa cierra el {fmtDateTime(selectedTicket.sale_end)}</p>
+                    )}
+                  </div>
+                )}
+                {selectedEvent && !selectedTicket && (
+                  <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-sm font-bold text-yellow-300">
+                    {stageNotice}
+                  </div>
+                )}
+                {selectedEvent && selectedTicket && (
+                  <div>
+                    <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Cantidad</label>
+                    <input 
+                      type="number" min="1" max={Math.min(10, selectedTicket.available)} required
+                      value={quantity}
+                      onChange={(e) => setQuantity(Number(e.target.value))}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
+                    />
                   </div>
                 )}
 
@@ -459,18 +521,10 @@ export default function PromoterDashboard() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Cédula / Documento (Opcional)</label>
+                      <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Cédula / Documento (obligatoria para la entrada)</label>
                       <input 
                         type="text" placeholder="Número de documento"
                         value={buyerDni} onChange={e => setBuyerDni(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">WhatsApp del Cliente (Opcional, para mandarle la entrada)</label>
-                      <input
-                        type="tel" inputMode="tel" placeholder="Ej: 300 123 4567"
-                        value={buyerPhone} onChange={e => setBuyerPhone(e.target.value)}
                         className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
                       />
                     </div>
@@ -480,15 +534,18 @@ export default function PromoterDashboard() {
                 {selectedTicket && (
                   <div className="bg-neon-purple/10 border border-neon-purple/30 rounded-xl p-4 flex justify-between items-center">
                     <span className="text-[10px] font-black text-neon-purple uppercase tracking-widest">Total a Cobrar en Efectivo</span>
-                    <span className="text-2xl font-black text-white">
-                      {Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(finalPrice)}
+                    <span className="text-right">
+                      {activeDiscount != null && activeDiscount > 0 && (
+                        <span className="block text-sm font-bold text-zinc-500 line-through">{money(baseTotal)}</span>
+                      )}
+                      <span className="block text-2xl font-black text-white">{money(finalPrice)}</span>
                     </span>
                   </div>
                 )}
 
                 <button 
                   type="submit" 
-                  disabled={submitting || !myCode || noTier || overTier}
+                  disabled={submitting || (!!selectedEvent && (!myCode || !selectedTicket)) || noTier || overTier}
                   className="w-full py-4 bg-neon-green hover:bg-neon-green/90 text-black text-sm font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(57,255,20,0.3)] disabled:opacity-50 flex justify-center items-center gap-2"
                 >
                   {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Generar Venta y QRs'}

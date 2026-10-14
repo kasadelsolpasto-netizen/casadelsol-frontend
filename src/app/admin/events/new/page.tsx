@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Image as ImageIcon, Upload, Plus, Trash2, ArrowLeft, Loader2 } from 'lucide-react';
 import { AdminGuard } from '@/components/AdminGuard';
 import SeoPanel from '@/components/SeoPanel';
+import { formatProblems, validateEventForm } from '@/lib/event-form';
 import dynamic from 'next/dynamic';
 
 const RichEditor = dynamic(() => import('@/components/RichEditor'), { ssr: false, loading: () => (
@@ -99,8 +100,11 @@ export default function NewEventPage() {
   };
 
   const publicarEvento = async () => {
-    if (!formData.title || !formData.date || !flyerUrl) {
-       return alert("⚠️ Faltan datos esenciales o el Flyer del evento.");
+    // Solo se exige nombre, fecha y los datos de cada etapa; si falta algo, el mensaje dice cuál.
+    const problems = validateEventForm(formData, ticketTypes);
+    if (problems.length > 0) {
+       setSubmitError(formatProblems(problems));
+       return;
     }
     
     setPublishing(true);
@@ -119,7 +123,7 @@ export default function NewEventPage() {
            ...formData,
            ...seo,
            date: new Date(formData.date).toISOString(),
-           flyer_url: flyerUrl,
+           flyer_url: flyerUrl || null,
            media_urls: mediaUrls,
            status: 'PUBLISHED',
            ticket_types: ticketTypes.map((t: any) => ({
@@ -343,7 +347,7 @@ export default function NewEventPage() {
               type="event"
             />
 
-            {submitError && <div className="text-red-500 text-xs font-bold uppercase tracking-widest mt-4 bg-red-500/10 p-4 rounded-xl border border-red-500/20">{submitError}</div>}
+            {submitError && <div className="text-red-500 text-xs font-bold uppercase tracking-widest whitespace-pre-line mt-4 bg-red-500/10 p-4 rounded-xl border border-red-500/20">{submitError}</div>}
             
             <button 
               onClick={publicarEvento} 

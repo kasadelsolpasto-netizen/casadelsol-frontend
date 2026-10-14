@@ -9,6 +9,7 @@ import {
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { useSearchParams } from 'next/navigation';
+import { discountedTotal } from '@/lib/promoter-tiers';
 
 interface CheckoutWizardProps {
   isOpen: boolean;
@@ -409,7 +410,12 @@ export default function CheckoutWizard({
               <div className="flex items-center justify-between bg-black/60 border border-zinc-800 rounded-xl px-4 py-3 mb-5">
                 <span className="text-zinc-300 text-sm font-bold">{ticketType?.name}</span>
                 <div className="text-right">
-                  <span className="text-white font-black">{fmt(ticketType?.price)}</span>
+                  {discount && discount.perc > 0 && (
+                    <span className="text-zinc-500 line-through text-xs font-bold mr-2">{fmt(ticketType?.price)}</span>
+                  )}
+                  <span className="text-white font-black">
+                    {fmt(discount && discount.perc > 0 ? discountedTotal(ticketType?.price || 0, discount.perc, 1) : ticketType?.price)}
+                  </span>
                   <span className="text-zinc-600 text-xs ml-1">c/u</span>
                 </div>
               </div>
@@ -436,7 +442,12 @@ export default function CheckoutWizard({
               {/* Total */}
               <div className="flex justify-between items-center bg-neon-green/5 border border-neon-green/20 rounded-xl px-4 py-3.5 mb-5">
                 <span className="text-zinc-300 text-sm font-bold uppercase tracking-widest">Total</span>
-                <span className="text-neon-green font-black text-xl">{fmt(totalPrice)}</span>
+                <span className="text-right">
+                  {discount && discount.perc > 0 && (
+                    <span className="block text-zinc-500 line-through text-xs font-bold">{fmt(baseTotalPrice)}</span>
+                  )}
+                  <span className="block text-neon-green font-black text-xl">{fmt(totalPrice)}</span>
+                </span>
               </div>
 
               <button onClick={() => { setCurrentAttendeeIdx(0); setStep('attendees'); }}
