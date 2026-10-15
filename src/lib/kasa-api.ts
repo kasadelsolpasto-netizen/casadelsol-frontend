@@ -12,9 +12,12 @@ export function authToken(): string | null {
 
 export class ApiError extends Error {
   status: number;
-  constructor(status: number, message: string) {
+  /** Cuerpo completo de la respuesta de error (por ejemplo `code`, `impact`, `history`), para pantallas que lo necesiten. */
+  data: any;
+  constructor(status: number, message: string, data: any = null) {
     super(message);
     this.status = status;
+    this.data = data;
   }
 }
 
@@ -43,6 +46,7 @@ export async function apiFetch<T = any>(path: string, init: { method?: string; b
           : res.status === 401 || res.status === 403
             ? 'No tienes permiso para esto. Vuelve a iniciar sesión.'
             : 'No se pudo completar la acción. Intenta de nuevo.'),
+      data,
     );
   }
   return data as T;

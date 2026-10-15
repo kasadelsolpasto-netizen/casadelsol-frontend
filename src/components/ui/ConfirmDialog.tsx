@@ -14,6 +14,7 @@ export default function ConfirmDialog({
   confirmLabel,
   tone = 'primary',
   busy = false,
+  confirmDisabled = false,
   error,
   onConfirm,
   onCancel,
@@ -24,6 +25,8 @@ export default function ConfirmDialog({
   confirmLabel: string;
   tone?: 'primary' | 'danger';
   busy?: boolean;
+  /** Deja el botón de confirmar apagado (por ejemplo hasta que escriban el nombre del evento). */
+  confirmDisabled?: boolean;
   error?: string;
   onConfirm: () => void;
   onCancel: () => void;
@@ -65,7 +68,7 @@ export default function ConfirmDialog({
           <button
             type="button"
             onClick={onConfirm}
-            disabled={busy}
+            disabled={busy || confirmDisabled}
             className={`h-12 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-60 ${confirmCls}`}
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : confirmLabel}

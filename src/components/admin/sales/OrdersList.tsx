@@ -17,12 +17,14 @@ import {
   type Summary,
 } from '@/lib/sales-view';
 import Pager from '@/components/ui/Pager';
+import { orderDeleteNotes } from '@/lib/delete-impact';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 const PAGE_SIZE = 25;
 
 type Order = {
   id: string;
+  status?: string;
   kind: SaleKind;
   total: number;
   created_at: string;
@@ -60,7 +62,7 @@ export default function OrdersList({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [openId, setOpenId] = useState<string | null>(null);
-  const [revoking, setRevoking] = useState<Order | null>(null);
+  const [removing, setRemoving] = useState<Order | null>(null);
   const [busy, setBusy] = useState(false);
   const [dialogError, setDialogError] = useState('');
   const reqId = useRef(0);
@@ -113,17 +115,17 @@ export default function OrdersList({
     { key: 'FREE', label: 'Gratis', count: summary.free.orders },
   ];
 
-  const doRevoke = async () => {
-    if (!revoking) return;
+  const doRemove = async () => {
+    if (!removing) return;
     setBusy(true);
     setDialogError('');
     try {
-      await apiFetch(`/promoters/orders/${revoking.id}/revoke`, { method: 'POST' });
-      setRevoking(null);
+      await apiFetch(`/orders/admin/${removing.id}`, { method: 'DELETE' });
+      setRemoving(null);
       setOpenId(null);
       onChanged();
     } catch (e: any) {
-      setDialogError(e?.message || 'No se pudo revocar la orden.');
+      setDialogError(e?.message || 'No se pudo eliminar la orden.');
     } finally {
       setBusy(false);
     }
@@ -202,7 +204,7 @@ export default function OrdersList({
         ) : (
           <ul className={`rounded-2xl bg-zinc-950 border border-zinc-900 divide-y divide-zinc-900 overflow-hidden ${loading ? 'opacity-60' : ''}`}>
             {orders.map((o) => (
-              <OrderItem key={o.id} o={o} open={openId === o.id} onToggle={() => setOpenId(openId === o.id ? null : o.id)} onRevoke={() => { setDialogError(''); setRevoking(o); }} />
+              <OrderItem key={o.id} o={o} open={openId === o.id} onToggle={() => setOpenId(openId === o.id ? null : o.id)} onRemove={() => { setDialogError(''); setRemoving(o); }} />
             ))}
           </ul>
         )}
@@ -210,29 +212,37 @@ export default function OrdersList({
       </div>
 
       <ConfirmDialog
-        open={revoking !== null}
-        title="Revocar esta venta"
-        confirmLabel="Sí, revocar"
+        open={removing !== null}
+        title="Eliminar esta orden"
+        confirmLabel="Sí, eliminar"
         tone="danger"
         busy={busy}
         error={dialogError}
-        onConfirm={doRevoke}
-        onCancel={() => setRevoking(null)}
+        onConfirm={doRemove}
+        onCancel={() => setRemoving(null)}
       >
         <p>
-          Se eliminarán los QR de <span className="text-white">{revoking?.user?.name || 'este cliente'}</span> ({revoking ? formatCOP(revoking.total) : ''}) y las entradas
-          volverán a estar disponibles.
+          Se eliminará la compra de <span className="text-white">{removing?.user?.name || 'este cliente'}</span> ({removing ? formatCOP(removing.total) : ''}) con todos sus QR. Dejarán de servir.
         </p>
-        <p className="text-zinc-400">No se puede deshacer. Si el cliente ya tiene el QR, dejará de servir.</p>
+        {removing &&
+          orderDeleteNotes({
+            kind: removing.kind,
+            status: removing.status,
+            scanned: removing.qr_codes.filter((q) => q.used_at).length,
+          }).map((n) => (
+            <p key={n} className="text-xs text-zinc-400">
+              {n}
+            </p>
+          ))}
+        <p className="text-zinc-400">No se puede deshacer.</p>
       </ConfirmDialog>
     </section>
   );
 }
 
-function OrderItem({ o, open, onToggle, onRevoke }: { o: Order; open: boolean; onToggle: () => void; onRevoke: () => void }) {
+function OrderItem({ o, open, onToggle, onRemove }: { o: Order; open: boolean; onToggle: () => void; onRemove: () => void }) {
   const qty = o.order_items.reduce((s, i) => s + i.quantity, 0);
   const promoter = o.promoter_code?.promoter?.name || o.promoter_code?.code || '';
-  const anyUsed = o.qr_codes.some((q) => q.used_at);
   const types = o.order_items.map((i) => `${i.quantity}× ${i.ticket_type?.name ?? 'Entrada'}`).join(', ');
   return (
     <li>
@@ -288,21 +298,15 @@ function OrderItem({ o, open, onToggle, onRevoke }: { o: Order; open: boolean; o
             </ul>
           )}
 
-          {o.kind === 'CASH_PENDING' && (
-            <div className="mt-3">
-              {anyUsed ? (
-                <p className="text-[11px] font-bold text-zinc-500">No se puede revocar: el cliente ya entró con este QR.</p>
-              ) : (
-                <button
-                  type="button"
-                  onClick={onRevoke}
-                  className="h-10 px-4 rounded-lg border border-red-500/40 bg-red-500/10 text-red-400 text-[11px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-colors"
-                >
-                  Revocar venta
-                </button>
-              )}
-            </div>
-          )}
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={onRemove}
+              className="h-10 px-4 rounded-lg border border-red-500/40 bg-red-500/10 text-red-400 text-[11px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-colors"
+            >
+              Eliminar orden
+            </button>
+          </div>
         </div>
       )}
     </li>
