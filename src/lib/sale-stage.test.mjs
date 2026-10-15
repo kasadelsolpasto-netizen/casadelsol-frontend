@@ -1,7 +1,7 @@
 // Pruebas de la etapa de venta vigente. Ejecutar:  npm run test:scan   (Node >= 22.18)
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { pickStage, isWindowOpen, isEventSalesClosed, sortStages, SALES_GRACE_MS } from './sale-stage.ts';
+import { pickStage, isWindowOpen, isEventSalesClosed, sortStages, isFreeStage, SALES_GRACE_MS } from './sale-stage.ts';
 
 const NOW = Date.parse('2026-10-14T15:00:00Z');
 const H = 3600 * 1000;
@@ -48,10 +48,58 @@ test('si hay varias abiertas a la vez, gana la que cierra primero', () => {
   assert.equal(pickStage(stages, NOW).current.id, 'y');
 });
 
-test('los boletos gratis o de precio 0 nunca son la etapa de venta en efectivo', () => {
+test('en un evento con boletos de pago, el boleto de $0 (cortesia) no se ofrece: sale el de pago', () => {
   const v = pickStage([t('g', 'Cortesia', 0), t('p', 'Pago', 45000)], NOW);
   assert.equal(v.current.id, 'p');
-  assert.equal(pickStage([t('g', 'Cortesia', 0)], NOW).current, null);
+});
+
+test('si la etapa de pago se agota, NO se pasa a entregar el boleto gratis', () => {
+  const v = pickStage([t('g', 'Cortesia', 0), t('p', 'Pago', 45000, { available: 0 })], NOW);
+  assert.equal(v.current, null);
+  assert.equal(v.soldOut, true);
+});
+
+test('evento donde todo cuesta $0: la entrada gratis ES la etapa de venta', () => {
+  const v = pickStage([t('g', 'Entrada libre', 0)], NOW);
+  assert.equal(v.current.id, 'g');
+  assert.equal(v.soldOut, false);
+});
+
+test('evento gratis con varias etapas: respeta ventana y cupos igual que las de pago', () => {
+  const stages = [
+    t('1', 'Gratis 1', 0, { sale_start: iso(-10), sale_end: iso(100), available: 0 }),
+    t('2', 'Gratis 2', 0, { sale_start: iso(100), sale_end: iso(300) }),
+  ];
+  const v = pickStage(stages, NOW);
+  assert.equal(v.current, null);
+  assert.equal(v.soldOut, true);
+  assert.equal(v.next.id, '2');
+});
+
+test('evento gratis: con una etapa abierta y cupos, la ofrece; la futura queda como proxima', () => {
+  const stages = [
+    t('1', 'Gratis 1', 0, { sale_start: iso(-10), sale_end: iso(100) }),
+    t('2', 'Gratis 2', 0, { sale_start: iso(100), sale_end: iso(300) }),
+  ];
+  const v = pickStage(stages, NOW);
+  assert.equal(v.current.id, '1');
+  assert.equal(v.next.id, '2');
+});
+
+test('isFreeStage: precio 0 (o vacio) es gratis; cualquier precio positivo no', () => {
+  assert.equal(isFreeStage({ price: 0 }), true);
+  assert.equal(isFreeStage({ price: 15000 }), false);
+  assert.equal(isFreeStage({ price: null }), true);
+});
+
+test('etapa gratis abierta pero el evento tiene etapas de pago: no se ofrece la gratis (comportamiento de siempre)', () => {
+  const stages = [
+    t('g', 'Etapa 1 gratis', 0, { sale_start: iso(-10), sale_end: iso(100) }),
+    t('p', 'Etapa 2 pago', 20000, { sale_start: iso(100), sale_end: iso(300) }),
+  ];
+  const v = pickStage(stages, NOW);
+  assert.equal(v.current, null);
+  assert.equal(v.next.id, 'p');
 });
 
 test('ninguna etapa abierta ni agotada: current y next vacios, soldOut falso', () => {

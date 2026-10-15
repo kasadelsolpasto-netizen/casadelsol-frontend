@@ -53,12 +53,25 @@ export interface StageView<T extends StageTicket> {
   soldOut: boolean;
 }
 
-/** Solo boletos de pago: el cobro en efectivo no aplica a cortesías/gratis. */
+/** true si la entrada no cuesta nada ($0). */
+export function isFreeStage(t: { price: number }): boolean {
+  return !(Number(t.price) > 0);
+}
+
+/**
+ * Etapa que el promotor puede vender ahora.
+ *  - Si el evento tiene boletos de pago, los de $0 (cortesías) NO se ofrecen nunca: así no se regalan entradas
+ *    cuando la etapa de pago se agota o todavía no abre.
+ *  - Si TODO el evento es gratis (todos los boletos valen $0), esas entradas son las que se entregan; quién puede
+ *    entregarlas lo decide el administrador con el código del promotor y su límite de entradas.
+ */
 export function pickStage<T extends StageTicket>(
   tickets: T[] | null | undefined,
   now: number = Date.now(),
 ): StageView<T> {
-  const paid = (tickets ?? []).filter((t) => Number(t.price) > 0);
+  const all = tickets ?? [];
+  const hasPaid = all.some((t) => !isFreeStage(t));
+  const paid = hasPaid ? all.filter((t) => !isFreeStage(t)) : all;
   const open = paid.filter((t) => isWindowOpen(t, now));
   const current = open.filter((t) => t.available > 0).sort(byStage)[0] ?? null;
   const upcoming = paid

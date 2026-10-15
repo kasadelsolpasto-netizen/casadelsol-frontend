@@ -2,13 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Ticket, DollarSign, CheckCircle2, AlertTriangle, Loader2, ChevronLeft, MessageCircle, Copy } from 'lucide-react';
+import { Ticket, CheckCircle2, AlertTriangle, Loader2, ChevronLeft, ChevronDown, ClipboardList, Link2, MessageCircle, Copy } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
 import { discountedTotal, formatTierDate, tierMessage, tierStatus } from '@/lib/promoter-tiers';
 import { buildTicketsMessage, ticketUrl, whatsappLink } from '@/lib/whatsapp';
 import { codesForEvent, pickPromoterCode } from '@/lib/promoter-codes';
-import { isEventSalesClosed, pickStage } from '@/lib/sale-stage';
+import { isEventSalesClosed, isFreeStage, pickStage } from '@/lib/sale-stage';
+import PromoLinks from '@/components/promoter/PromoLinks';
+import PromoterSummary from '@/components/promoter/PromoterSummary';
+import PromoterSales, { type SalesFilter } from '@/components/promoter/PromoterSales';
+import { apiFetch } from '@/lib/kasa-api';
+import type { Summary } from '@/lib/sales-view';
 
 type SoldInfo = {
   buyerName: string;
@@ -105,6 +110,10 @@ export default function PromoterDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<'vender' | 'ventas' | 'enlaces'>('vender');
+  const [summary, setSummary] = useState<{ totals: Summary; events: Array<{ event: { id: string; title: string } }> } | null>(null);
+  const [salesKind, setSalesKind] = useState<SalesFilter>('ALL');
+  const [salesKey, setSalesKey] = useState(0); // sube cuando se registra una venta, para que "Mis ventas" se recargue
   
   // Form state
   const [selectedEventId, setSelectedEventId] = useState('');
@@ -124,6 +133,15 @@ export default function PromoterDashboard() {
   const getToken = () => {
     const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
     return tokenRow ? tokenRow.split('=')[1] : null;
+  };
+
+  // Resumen de lo que vendió y lo que debe entregar. Si falla, el panel sigue funcionando (solo no muestra el resumen).
+  const loadSummary = async () => {
+    try {
+      setSummary(await apiFetch('/promoters/me/summary'));
+    } catch {
+      // se vuelve a intentar en la próxima venta o recarga
+    }
   };
 
   useEffect(() => {
@@ -156,6 +174,7 @@ export default function PromoterDashboard() {
         }
         
         setProfile(profileData);
+        loadSummary();
 
         // Fetch Events
         const resEvents = await fetch(`${API_URL}/events`);
@@ -175,6 +194,8 @@ export default function PromoterDashboard() {
   // El promotor no elige boleto: se vende la etapa que está abierta ahora (por fechas y cupos), igual que en la web.
   const stage = selectedEvent ? pickStage<any>(selectedEvent.ticket_types) : null;
   const selectedTicket: any = stage?.current ?? null;
+  // Entrada de $0 (evento gratis): no hay nada que cobrar ni descuento que mostrar.
+  const isFree: boolean = !!selectedTicket && isFreeStage(selectedTicket);
   const stageNotice: string = (() => {
     if (!selectedEvent || selectedTicket) return '';
     const opens = stage?.next?.sale_start
@@ -204,6 +225,14 @@ export default function PromoterDashboard() {
     }
     if (!myCode) {
       setErrorMsg('No tienes un código activo que aplique a este evento. Habla con el administrador.');
+      return;
+    }
+    if (quotaLeft !== null && quantity > quotaLeft) {
+      setErrorMsg(
+        quotaLeft === 0
+          ? `Ya entregaste todas las entradas que permite tu código (${myCode.ticket_limit}).`
+          : `Tu código solo permite ${quotaLeft === 1 ? '1 entrada más' : `${quotaLeft} entradas más`}. Reduce la cantidad a ${quotaLeft} (o menos).`,
+      );
       return;
     }
     if (noTier || overTier) {
@@ -268,7 +297,7 @@ export default function PromoterDashboard() {
       }
 
       const soldTickets: { token: string; attendee_name: string | null }[] = Array.isArray(data?.tickets) ? data.tickets : [];
-      setSuccessMsg(`Venta registrada. Le enviamos ${soldTickets.length === 1 ? 'la entrada' : 'las entradas'} a ${buyerEmail}.`);
+      setSuccessMsg(`${isFree ? 'Entradas registradas.' : 'Venta registrada.'} Le enviamos ${soldTickets.length === 1 ? 'la entrada' : 'las entradas'} a ${buyerEmail}.`);
       setSold(
         soldTickets.length > 0
           ? { buyerName, buyerEmail, eventTitle: data?.eventTitle || selectedEvent?.title || '', tickets: soldTickets }
@@ -282,6 +311,10 @@ export default function PromoterDashboard() {
       setBuyerEmail('');
       setBuyerDni('');
       setChosenCodeId('');
+
+      // Actualiza el resumen y la lista de "Mis ventas"
+      loadSummary();
+      setSalesKey((k) => k + 1);
 
       // Refresh profile to update stats
       const resProfile = await fetch(`${API_URL}/users/${profile.id}/profile`, {
@@ -328,234 +361,285 @@ export default function PromoterDashboard() {
   // Precio por entrada y total SIN descuento, para mostrarlos tachados cuando hay descuento.
   const unitPrice: number = selectedTicket ? (activeDiscount != null ? discountedTotal(selectedTicket.price, activeDiscount, 1) : selectedTicket.price) : 0;
   const baseTotal: number = selectedTicket ? discountedTotal(selectedTicket.price, 0, quantity) : 0;
+  // Cupo del código (límite de entradas que el administrador le dio a este promotor): es lo mismo que valida el servidor.
+  const quotaLeft: number | null = myCode?.ticket_limit ? Math.max(0, myCode.ticket_limit - (myCode.tickets_sold || 0)) : null;
 
   return (
-    <div className="min-h-screen pb-20 bg-[#050505]">
-      <main className="max-w-4xl mx-auto px-6 py-12">
-        <header className="mb-12 border-b border-zinc-900 pb-8">
-          <Link href={`/profile/${profile?.id}`} className="inline-flex items-center gap-2 text-xs font-black text-zinc-500 uppercase tracking-widest hover:text-white transition-colors mb-6">
-            <ChevronLeft className="w-4 h-4" /> Volver a mi Bóveda
+    <div className="min-h-screen pb-24 bg-[#050505]">
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-5 sm:py-10">
+        <header className="mb-4">
+          <Link href={`/profile/${profile?.id}`} className="inline-flex items-center gap-1 min-h-[44px] text-[11px] font-black text-zinc-500 uppercase tracking-widest hover:text-white transition-colors">
+            <ChevronLeft className="w-4 h-4" /> Mi Bóveda
           </Link>
-          <br/>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon-purple/10 border border-neon-purple/30 text-neon-purple text-[10px] font-black uppercase tracking-widest mb-4">
-            <DollarSign className="w-3 h-3" /> Promotor Autorizado
-          </div>
-          <h1 className="text-4xl font-black uppercase text-white mb-2">Panel de Ventas</h1>
-          <p className="text-zinc-500 font-bold">Genera ventas en efectivo. El sistema registrará tu deuda.</p>
+          <h1 className="text-2xl sm:text-3xl font-black uppercase text-white leading-tight">Panel de Ventas</h1>
+          <p className="text-xs font-bold text-zinc-500">Promotor autorizado</p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Stats Card */}
-          <div className="md:col-span-1 space-y-6">
-            <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-neon-purple/10 blur-[50px] pointer-events-none" />
-              <h3 className="text-xs font-black text-zinc-500 uppercase tracking-widest mb-4">Tu Código</h3>
-              <p className="text-2xl font-mono text-neon-green font-bold bg-zinc-900 p-3 rounded-xl text-center border border-zinc-800">
-                {myCode ? myCode.code : 'SIN CÓDIGO'}
-              </p>
-              <div className="mt-6 flex justify-between items-end">
-                <div>
-                  <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Total Ventas</p>
-                  <p className="text-3xl font-black text-white">{myCode?.uses_count}</p>
+        <PromoterSummary
+          totals={summary?.totals ?? null}
+          onShowPending={() => {
+            setSalesKind('CASH_PENDING');
+            setTab('ventas');
+          }}
+        />
+
+        <div role="tablist" aria-label="Secciones del panel" className="mt-5 grid grid-cols-3 gap-1 p-1 rounded-2xl bg-zinc-950 border border-zinc-900">
+          {([
+            { key: 'vender', label: 'Vender', Icon: Ticket },
+            { key: 'ventas', label: 'Mis ventas', Icon: ClipboardList },
+            { key: 'enlaces', label: 'Enlaces', Icon: Link2 },
+          ] as const).map(({ key, label, Icon }) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={tab === key}
+              onClick={() => setTab(key)}
+              className={`h-11 rounded-xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-colors ${
+                tab === key ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Icon className="w-4 h-4" /> {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-4">
+          {tab === 'vender' && (
+            <div className="space-y-4">
+              <div className="rounded-2xl bg-zinc-950 border border-zinc-900 px-4 py-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Tu código</p>
+                  <p className="text-lg font-mono font-bold text-neon-green truncate">{myCode ? myCode.code : 'SIN CÓDIGO'}</p>
                 </div>
-                {activeDiscount != null && activeDiscount > 0 && (
-                  <div className="text-right">
-                     <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Descuento</p>
-                     <p className="text-lg font-black text-neon-purple">{activeDiscount}% OFF</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {hasTiers && (
-              <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6">
-                <h3 className="text-xs font-black text-zinc-500 uppercase tracking-widest mb-3">Tus descuentos</h3>
-                <p className="text-sm font-bold text-zinc-300 mb-4">{tierMessage(currentTier, myCode?.next_tier)}</p>
-                <div className="space-y-2">
-                  {myCode.tiers.map((t: any) => {
-                    const st = tierStatus(t, myCode.tiers);
-                    const style =
-                      st === 'current' ? 'border-neon-purple/50 bg-neon-purple/10 text-neon-purple'
-                      : st === 'waiting' ? 'border-zinc-800 text-zinc-300'
-                      : 'border-zinc-900 text-zinc-600 line-through';
-                    return (
-                      <div key={t.id} className={`flex justify-between items-center text-xs font-bold rounded-xl px-3 py-2 border ${style}`}>
-                        <span>{t.discount_perc}% OFF</span>
-                        <span>{t.sold}/{t.quantity}{t.valid_until ? ` · hasta ${formatTierDate(t.valid_until)}` : ''}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Formulario */}
-          <div className="md:col-span-2">
-            {sold && <SoldTickets key={sold.tickets[0].token} sold={sold} onClose={() => setSold(null)} />}
-
-            <form onSubmit={handleSubmit} noValidate className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 shadow-2xl">
-              <h2 className="text-xl font-black uppercase text-white flex items-center gap-3 mb-8">
-                <Ticket className="w-6 h-6 text-neon-green" /> Nueva Venta en Efectivo
-              </h2>
-
-              {successMsg && (
-                <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                  <p className="text-sm font-bold text-green-400">{successMsg}</p>
-                </div>
-              )}
-
-              {errorMsg && (
-                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3">
-                  <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
-                  <p className="text-sm font-bold text-red-400">{errorMsg}</p>
-                </div>
-              )}
-
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Evento</label>
-                  <select 
-                    required
-                    value={selectedEventId}
-                    onChange={(e) => { setSelectedEventId(e.target.value); setChosenCodeId(''); }}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
-                  >
-                    <option value="">Selecciona un evento</option>
-                    {events.filter(ev => !isEventSalesClosed(ev.date)).map(ev => (
-                      <option key={ev.id} value={ev.id}>{ev.title} - {new Date(ev.date).toLocaleDateString('es-CO')}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {selectedEvent && selectedTicket && (
-                  <div className="rounded-2xl border border-neon-green/30 bg-neon-green/5 p-5">
-                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Etapa en venta ahora</p>
-                    <div className="flex items-end justify-between gap-4">
-                      <p className="text-lg font-black text-white uppercase leading-tight">{selectedTicket.name}</p>
-                      <div className="text-right shrink-0">
-                        {activeDiscount != null && activeDiscount > 0 && (
-                          <p className="text-sm font-bold text-zinc-500 line-through">{money(selectedTicket.price)}</p>
-                        )}
-                        <p className="text-3xl font-black text-neon-green leading-none">{money(unitPrice)}</p>
-                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1">por entrada</p>
-                      </div>
+                <div className="flex items-center gap-4 shrink-0 text-right">
+                  {activeDiscount != null && activeDiscount > 0 && (
+                    <div>
+                      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Descuento</p>
+                      <p className="text-base font-black text-neon-purple">{activeDiscount}% OFF</p>
                     </div>
-                    {activeDiscount != null && activeDiscount > 0 && (
-                      <p className="mt-3 text-xs font-black text-neon-purple uppercase tracking-widest">
-                        Tu descuento del {activeDiscount}% ya está aplicado
-                      </p>
-                    )}
-                    {selectedTicket.sale_end && (
-                      <p className="mt-2 text-[11px] font-bold text-zinc-500">Esta etapa cierra el {fmtDateTime(selectedTicket.sale_end)}</p>
-                    )}
-                  </div>
-                )}
-                {selectedEvent && !selectedTicket && (
-                  <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-sm font-bold text-yellow-300">
-                    {stageNotice}
-                  </div>
-                )}
-                {selectedEvent && selectedTicket && (
+                  )}
                   <div>
-                    <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Cantidad</label>
-                    <input 
-                      type="number" min="1" max={Math.min(10, selectedTicket.available)} required
-                      value={quantity}
-                      onChange={(e) => setQuantity(Number(e.target.value))}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
-                    />
-                  </div>
-                )}
-
-                {selectedEvent && eventCodes.length > 1 && (
-                  <div>
-                    <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Código a usar</label>
-                    <select
-                      value={myCode?.id ?? ''}
-                      onChange={(e) => setChosenCodeId(e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
-                    >
-                      {eventCodes.map((c: any) => (
-                        <option key={c.id} value={c.id}>{c.code}{c.event_id ? '' : ' (todos los eventos)'}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                {selectedEvent && !myCode && (
-                  <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-sm font-bold text-red-400">
-                    Ninguno de tus códigos activos aplica a este evento. Habla con el administrador.
-                  </div>
-                )}
-
-                {noTier && (
-                  <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-sm font-bold text-red-400">
-                    No tienes descuentos vigentes. Habla con el administrador para que te asigne más entradas.
-                  </div>
-                )}
-                {overTier && currentTier && (
-                  <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-sm font-bold text-yellow-300">
-                    Con tu escalón actual solo {currentTier.remaining === 1 ? 'queda 1 entrada' : `quedan ${currentTier.remaining} entradas`} al {currentTier.discount_perc}%.
-                    {' '}Reduce la cantidad a {currentTier.remaining} (o menos) y haz otra venta por el resto.
-                  </div>
-                )}
-
-                <div className="pt-6 border-t border-zinc-900">
-                  <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4">Datos del Cliente</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Nombre Completo</label>
-                      <input 
-                        required type="text" placeholder="Ej: Juan Pérez"
-                        value={buyerName} onChange={e => setBuyerName(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Correo Electrónico (Para enviar QR y crear Bóveda)</label>
-                      <input 
-                        required type="email" placeholder="ejemplo@correo.com"
-                        value={buyerEmail} onChange={e => setBuyerEmail(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Cédula / Documento (obligatoria para la entrada)</label>
-                      <input 
-                        type="text" placeholder="Número de documento"
-                        value={buyerDni} onChange={e => setBuyerDni(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
-                      />
-                    </div>
+                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Ventas</p>
+                    <p className="text-base font-black text-white">{myCode?.uses_count ?? 0}</p>
                   </div>
                 </div>
+              </div>
 
-                {selectedTicket && (
-                  <div className="bg-neon-purple/10 border border-neon-purple/30 rounded-xl p-4 flex justify-between items-center">
-                    <span className="text-[10px] font-black text-neon-purple uppercase tracking-widest">Total a Cobrar en Efectivo</span>
-                    <span className="text-right">
-                      {activeDiscount != null && activeDiscount > 0 && (
-                        <span className="block text-sm font-bold text-zinc-500 line-through">{money(baseTotal)}</span>
-                      )}
-                      <span className="block text-2xl font-black text-white">{money(finalPrice)}</span>
+              {hasTiers && (
+                <details className="group rounded-2xl bg-zinc-950 border border-zinc-900">
+                  <summary className="flex items-center justify-between gap-3 px-4 min-h-[52px] py-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                    <span className="min-w-0">
+                      <span className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest">Tus descuentos</span>
+                      <span className="block text-xs font-bold text-zinc-300">{tierMessage(currentTier, myCode?.next_tier)}</span>
                     </span>
+                    <ChevronDown className="w-4 h-4 shrink-0 text-zinc-500 transition-transform group-open:rotate-180" />
+                  </summary>
+                  <div className="px-4 pb-4 space-y-2">
+                    {myCode.tiers.map((t: any) => {
+                      const st = tierStatus(t, myCode.tiers);
+                      const style =
+                        st === 'current' ? 'border-neon-purple/50 bg-neon-purple/10 text-neon-purple'
+                        : st === 'waiting' ? 'border-zinc-800 text-zinc-300'
+                        : 'border-zinc-900 text-zinc-600 line-through';
+                      return (
+                        <div key={t.id} className={`flex justify-between items-center text-xs font-bold rounded-xl px-3 py-2 border ${style}`}>
+                          <span>{t.discount_perc}% OFF</span>
+                          <span>{t.sold}/{t.quantity}{t.valid_until ? ` · hasta ${formatTierDate(t.valid_until)}` : ''}</span>
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
+                </details>
+              )}
 
-                <button 
-                  type="submit" 
-                  disabled={submitting || (!!selectedEvent && (!myCode || !selectedTicket)) || noTier || overTier}
-                  className="w-full py-4 bg-neon-green hover:bg-neon-green/90 text-black text-sm font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(57,255,20,0.3)] disabled:opacity-50 flex justify-center items-center gap-2"
-                >
-                  {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Generar Venta y QRs'}
-                </button>
-                <p className="text-center text-[10px] font-bold text-zinc-600 uppercase tracking-widest mt-4">
-                  Al hacer clic confirmas que recibiste el efectivo.
-                </p>
-              </div>
-            </form>
-          </div>
+              {sold && <SoldTickets key={sold.tickets[0].token} sold={sold} onClose={() => setSold(null)} />}
+
+                  <form onSubmit={handleSubmit} noValidate className="bg-zinc-950 border border-zinc-900 rounded-3xl p-5 sm:p-8 shadow-2xl">
+                    <h2 className="text-xl font-black uppercase text-white flex items-center gap-3 mb-6">
+                      <Ticket className="w-6 h-6 text-neon-green" /> {isFree ? 'Entrega de Entradas Gratis' : 'Nueva Venta en Efectivo'}
+                    </h2>
+              
+                    {successMsg && (
+                      <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl flex items-center gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                        <p className="text-sm font-bold text-green-400">{successMsg}</p>
+                      </div>
+                    )}
+              
+                    {errorMsg && (
+                      <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3">
+                        <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
+                        <p className="text-sm font-bold text-red-400">{errorMsg}</p>
+                      </div>
+                    )}
+              
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Evento</label>
+                        <select 
+                          required
+                          value={selectedEventId}
+                          onChange={(e) => { setSelectedEventId(e.target.value); setChosenCodeId(''); }}
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
+                        >
+                          <option value="">Selecciona un evento</option>
+                          {events.filter(ev => !isEventSalesClosed(ev.date)).map(ev => (
+                            <option key={ev.id} value={ev.id}>{ev.title} - {new Date(ev.date).toLocaleDateString('es-CO')}</option>
+                          ))}
+                        </select>
+                      </div>
+              
+                      {selectedEvent && selectedTicket && (
+                        <div className="rounded-2xl border border-neon-green/30 bg-neon-green/5 p-5">
+                          <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Etapa en venta ahora</p>
+                          <div className="flex items-end justify-between gap-4">
+                            <p className="text-lg font-black text-white uppercase leading-tight">{selectedTicket.name}</p>
+                            <div className="text-right shrink-0">
+                              {!isFree && activeDiscount != null && activeDiscount > 0 && (
+                                <p className="text-sm font-bold text-zinc-500 line-through">{money(selectedTicket.price)}</p>
+                              )}
+                              <p className="text-3xl font-black text-neon-green leading-none">{isFree ? 'Gratis' : money(unitPrice)}</p>
+                              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1">por entrada</p>
+                            </div>
+                          </div>
+                          {isFree && (
+                            <p className="mt-3 text-xs font-bold text-zinc-400">Esta entrada no tiene costo: no recibes dinero del cliente.</p>
+                          )}
+                          {!isFree && activeDiscount != null && activeDiscount > 0 && (
+                            <p className="mt-3 text-xs font-black text-neon-purple uppercase tracking-widest">
+                              Tu descuento del {activeDiscount}% ya está aplicado
+                            </p>
+                          )}
+                          {quotaLeft !== null && (
+                            <p className="mt-2 text-[11px] font-black text-neon-purple uppercase tracking-widest">
+                              {quotaLeft === 0
+                                ? 'Ya entregaste todas las entradas de tu código'
+                                : `Te ${quotaLeft === 1 ? 'queda 1 entrada' : `quedan ${quotaLeft} entradas`} de las ${myCode.ticket_limit} de tu código`}
+                            </p>
+                          )}
+                          {selectedTicket.sale_end && (
+                            <p className="mt-2 text-[11px] font-bold text-zinc-500">Esta etapa cierra el {fmtDateTime(selectedTicket.sale_end)}</p>
+                          )}
+                        </div>
+                      )}
+                      {selectedEvent && !selectedTicket && (
+                        <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-sm font-bold text-yellow-300">
+                          {stageNotice}
+                        </div>
+                      )}
+                      {selectedEvent && selectedTicket && (
+                        <div>
+                          <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Cantidad</label>
+                          <input 
+                            type="number" min="1" max={Math.min(10, selectedTicket.available)} required
+                            value={quantity}
+                            onChange={(e) => setQuantity(Number(e.target.value))}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
+                          />
+                        </div>
+                      )}
+              
+                      {selectedEvent && eventCodes.length > 1 && (
+                        <div>
+                          <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Código a usar</label>
+                          <select
+                            value={myCode?.id ?? ''}
+                            onChange={(e) => setChosenCodeId(e.target.value)}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
+                          >
+                            {eventCodes.map((c: any) => (
+                              <option key={c.id} value={c.id}>{c.code}{c.event_id ? '' : ' (todos los eventos)'}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      {selectedEvent && !myCode && (
+                        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-sm font-bold text-red-400">
+                          Ninguno de tus códigos activos aplica a este evento. Habla con el administrador.
+                        </div>
+                      )}
+              
+                      {noTier && (
+                        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-sm font-bold text-red-400">
+                          No tienes descuentos vigentes. Habla con el administrador para que te asigne más entradas.
+                        </div>
+                      )}
+                      {overTier && currentTier && (
+                        <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-sm font-bold text-yellow-300">
+                          Con tu escalón actual solo {currentTier.remaining === 1 ? 'queda 1 entrada' : `quedan ${currentTier.remaining} entradas`} al {currentTier.discount_perc}%.
+                          {' '}Reduce la cantidad a {currentTier.remaining} (o menos) y haz otra venta por el resto.
+                        </div>
+                      )}
+              
+                      <div className="pt-6 border-t border-zinc-900">
+                        <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4">Datos del Cliente</h3>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Nombre Completo</label>
+                            <input 
+                              required type="text" placeholder="Ej: Juan Pérez"
+                              value={buyerName} onChange={e => setBuyerName(e.target.value)}
+                              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Correo Electrónico (Para enviar QR y crear Bóveda)</label>
+                            <input 
+                              required type="email" placeholder="ejemplo@correo.com"
+                              value={buyerEmail} onChange={e => setBuyerEmail(e.target.value)}
+                              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Cédula / Documento (obligatoria para la entrada)</label>
+                            <input 
+                              type="text" placeholder="Número de documento"
+                              value={buyerDni} onChange={e => setBuyerDni(e.target.value)}
+                              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+              
+                      {selectedTicket && (
+                        <div className="bg-neon-purple/10 border border-neon-purple/30 rounded-xl p-4 flex justify-between items-center">
+                          <span className="text-[10px] font-black text-neon-purple uppercase tracking-widest">{isFree ? 'Entradas gratuitas' : 'Total a Cobrar en Efectivo'}</span>
+                          <span className="text-right">
+                            {!isFree && activeDiscount != null && activeDiscount > 0 && (
+                              <span className="block text-sm font-bold text-zinc-500 line-through">{money(baseTotal)}</span>
+                            )}
+                            <span className="block text-2xl font-black text-white">{isFree ? 'Gratis' : money(finalPrice)}</span>
+                          </span>
+                        </div>
+                      )}
+              
+                      <button 
+                        type="submit" 
+                        disabled={submitting || (!!selectedEvent && (!myCode || !selectedTicket)) || noTier || overTier}
+                        className="w-full py-4 bg-neon-green hover:bg-neon-green/90 text-black text-sm font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(57,255,20,0.3)] disabled:opacity-50 flex justify-center items-center gap-2"
+                      >
+                        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (isFree ? 'Generar Entradas y QRs' : 'Generar Venta y QRs')}
+                      </button>
+                      <p className="text-center text-[10px] font-bold text-zinc-600 uppercase tracking-widest mt-4">
+                        {isFree ? 'Estas entradas no tienen costo: no se cobra nada.' : 'Al hacer clic confirmas que recibiste el efectivo.'}
+                      </p>
+                    </div>
+                  </form>
+            </div>
+          )}
+
+          {tab === 'ventas' && (
+            <PromoterSales
+              totals={summary?.totals ?? null}
+              eventOptions={(summary?.events ?? []).map((r) => ({ id: r.event.id, title: r.event.title }))}
+              kind={salesKind}
+              onKindChange={setSalesKind}
+              refreshKey={salesKey}
+            />
+          )}
+
+          {tab === 'enlaces' && <PromoLinks events={events} codes={profile?.promoter_codes ?? []} />}
         </div>
       </main>
     </div>
