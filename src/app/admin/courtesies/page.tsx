@@ -7,6 +7,7 @@ import {
   Copy, Upload, FileSpreadsheet
 } from 'lucide-react';
 import Link from 'next/link';
+import CourtesyBulkImport from '@/components/admin/courtesies/CourtesyBulkImport';
 
 export default function CourtesiesAdminPage() {
   const router = useRouter();
@@ -20,7 +21,6 @@ export default function CourtesiesAdminPage() {
   // Form State
   const [mode, setMode] = useState<'SINGLE' | 'BULK'>('SINGLE');
   const [singleForm, setSingleForm] = useState({ name: '', dni: '', email: '', ticket_type_id: '' });
-  const [bulkText, setBulkText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
@@ -35,8 +35,9 @@ export default function CourtesiesAdminPage() {
     fetchEvents();
   }, []);
 
-  const fetchEvents = async () => {
-    setLoading(true);
+  // silent: refresca los numeros sin tapar la pantalla con el cargando (para no perder el resultado de una carga masiva).
+  const fetchEvents = async (silent = false) => {
+    if (!silent) setLoading(true);
     const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
     const token = tokenRow ? tokenRow.split('=')[1] : null;
 
@@ -125,35 +126,12 @@ export default function CourtesiesAdminPage() {
     setShowDropdown(false);
   };
 
-  const parseBulkText = () => {
-    // Expected format per line: Nombre, Cedula, Correo
-    const lines = bulkText.split('\n').map(l => l.trim()).filter(l => l);
-    const parsed = [];
-    for (const line of lines) {
-      // Intentar dividir por comas, tabulaciones o punto y coma (para Excel/CSV)
-      const parts = line.split(/[\t,;]+/).map(p => p.trim());
-      if (parts.length >= 3) {
-        parsed.push({ name: parts[0], dni: parts[1], email: parts[2], ticket_type_id: singleForm.ticket_type_id });
-      } else if (parts.length === 2 && parts[1].includes('@')) {
-         // Fallback if no DNI: Nombre, Correo
-         parsed.push({ name: parts[0], dni: '00000000', email: parts[1], ticket_type_id: singleForm.ticket_type_id });
-      }
-    }
-    return parsed;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEvent) return;
     
-    let payload = [];
-    if (mode === 'SINGLE') {
-      if (!singleForm.name || !singleForm.email || !singleForm.ticket_type_id) return alert('Completa los datos.');
-      payload = [singleForm];
-    } else {
-      payload = parseBulkText();
-      if (payload.length === 0) return alert('No se encontraron registros válidos en el texto.');
-    }
+    const payload = [singleForm];
+    if (!singleForm.name || !singleForm.email || !singleForm.ticket_type_id) return alert('Completa los datos.');
 
     setSubmitting(true);
     const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
@@ -173,7 +151,6 @@ export default function CourtesiesAdminPage() {
       const resBody = await res.json().catch(() => null);
       if (res.ok) {
         setSingleForm({ name: '', dni: '', email: '', ticket_type_id: ticketTypes[0]?.id || '' });
-        setBulkText('');
         fetchEventDetails(selectedEvent.id);
         fetchEvents(); // Update metrics on main screen
         // El servidor responde por cada registro: avisar de los que no se pudieron crear.
@@ -444,19 +421,17 @@ export default function CourtesiesAdminPage() {
                   </>
                 ) : (
                   <div>
-                    <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Pega desde Excel (Nombre, Cédula, Correo)</label>
-                    <textarea 
-                      value={bulkText} 
-                      onChange={e => setBulkText(e.target.value)} 
-                      className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-purple transition-colors h-48 font-mono text-sm" 
-                      placeholder={"John Doe\t123456\tjohn@test.com\nJane Doe\t654321\tjane@test.com"} 
-                      required
+                    <CourtesyBulkImport
+                      eventId={selectedEvent.id}
+                      eventTitle={selectedEvent.title}
+                      ticketTypes={ticketTypes}
+                      existing={courtesies}
+                      onDone={() => { fetchEventDetails(selectedEvent.id); fetchEvents(true); }}
                     />
-                    <p className="text-xs text-zinc-600 mt-2">Separa los datos con comas o tabs. 1 persona por línea.</p>
                   </div>
                 )}
 
-                <div>
+                <div className={mode === 'BULK' ? 'hidden' : ''}>
                   <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 mt-2">Tipo de Entrada a Regalar</label>
                   <select 
                     value={singleForm.ticket_type_id} 
@@ -472,7 +447,7 @@ export default function CourtesiesAdminPage() {
                 <button 
                   type="submit" 
                   disabled={submitting}
-                  className="w-full mt-4 bg-white text-black font-black uppercase tracking-widest py-4 rounded-xl hover:bg-neon-purple hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className={`w-full mt-4 bg-white text-black font-black uppercase tracking-widest py-4 rounded-xl hover:bg-neon-purple hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${mode === 'BULK' ? 'hidden' : ''}`}
                 >
                   {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Upload className="w-4 h-4" /> Emitir Cortesía{mode === 'BULK' ? 's' : ''}</>}
                 </button>
