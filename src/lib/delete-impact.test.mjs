@@ -63,3 +63,13 @@ test('orderDeleteNotes: según tipo y si ya se usó', () => {
   // Pendiente / fallida: no llevó cupos ni se cobró, no hay nada que avisar.
   assert.deepEqual(orderDeleteNotes({ kind: 'ONLINE', status: 'PENDING' }), []);
 });
+
+test('impactLines/impactWarnings: artistas con cachet registrado', () => {
+  const i = { ...empty(), artist_bookings: { count: 2, fee: 800000, paid: 250000 } };
+  const lines = impactLines(i);
+  assert.ok(lines.some((l) => l.includes('2 artistas con cachet registrado')));
+  assert.ok(impactWarnings(i).some((w) => w.includes('artistas')));
+  // sin artistas (o servidor anterior) no sale nada extra
+  assert.equal(impactLines(empty()).some((l) => l.includes('artista')), false);
+  assert.equal(impactWarnings({ ...empty(), artist_bookings: { count: 1, fee: 100, paid: 0 } }).some((w) => w.includes('artistas')), false);
+});

@@ -12,7 +12,8 @@ import {
   LayoutDashboard,
   Settings,
   ChevronDown,
-  DollarSign
+  DollarSign,
+  Music
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -22,7 +23,7 @@ export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<{id: string; name: string; role: string; avatar?: string} | null>(null);
-  const [userProfile, setUserProfile] = useState<{promoter_codes?: Array<{id: string}>} | null>(null);
+  const [userProfile, setUserProfile] = useState<{promoter_codes?: Array<{id: string}>; artist_profile?: {id: string; is_active: boolean} | null} | null>(null);
   const [mounted, setMounted] = useState(false);
   const [brandLogo, setBrandLogo] = useState<string | null>(null);
 
@@ -164,6 +165,14 @@ export function Navbar() {
                      <Link href="/profile/promoter" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item border-t border-zinc-900">
                         <DollarSign className="w-4 h-4 text-neon-green group-hover/item:scale-110 transition-transform" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Panel de Promotor</span>
+                     </Link>
+                   )}
+
+                   {/* Opción Artista */}
+                   {userProfile?.artist_profile?.is_active && (
+                     <Link href="/profile/artist" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item border-t border-zinc-900">
+                        <Music className="w-4 h-4 text-neon-purple group-hover/item:scale-110 transition-transform" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Perfil de Artista</span>
                      </Link>
                    )}
 

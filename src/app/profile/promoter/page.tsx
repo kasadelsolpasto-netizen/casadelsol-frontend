@@ -13,6 +13,7 @@ import PromoLinks from '@/components/promoter/PromoLinks';
 import PromoterSummary from '@/components/promoter/PromoterSummary';
 import PromoterSales, { type SalesFilter } from '@/components/promoter/PromoterSales';
 import { apiFetch } from '@/lib/kasa-api';
+import ProfileTabs from '@/components/profile/ProfileTabs';
 import type { Summary } from '@/lib/sales-view';
 
 type SoldInfo = {
@@ -367,6 +368,7 @@ export default function PromoterDashboard() {
   return (
     <div className="min-h-screen pb-24 bg-[#050505]">
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-5 sm:py-10">
+        <div className="mb-3"><ProfileTabs active="promotor" userId={profile?.id} promoter /></div>
         <header className="mb-4">
           <Link href={`/profile/${profile?.id}`} className="inline-flex items-center gap-1 min-h-[44px] text-[11px] font-black text-zinc-500 uppercase tracking-widest hover:text-white transition-colors">
             <ChevronLeft className="w-4 h-4" /> Mi Bóveda

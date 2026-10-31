@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ChevronRight, ClipboardList, Download, DoorOpen, LayoutDashboard, Loader2, Users } from 'lucide-react';
+import { ArrowLeft, ChevronRight, ClipboardList, Download, DoorOpen, LayoutDashboard, Loader2, Music, Users } from 'lucide-react';
 import { apiFetch, withQuery } from '@/lib/kasa-api';
 import { buildOrdersCsv, formatCOP, type PromoterRow, type Summary } from '@/lib/sales-view';
 import MoneyCards from '@/components/admin/sales/MoneyCards';
@@ -10,6 +10,7 @@ import PromoterDebt from '@/components/admin/sales/PromoterDebt';
 import OrdersList from '@/components/admin/sales/OrdersList';
 import WalkInList from '@/components/admin/sales/WalkInList';
 import SettlementsHistory from '@/components/admin/sales/SettlementsHistory';
+import EventArtists from '@/components/admin/sales/EventArtists';
 
 type EventStats = {
   event: { id: string; title: string; date: string; venue: string; page_views?: number; checkout_clicks?: number };
@@ -21,16 +22,17 @@ type EventStats = {
 
 type WalkIn = { id: string; name?: string | null; email?: string | null; cedula?: string | null; amount: number; created_at: string };
 
-type Tab = 'resumen' | 'promotores' | 'ventas';
+type Tab = 'resumen' | 'promotores' | 'ventas' | 'artistas';
 
 const TABS: { key: Tab; label: string; Icon: typeof Users }[] = [
   { key: 'resumen', label: 'Resumen', Icon: LayoutDashboard },
   { key: 'promotores', label: 'Promotores', Icon: Users },
   { key: 'ventas', label: 'Ventas', Icon: ClipboardList },
+  { key: 'artistas', label: 'Artistas', Icon: Music },
 ];
 
 function isTab(value: string): value is Tab {
-  return value === 'resumen' || value === 'promotores' || value === 'ventas';
+  return value === 'resumen' || value === 'promotores' || value === 'ventas' || value === 'artistas';
 }
 
 /**
@@ -192,7 +194,7 @@ export default function EventSalesStatsPage({ params }: { params: { id: string }
         </header>
         {exportError && <p className="-mt-4 mb-6 text-xs font-bold text-red-400">{exportError}</p>}
 
-        <div role="tablist" aria-label="Secciones del evento" className="mb-6 grid grid-cols-3 gap-1 p-1 rounded-2xl bg-zinc-950 border border-zinc-900">
+        <div role="tablist" aria-label="Secciones del evento" className="mb-6 grid grid-cols-2 min-[560px]:grid-cols-4 gap-1 p-1 rounded-2xl bg-zinc-950 border border-zinc-900">
           {TABS.map(({ key, label, Icon }) => {
             const active = tab === key;
             return (
@@ -287,6 +289,12 @@ export default function EventSalesStatsPage({ params }: { params: { id: string }
             <OrdersList eventId={data.event.id} summary={data.summary} promoters={data.promoters} refreshKey={refreshKey} onChanged={onChanged} />
 
             <WalkInList walkIns={walkIns} />
+          </div>
+        )}
+
+        {visited.includes('artistas') && (
+          <div id="panel-artistas" role="tabpanel" aria-labelledby="tab-artistas" hidden={tab !== 'artistas'}>
+            <EventArtists eventId={data.event.id} />
           </div>
         )}
       </div>

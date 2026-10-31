@@ -10,6 +10,7 @@ import {
 import { UserAvatar, AVATAR_OPTIONS } from '@/components/UserAvatar';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
+import ProfileTabs from '@/components/profile/ProfileTabs';
 import { formatSavedAt, isTransientFailure, loadOffline, saveOffline } from '@/lib/offline-tickets';
 import { io } from 'socket.io-client';
 
@@ -322,14 +323,13 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-neon-purple/10 border border-neon-purple/30 text-neon-purple text-[10px] font-black uppercase tracking-widest">
                     <Star className="w-3 h-3" /> Raver VIP
                  </div>
-                 {profile?.promoter_codes?.length > 0 && (
-                   <Link href="/profile/promoter" className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-neon-green/10 border border-neon-green/30 text-neon-green text-[10px] font-black uppercase tracking-widest hover:bg-neon-green/20 transition-all">
-                      <DollarSign className="w-3 h-3" /> Panel de Ventas
-                   </Link>
-                 )}
+                 
+                 
               </div>
            </div>
         </header>
+
+        <div className="mb-10 max-w-md mx-auto lg:mx-0"><ProfileTabs active="cuenta" userId={profile?.id} artist={!!profile?.artist_profile?.is_active} promoter={(profile?.promoter_codes?.length ?? 0) > 0} /></div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
            <div className="lg:col-span-2 space-y-16">

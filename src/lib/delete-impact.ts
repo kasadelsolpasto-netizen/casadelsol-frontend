@@ -24,6 +24,8 @@ export interface DeleteImpact {
   walk_in: { count: number; amount: number };
   courtesies: number;
   promoter_codes: number;
+  /** Artistas con cachet registrado en este evento (puede faltar si el servidor es una versión anterior). */
+  artist_bookings?: { count: number; fee: number; paid: number };
 }
 
 const cop = (n: number) => {
@@ -67,6 +69,10 @@ export function impactLines(i: DeleteImpact): string[] {
   if (i.promoter_codes > 0) {
     lines.push(`${plural(i.promoter_codes, 'código de promotor', 'códigos de promotor')} de este evento`);
   }
+  const ab = i.artist_bookings;
+  if (ab && ab.count > 0) {
+    lines.push(`${plural(ab.count, 'artista con cachet registrado', 'artistas con cachet registrado')} (${cop(ab.fee)} de cachet, ${cop(ab.paid)} ya pagados)`);
+  }
   return lines;
 }
 
@@ -78,6 +84,9 @@ export function impactWarnings(i: DeleteImpact): string[] {
   }
   if (i.summary.online.amount > 0) {
     w.push('Los pagos online NO se devuelven solos: si hay que reembolsarlos, hazlo desde la pasarela (Wompi / Bold).');
+  }
+  if ((i.artist_bookings?.paid ?? 0) > 0) {
+    w.push('Lo que ya se le pagó a los artistas se conserva en sus cuentas, pero el cachet de este evento deja de contar.');
   }
   return w;
 }
