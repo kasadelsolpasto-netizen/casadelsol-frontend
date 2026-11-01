@@ -86,6 +86,9 @@ function StatusStrip({ net, sessionExpired }: { net: NetState; sessionExpired: b
   return <div className={`w-full text-center text-[10px] font-black uppercase tracking-widest py-1 ${cfg.cls}`}>{cfg.label}</div>;
 }
 
+/** Tema de Halloween: fantasma al entrar y "ándate feo" al rechazar. Solo decora; no cambia nada de la validación. Poner en false para quitarlo. */
+const HALLOWEEN_MODE = true;
+
 export default function ScannerPage() {
   const [mode, setMode] = useState<Mode>('qr');
   const [status, setStatus] = useState<ScanStatus>({ type: 'idle' });
@@ -503,7 +506,11 @@ export default function ScannerPage() {
               )}
               {(status.type === 'admitted' || status.type === 'shop_success') && (
                 <div className="w-full p-10 rounded-[3rem] border-8 border-neon-green bg-neon-green shadow-[0_0_100px_rgba(57,255,20,0.5)] flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200">
-                  <div className="w-24 h-24 rounded-full bg-black flex items-center justify-center"><CheckCircle className="w-16 h-16 text-neon-green" /></div>
+                  {HALLOWEEN_MODE ? (
+                    <div className="w-24 h-24 rounded-full bg-black flex items-center justify-center"><span aria-hidden="true" className="text-6xl animate-bounce">👻</span></div>
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-black flex items-center justify-center"><CheckCircle className="w-16 h-16 text-neon-green" /></div>
+                  )}
                   <h2 className="font-black uppercase tracking-tighter text-black text-6xl italic">LISTO</h2>
                   <div className="text-center">
                     <p className="text-black font-black text-2xl uppercase leading-tight">{status.name}</p>
@@ -516,6 +523,7 @@ export default function ScannerPage() {
               {(status.type === 'shop_error' || status.type === 'already_used' || status.type === 'invalid') && (
                 <div className="w-full p-10 rounded-[3rem] border-8 border-red-600 bg-red-600 shadow-[0_0_100px_rgba(220,38,38,0.5)] flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200">
                   <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center"><ShieldAlert className="w-16 h-16 text-red-600" /></div>
+                  {HALLOWEEN_MODE && <p aria-hidden="true" className="font-black uppercase tracking-widest text-white text-2xl italic text-center animate-pulse">💀 ¡Ándate feo! 💀</p>}
                   <h2 className="font-black uppercase tracking-tighter text-white text-4xl italic text-center">
                     {status.type === 'already_used' ? 'YA QUEMADO' : status.message}
                   </h2>
@@ -529,6 +537,7 @@ export default function ScannerPage() {
               {status.type === 'wrong_event' && (
                 <div className="w-full p-10 rounded-[3rem] border-8 border-orange-500 bg-orange-500 shadow-[0_0_100px_rgba(249,115,22,0.5)] flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200">
                   <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center"><XCircle className="w-16 h-16 text-orange-500" /></div>
+                  {HALLOWEEN_MODE && <p aria-hidden="true" className="font-black uppercase tracking-widest text-white text-2xl italic text-center animate-pulse">💀 ¡Ándate feo! 💀</p>}
                   <h2 className="font-black uppercase tracking-tighter text-white text-3xl italic text-center">EVENTO INCORRECTO</h2>
                   <p className="text-white/90 font-bold text-sm text-center">Esta entrada es de otro evento.</p>
                 </div>
