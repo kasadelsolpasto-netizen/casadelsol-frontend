@@ -21,7 +21,7 @@ export type LinkState =
 /**
  * ¿El enlace de este código deja comprar ahora? Es la misma regla con la que el servidor cobra:
  *  - código con límite de ventas ya alcanzado → rechaza la compra;
- *  - código con escalones y ninguno vigente → rechaza la compra;
+ *  - código con escalones y ninguno vigente (agotados, vencidos o pausados) → la compra sigue a precio normal, a nombre del promotor;
  *  - si no, aplica el descuento del escalón vigente (o el del código si no tiene escalones).
  */
 export function linkState(c: LinkCode): LinkState {
@@ -33,13 +33,7 @@ export function linkState(c: LinkCode): LinkState {
     };
   }
   if ((c.tiers?.length ?? 0) > 0) {
-    if (!c.current_tier) {
-      return {
-        ok: false,
-        reason: 'NO_TIER',
-        message: 'No tienes descuentos vigentes: quien abra este enlace pagará precio completo y la venta no quedará a tu nombre. Habla con el administrador.',
-      };
-    }
+    if (!c.current_tier) return { ok: true, discountPerc: 0 };
     return { ok: true, discountPerc: c.current_tier.discount_perc };
   }
   return { ok: true, discountPerc: c.discount_perc ?? 0 };

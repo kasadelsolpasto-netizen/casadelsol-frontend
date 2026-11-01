@@ -128,12 +128,32 @@ export default function PromoterDashboard() {
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [tierBusy, setTierBusy] = useState<string | null>(null); // variante que se está pausando/activando
+  const [tierError, setTierError] = useState('');
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
   const getToken = () => {
     const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
     return tokenRow ? tokenRow.split('=')[1] : null;
+  };
+
+  // Pausar / activar una variante de descuento. El servidor decide (solo se puede con las del propio código) y
+  // devuelve el perfil actualizado para que el escalón vigente y los mensajes se recalculen con su misma regla.
+  const toggleTier = async (t: any) => {
+    if (tierBusy) return;
+    setTierBusy(t.id);
+    setTierError('');
+    try {
+      await apiFetch(`/promoters/tiers/${t.id}/enabled`, { method: 'PATCH', body: { is_enabled: t.is_enabled === false } });
+      const lsUser = localStorage.getItem('kasa_user');
+      const userId = lsUser ? JSON.parse(lsUser).id : null;
+      if (userId) setProfile(await apiFetch(`/users/${userId}/profile`));
+    } catch (e: any) {
+      setTierError(e?.message || 'No se pudo cambiar la variante. Inténtalo de nuevo.');
+    } finally {
+      setTierBusy(null);
+    }
   };
 
   // Resumen de lo que vendió y lo que debe entregar. Si falla, el panel sigue funcionando (solo no muestra el resumen).
@@ -236,8 +256,8 @@ export default function PromoterDashboard() {
       );
       return;
     }
-    if (noTier || overTier) {
-      setErrorMsg(noTier ? 'No tienes descuentos vigentes.' : 'La cantidad supera lo que queda en tu escalón actual.');
+    if (overTier) {
+      setErrorMsg('La cantidad supera lo que queda en tu escalón actual.');
       return;
     }
     // Mismas reglas que aplica el servidor a cada entrada: así el error sale ANTES de enviar y dice qué campo es.
@@ -355,7 +375,8 @@ export default function PromoterDashboard() {
   // Con escalones se usa el vigente (lo calcula el servidor); sin escalones, el descuento del código de siempre.
   const hasTiers = (myCode?.tiers?.length ?? 0) > 0;
   const currentTier = myCode?.current_tier ?? null;
-  const activeDiscount: number | null = hasTiers ? (currentTier ? currentTier.discount_perc : null) : (myCode?.discount_perc ?? 0);
+  // Con escalones pero ninguno activo con cupo (agotados, vencidos o pausados), la venta sigue a precio normal.
+  const activeDiscount: number | null = hasTiers ? (currentTier ? currentTier.discount_perc : 0) : (myCode?.discount_perc ?? 0);
   const noTier = hasTiers && !currentTier;
   const overTier = hasTiers && currentTier != null && quantity > currentTier.remaining;
   const finalPrice = selectedTicket && activeDiscount != null ? discountedTotal(selectedTicket.price, activeDiscount, quantity) : 0;
@@ -438,16 +459,41 @@ export default function PromoterDashboard() {
                     <ChevronDown className="w-4 h-4 shrink-0 text-zinc-500 transition-transform group-open:rotate-180" />
                   </summary>
                   <div className="px-4 pb-4 space-y-2">
+                    <p className="text-[11px] text-zinc-500 font-bold">
+                      Escoge cuáles quieres vender. Se usa la primera activa que tenga cupo; las pausadas no se venden hasta que las actives.
+                    </p>
+                    {tierError && <p role="alert" className="text-xs font-bold text-red-400">{tierError}</p>}
                     {myCode.tiers.map((t: any) => {
                       const st = tierStatus(t, myCode.tiers);
                       const style =
                         st === 'current' ? 'border-neon-purple/50 bg-neon-purple/10 text-neon-purple'
                         : st === 'waiting' ? 'border-zinc-800 text-zinc-300'
+                        : st === 'paused' ? 'border-zinc-800 text-zinc-500'
                         : 'border-zinc-900 text-zinc-600 line-through';
+                      const finished = st === 'done' || st === 'expired';
+                      const enabled = t.is_enabled !== false;
                       return (
-                        <div key={t.id} className={`flex justify-between items-center text-xs font-bold rounded-xl px-3 py-2 border ${style}`}>
-                          <span>{t.discount_perc}% OFF</span>
-                          <span>{t.sold}/{t.quantity}{t.valid_until ? ` · hasta ${formatTierDate(t.valid_until)}` : ''}</span>
+                        <div key={t.id} className={`flex justify-between items-center gap-3 text-xs font-bold rounded-xl px-3 py-2 border ${style}`}>
+                          <span className="min-w-0">
+                            <span className={st === 'paused' ? 'line-through' : ''}>{t.discount_perc}% OFF</span>
+                            <span className="block text-[10px] font-bold opacity-80">
+                              {t.sold}/{t.quantity}{t.valid_until ? ` · hasta ${formatTierDate(t.valid_until)}` : ''}
+                              {st === 'current' ? ' · se está vendiendo' : st === 'paused' ? ' · pausada' : st === 'done' ? ' · agotada' : st === 'expired' ? ' · vencida' : ''}
+                            </span>
+                          </span>
+                          {!finished && (
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={enabled}
+                              aria-label={`${enabled ? 'Pausar' : 'Activar'} la variante del ${t.discount_perc}%`}
+                              disabled={tierBusy === t.id}
+                              onClick={() => toggleTier(t)}
+                              className={`shrink-0 min-h-[44px] px-4 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-colors disabled:opacity-50 ${enabled ? 'border-neon-green/60 text-neon-green bg-neon-green/10' : 'border-zinc-700 text-zinc-400 bg-zinc-900'}`}
+                            >
+                              {tierBusy === t.id ? '…' : enabled ? 'Activa' : 'Pausada'}
+                            </button>
+                          )}
                         </div>
                       );
                     })}
@@ -563,8 +609,9 @@ export default function PromoterDashboard() {
                       )}
               
                       {noTier && (
-                        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-sm font-bold text-red-400">
-                          No tienes descuentos vigentes. Habla con el administrador para que te asigne más entradas.
+                        <div className="p-4 bg-zinc-900 border border-zinc-700 rounded-xl text-sm font-bold text-zinc-300">
+                          No tienes ninguna variante de descuento activa con cupo: esta venta va a precio normal, sin descuento.
+                          {' '}Puedes activar una en «Tus descuentos».
                         </div>
                       )}
                       {overTier && currentTier && (
@@ -618,7 +665,7 @@ export default function PromoterDashboard() {
               
                       <button 
                         type="submit" 
-                        disabled={submitting || (!!selectedEvent && (!myCode || !selectedTicket)) || noTier || overTier}
+                        disabled={submitting || (!!selectedEvent && (!myCode || !selectedTicket)) || overTier}
                         className="w-full py-4 bg-neon-green hover:bg-neon-green/90 text-black text-sm font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(57,255,20,0.3)] disabled:opacity-50 flex justify-center items-center gap-2"
                       >
                         {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (isFree ? 'Generar Entradas y QRs' : 'Generar Venta y QRs')}

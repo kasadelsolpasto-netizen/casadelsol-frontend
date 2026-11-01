@@ -9,6 +9,8 @@ export interface TierRow {
   sold: number;
   discount_perc: number;
   valid_until: string | null;
+  /** false = pausada por el promotor/admin (no se vende). Si falta, está activa. */
+  is_enabled?: boolean;
 }
 
 /** Escalón vigente / siguiente tal como los calcula el servidor. */
@@ -18,6 +20,7 @@ export interface TierView {
   remaining: number;
   quantity: number;
   valid_until: string | null;
+  is_enabled?: boolean;
 }
 
 /** Fila del editor del admin (todo como texto para poder escribir libremente en los campos). */
@@ -87,16 +90,17 @@ export function validateDrafts(drafts: TierDraft[]): string | null {
   return null;
 }
 
-export type TierStatus = 'current' | 'waiting' | 'done' | 'expired';
+export type TierStatus = 'current' | 'waiting' | 'done' | 'expired' | 'paused';
 
-/** Estado de un escalón para pintarlo: vigente, en espera, agotado o vencido. */
+/** Estado de un escalón para pintarlo: vigente, en espera, agotado, vencido o pausado. */
 export function tierStatus(t: TierRow, tiers: TierRow[], now: Date = new Date()): TierStatus {
   const expired = t.valid_until != null && new Date(t.valid_until).getTime() < now.getTime();
   if (t.sold >= t.quantity) return 'done';
   if (expired) return 'expired';
+  if (t.is_enabled === false) return 'paused';
   const first = [...tiers]
     .sort((a, b) => a.position - b.position)
-    .find((x) => x.sold < x.quantity && !(x.valid_until != null && new Date(x.valid_until).getTime() < now.getTime()));
+    .find((x) => x.is_enabled !== false && x.sold < x.quantity && !(x.valid_until != null && new Date(x.valid_until).getTime() < now.getTime()));
   return first && first.id === t.id ? 'current' : 'waiting';
 }
 
@@ -105,7 +109,7 @@ const entradas = (n: number) => (n === 1 ? '1 entrada' : `${n} entradas`);
 
 /** "Te quedan 6 entradas al 20% hasta el 15 oct. Luego 10 entradas al 10%." */
 export function tierMessage(current: TierView | null | undefined, next: TierView | null | undefined): string {
-  if (!current) return 'Sin descuentos vigentes.';
+  if (!current) return 'Sin descuentos vigentes: tus ventas van a precio normal.';
   const left = current.remaining === 1 ? 'Te queda' : 'Te quedan';
   let msg = `${left} ${entradas(current.remaining)} al ${current.discount_perc}%${untilText(current.valid_until)}.`;
   if (next) msg += ` Luego ${entradas(next.remaining)} al ${next.discount_perc}%${untilText(next.valid_until)}.`;

@@ -125,6 +125,22 @@ export default function PromotersAdminPage() {
     fetchData();
   };
 
+  // Pausar / reactivar una variante de descuento (el promotor también puede hacerlo desde su perfil).
+  const toggleTierEnabled = async (tierId: string, enabled: boolean) => {
+    const token = getToken();
+    try {
+      const res = await fetch(`${API}/promoters/tiers/${tierId}/enabled`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ is_enabled: enabled })
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      alert('No se pudo cambiar la variante. Inténtalo de nuevo.');
+    }
+    fetchData();
+  };
+
   const startEdit = (c: PromoterCode) => {
     setEditingId(c.id);
     setEditData({ code: c.code, discount_perc: c.discount_perc, event_id: c.event_id || '', ticket_limit: c.ticket_limit || '' });
@@ -424,11 +440,23 @@ export default function PromotersAdminPage() {
                             const style =
                               st === 'current' ? 'border-neon-purple/60 bg-neon-purple/10 text-neon-purple'
                               : st === 'waiting' ? 'border-zinc-700 text-zinc-300'
+                              : st === 'paused' ? 'border-zinc-700 text-zinc-500'
                               : 'border-zinc-800 text-zinc-600 line-through';
-                            const tag = st === 'done' ? ' · agotado' : st === 'expired' ? ' · vencido' : '';
+                            const tag = st === 'done' ? ' · agotado' : st === 'expired' ? ' · vencido' : st === 'paused' ? ' · pausada' : '';
+                            const canToggle = st !== 'done' && st !== 'expired';
                             return (
-                              <span key={t.id} className={`text-[10px] font-bold border rounded-full px-2.5 py-1 ${style}`}>
-                                {i + 1}) {t.sold}/{t.quantity} · {t.discount_perc}%{t.valid_until ? ` · hasta ${formatTierDate(t.valid_until)}` : ''}{tag}
+                              <span key={t.id} className={`inline-flex items-center gap-1.5 text-[10px] font-bold border rounded-full pl-2.5 pr-1 py-1 ${style}`}>
+                                <span>{i + 1}) {t.sold}/{t.quantity} · {t.discount_perc}%{t.valid_until ? ` · hasta ${formatTierDate(t.valid_until)}` : ''}{tag}</span>
+                                {canToggle && (
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleTierEnabled(t.id, t.is_enabled === false)}
+                                    className="rounded-full border border-zinc-600 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-zinc-300 hover:border-neon-purple hover:text-neon-purple"
+                                    title={t.is_enabled === false ? 'Reactivar esta variante' : 'Pausar esta variante'}
+                                  >
+                                    {t.is_enabled === false ? 'Activar' : 'Pausar'}
+                                  </button>
+                                )}
                               </span>
                             );
                           })}

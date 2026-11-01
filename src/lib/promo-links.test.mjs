@@ -23,11 +23,9 @@ test('linkState: con escalones manda el vigente, no el descuento base del codigo
   assert.deepEqual(s, { ok: true, discountPerc: 20 });
 });
 
-test('linkState: con escalones y ninguno vigente, el enlace no deja comprar', () => {
+test('linkState: con escalones y ninguno vigente (agotados, vencidos o pausados) el enlace sigue vendiendo a precio normal', () => {
   const s = linkState({ discount_perc: 5, tiers: [{}], current_tier: null });
-  assert.equal(s.ok, false);
-  assert.equal(s.reason, 'NO_TIER');
-  assert.match(s.message, /descuentos vigentes/);
+  assert.deepEqual(s, { ok: true, discountPerc: 0 });
 });
 
 test('linkState: limite de ventas alcanzado bloquea (y gana sobre lo demas, como en el servidor)', () => {

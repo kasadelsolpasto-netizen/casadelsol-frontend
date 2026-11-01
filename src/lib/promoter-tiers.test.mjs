@@ -61,12 +61,31 @@ test('estado de cada escalón: vigente, en espera, agotado o vencido', () => {
   assert.deepEqual(tiers.map((t) => tierStatus(t, tiers, now)), ['done', 'expired', 'current', 'waiting']);
 });
 
+test('una variante pausada se marca "paused" y la vigente pasa a la siguiente activa', () => {
+  const tiers = [
+    row({ id: 'a', position: 1, is_enabled: false }),
+    row({ id: 'b', position: 2 }),
+    row({ id: 'c', position: 3 }),
+  ];
+  assert.deepEqual(tiers.map((t) => tierStatus(t, tiers, now)), ['paused', 'current', 'waiting']);
+});
+
+test('si TODAS las variantes están pausadas ninguna es la vigente', () => {
+  const tiers = [row({ id: 'a', position: 1, is_enabled: false }), row({ id: 'b', position: 2, is_enabled: false })];
+  assert.deepEqual(tiers.map((t) => tierStatus(t, tiers, now)), ['paused', 'paused']);
+});
+
+test('agotada o vencida gana sobre pausada (se sigue mostrando como agotada/vencida)', () => {
+  const tiers = [row({ id: 'a', position: 1, quantity: 5, sold: 5, is_enabled: false }), row({ id: 'b', position: 2, valid_until: new Date(now.getTime() - DAY).toISOString(), is_enabled: false })];
+  assert.deepEqual(tiers.map((t) => tierStatus(t, tiers, now)), ['done', 'expired']);
+});
+
 test('mensaje para el promotor: cuántas quedan, hasta cuándo y qué viene después', () => {
   const cur = { id: 'a', discount_perc: 20, remaining: 6, quantity: 10, valid_until: '2026-10-16T04:59:59.999Z' };
   const nxt = { id: 'b', discount_perc: 10, remaining: 10, quantity: 10, valid_until: null };
   assert.equal(tierMessage(cur, nxt), 'Te quedan 6 entradas al 20% hasta el 15 oct. Luego 10 entradas al 10%.');
   assert.equal(tierMessage({ ...cur, remaining: 1, valid_until: null }, null), 'Te queda 1 entrada al 20%.');
-  assert.equal(tierMessage(null, null), 'Sin descuentos vigentes.');
+  assert.equal(tierMessage(null, null), 'Sin descuentos vigentes: tus ventas van a precio normal.');
 });
 
 test('total con descuento: redondeo en centavos igual que el servidor', () => {
