@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { QrCode, CalendarPlus, Loader2, Users, ShoppingBag, DoorOpen, Newspaper } from 'lucide-react';
+import { QrCode, CalendarPlus, Loader2, Users, ShoppingBag, DoorOpen, Newspaper, Sun } from 'lucide-react';
 import { AdminGuard } from '@/components/AdminGuard';
 import { useEffect, useState } from 'react';
 
@@ -122,6 +122,17 @@ export default function AdminDashboard() {
                <div>
                   <h3 className="font-black uppercase tracking-widest text-white mb-2 group-hover:neon-text-orange transition-all">Inventario de Shop</h3>
                   <p className="text-xs text-zinc-400 font-bold max-w-xs">Crea productos, ajusta precios, gestiona categorías y controla el stock de la barra.</p>
+               </div>
+            </Link>
+
+            <Link href="/admin/ong" className="group glass-panel bg-black/60 p-8 rounded-2xl hover:border-red-600 transition-all flex flex-col items-center justify-center text-center gap-4 relative overflow-hidden border border-zinc-800">
+               <div className="absolute inset-x-0 bottom-0 h-1 bg-red-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+               <div className="w-16 h-16 rounded-full bg-red-600/10 flex items-center justify-center group-hover:bg-red-600/20 transition-all">
+                 <Sun className="w-8 h-8 text-red-600" />
+               </div>
+               <div>
+                  <h3 className="font-black uppercase tracking-widest text-white mb-2">Fundación</h3>
+                  <p className="text-xs text-zinc-400 font-bold max-w-xs">Edita todos los textos, líneas misionales, programas, gobernanza y contactos de kasadelsol.co/ong.</p>
                </div>
             </Link>
 

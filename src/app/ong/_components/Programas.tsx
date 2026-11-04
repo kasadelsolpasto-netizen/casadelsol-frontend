@@ -2,14 +2,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { Section, SectionHead } from "./Section";
-import { programas, lineas, type Programa } from "../content";
+import type { BloqueProgramas, BloqueLineas, Programa } from "../contenido";
 
-/** Devuelve el título de la línea misional a la que pertenece un proyecto. */
-function tituloLinea(id: string) {
-  return lineas.items.find((l) => l.id === id)?.titulo ?? "";
-}
-
-function Tarjeta({ programa }: { programa: Programa }) {
+function Tarjeta({
+  programa,
+  tituloLinea,
+}: {
+  programa: Programa;
+  /** Título de la línea misional a la que pertenece el proyecto. */
+  tituloLinea: string;
+}) {
   const cuerpo = (
     <>
       <div className="relative h-40 w-full shrink-0 overflow-hidden bg-[var(--ong-tint-1)]">
@@ -38,7 +40,7 @@ function Tarjeta({ programa }: { programa: Programa }) {
 
       <div className="flex flex-1 flex-col p-7">
         <p className="ong-mono text-[9px] font-black uppercase tracking-[0.2em] ong-faint">
-          {tituloLinea(programa.linea)}
+          {tituloLinea}
         </p>
         <h3 className="mt-3 text-lg font-black uppercase leading-snug tracking-wide ong-strong transition-colors group-hover:text-[var(--ong-red)]">
           {programa.nombre}
@@ -80,8 +82,17 @@ function Tarjeta({ programa }: { programa: Programa }) {
   );
 }
 
-export function Programas() {
+export function Programas({
+  datos: programas,
+  lineas,
+}: {
+  datos: BloqueProgramas;
+  lineas: BloqueLineas;
+}) {
   if (programas.items.length === 0) return null;
+
+  const tituloDeLinea = (id: string) =>
+    lineas.items.find((l) => l.id === id)?.titulo ?? "";
 
   return (
     <Section id="programas">
@@ -97,7 +108,7 @@ export function Programas() {
       />
       <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {programas.items.map((p) => (
-          <Tarjeta key={p.id} programa={p} />
+          <Tarjeta key={p.id} programa={p} tituloLinea={tituloDeLinea(p.linea)} />
         ))}
       </div>
     </Section>

@@ -1,9 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Section, SectionHead } from "./Section";
-import { aliados } from "../content";
+import type { Aliado } from "../contenido";
 
-export function Aliados() {
+export function Aliados({ datos: aliados }: { datos: Aliado[] }) {
   if (aliados.length === 0) return null;
 
   return (

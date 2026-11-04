@@ -2,9 +2,15 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Section, SectionHead } from "./Section";
 import { OngIcon } from "./icons";
-import { vinculacion, rteCalificado } from "../content";
+import type { Vinculacion as DatosVinculacion } from "../contenido";
 
-export function Vinculacion() {
+export function Vinculacion({
+  datos: vinculacion,
+  rteCalificado,
+}: {
+  datos: DatosVinculacion;
+  rteCalificado: boolean;
+}) {
   return (
     <Section id="vinculacion">
       <SectionHead

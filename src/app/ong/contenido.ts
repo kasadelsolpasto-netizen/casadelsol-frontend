@@ -12,6 +12,111 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+export type Seccion = { id: string; label: string };
+
+export type Identidad = {
+  nombre: string;
+  nombreCorto: string;
+  nit: string;
+  domicilio: string;
+  ambito: string;
+  correo: string;
+  naturaleza: string;
+  representante: { nombre: string; cargo: string };
+  vigilancia: string;
+  registro: string;
+};
+
+export type Sello = { id: string; etiqueta: string; valor: string };
+
+export type Accion = { label: string; href: string };
+
+export type Hero = {
+  antetitulo: string;
+  titular: string;
+  entrada: string;
+  sellos: Sello[];
+  acciones: { principal: Accion; secundario: Accion };
+};
+
+export type Tesis = {
+  antetitulo: string;
+  titulo: string;
+  parrafos: string[];
+  destacado: string;
+};
+
+export type BloqueLineas = {
+  antetitulo: string;
+  titulo: string;
+  lead: string;
+  items: Linea[];
+};
+
+export type Marcador = { id: string; valor: string; etiqueta: string };
+
+export type Territorio = {
+  antetitulo: string;
+  titulo: string;
+  parrafos: string[];
+  sitio: { denominacion: string; publicarUbicacion: boolean };
+  marcadores: Marcador[];
+  nota: string;
+};
+
+export type BloqueProgramas = {
+  antetitulo: string;
+  titulo: string;
+  lead: string;
+  items: Programa[];
+};
+
+export type Documento = { id: string; nombre: string; archivo: string };
+
+export type Gobernanza = {
+  antetitulo: string;
+  titulo: string;
+  lead: string;
+  garantias: Garantia[];
+  documentos: Documento[];
+};
+
+export type Vinculacion = {
+  antetitulo: string;
+  titulo: string;
+  lead: string;
+  vias: Via[];
+  beneficioTributario: string;
+};
+
+export type Red = { id: string; label: string; href: string };
+
+export type Contacto = {
+  antetitulo: string;
+  titulo: string;
+  lead: string;
+  correo: string;
+  telefono: string;
+  direccion: string;
+  redes: Red[];
+};
+
+/** Documento completo que gobierna la página y que edita el panel admin. */
+export type ContenidoOng = {
+  identidad: Identidad;
+  rteCalificado: boolean;
+  secciones: Seccion[];
+  hero: Hero;
+  tesis: Tesis;
+  lineas: BloqueLineas;
+  territorio: Territorio;
+  programas: BloqueProgramas;
+  gobernanza: Gobernanza;
+  vinculacion: Vinculacion;
+  aliados: Aliado[];
+  contacto: Contacto;
+};
+
 export type IconKey =
   | "sol"
   | "agua"
@@ -30,7 +135,7 @@ export type IconKey =
    IDENTIDAD INSTITUCIONAL  —  Arts. 1, 2, 3, 27 y 28
    ════════════════════════════════════════════════════════════════════════ */
 
-export const identidad = {
+const identidad: Identidad = {
   nombre: "Fundación Kasa del Sol",
   nombreCorto: "Kasa del Sol",
   nit: "902.014.359-1",
@@ -56,13 +161,13 @@ export const identidad = {
  * las donaciones dan derecho al descuento del art. 257 E.T.
  * Cambiar a true únicamente con el acto de calificación en la mano.
  */
-export const rteCalificado = false;
+const rteCalificado = false;
 
 /* ════════════════════════════════════════════════════════════════════════
    NAVEGACIÓN
    ════════════════════════════════════════════════════════════════════════ */
 
-export const secciones = [
+const secciones: Seccion[] = [
   { id: "tesis", label: "Planteamiento" },
   { id: "lineas", label: "Líneas misionales" },
   { id: "territorio", label: "Territorio" },
@@ -70,13 +175,13 @@ export const secciones = [
   { id: "gobernanza", label: "Gobernanza" },
   { id: "vinculacion", label: "Vinculación" },
   { id: "contacto", label: "Contacto" },
-] as const;
+];
 
 /* ════════════════════════════════════════════════════════════════════════
    HERO
    ════════════════════════════════════════════════════════════════════════ */
 
-export const hero = {
+const hero: Hero = {
   antetitulo: "Entidad sin ánimo de lucro · Pasto, Nariño",
   titular: "Sol y cuenca",
   /** Tesis en una frase. Es lo primero que lee un inversor. */
@@ -97,7 +202,7 @@ export const hero = {
    PLANTEAMIENTO  —  la tesis que unifica las líneas
    ════════════════════════════════════════════════════════════════════════ */
 
-export const tesis = {
+const tesis: Tesis = {
   antetitulo: "Planteamiento",
   titulo: "Una sola cadena",
   parrafos: [
@@ -125,7 +230,7 @@ export type Linea = {
   fundamento: { articulo: string; norma: string };
 };
 
-export const lineas: { antetitulo: string; titulo: string; lead: string; items: Linea[] } = {
+const lineas: BloqueLineas = {
   antetitulo: "Objeto social",
   titulo: "Siete líneas, un objeto",
   lead: "El objeto de la Fundación es exclusivamente el desarrollo de actividades meritorias de interés general y de libre acceso a la comunidad. Cada línea responde a un numeral del artículo 359 del Estatuto Tributario.",
@@ -235,7 +340,7 @@ export const lineas: { antetitulo: string; titulo: string; lead: string; items: 
    TERRITORIO  —  alta cuenca amazónica
    ════════════════════════════════════════════════════════════════════════ */
 
-export const territorio = {
+const territorio: Territorio = {
   antetitulo: "Territorio",
   titulo: "Donde nace el Amazonas",
   parrafos: [
@@ -279,7 +384,7 @@ export type Programa = {
   enlace?: string;
 };
 
-export const programas: { antetitulo: string; titulo: string; lead: string; items: Programa[] } = {
+const programas: BloqueProgramas = {
   antetitulo: "Portafolio",
   titulo: "Proyectos abiertos a inversión y cooperación",
   lead: "Cada proyecto indica su estado real de avance y lo que requiere para ejecutarse. No presentamos como ejecutado lo que está en formulación.",
@@ -325,7 +430,7 @@ export type Garantia = {
   fundamento: string;
 };
 
-export const gobernanza = {
+const gobernanza: Gobernanza = {
   antetitulo: "Gobernanza",
   titulo: "Cómo respondemos por los recursos",
   lead: "La Fundación opera bajo reglas estatutarias de destinación, control y transparencia que pueden verificarse en su texto inscrito.",
@@ -386,7 +491,7 @@ export const gobernanza = {
         "El remanente se transfiere obligatoriamente a entidades sin ánimo de lucro del Régimen Tributario Especial o a una entidad de derecho público con objeto afín, preferentemente en Nariño.",
       fundamento: "Art. 24",
     },
-  ] as Garantia[],
+  ],
   /** Documentos descargables. Se publican cuando el archivo esté en /public. */
   documentos: [
     { id: "estatutos", nombre: "Estatutos vigentes (Acta No. 3 de 2026)", archivo: "" },
@@ -410,7 +515,7 @@ export type Via = {
   accion?: { label: string; href: string };
 };
 
-export const vinculacion = {
+const vinculacion: Vinculacion = {
   antetitulo: "Vinculación",
   titulo: "Formas de trabajar con nosotros",
   lead: "La Fundación está facultada para suscribir convenios, contratos y acuerdos de cooperación con entidades públicas, privadas, nacionales y extranjeras.",
@@ -452,7 +557,7 @@ export const vinculacion = {
       contrapartida: "Acceso a territorio, datos de campo y coautoría",
       accion: { label: "Proponer colaboración", href: "#contacto" },
     },
-  ] as Via[],
+  ],
   /**
    * Texto que solo aparece cuando `rteCalificado` sea true. No se publica
    * antes: afirmar el beneficio tributario sin la calificación en firme
@@ -468,7 +573,7 @@ export const vinculacion = {
 
 export type Aliado = { id: string; nombre: string; logo?: string; enlace?: string };
 
-export const aliados: Aliado[] = [
+const aliados: Aliado[] = [
   // PENDIENTE: { id: "a1", nombre: "Nombre", logo: "/ong/aliados/logo.png" },
 ];
 
@@ -476,12 +581,37 @@ export const aliados: Aliado[] = [
    CONTACTO
    ════════════════════════════════════════════════════════════════════════ */
 
-export const contacto = {
+const contacto: Contacto = {
   antetitulo: "Contacto institucional",
   titulo: "Hablemos",
   lead: "Para propuestas de cooperación, convenios o solicitudes de información institucional.",
-  correo: identidad.correo,
+  correo: "ongkasadelsol@gmail.com",
   telefono: "", // PENDIENTE: teléfono institucional en formato internacional
   direccion: "", // PENDIENTE: dirección de notificación judicial, si se publica
-  redes: [] as { id: string; label: string; href: string }[],
+  redes: [],
+};
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   DOCUMENTO BASE
+   ────────────────────────────────────────────────────────────────────────
+   Es el contenido de fábrica: lo que se publica mientras el panel admin no
+   haya guardado una versión propia, y la base sobre la que se fusiona lo
+   guardado (así los campos nuevos que se agreguen en código aparecen aunque
+   el documento almacenado sea anterior).
+   ════════════════════════════════════════════════════════════════════════ */
+
+export const CONTENIDO_BASE: ContenidoOng = {
+  identidad,
+  rteCalificado,
+  secciones,
+  hero,
+  tesis,
+  lineas,
+  territorio,
+  programas,
+  gobernanza,
+  vinculacion,
+  aliados,
+  contacto,
 };

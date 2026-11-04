@@ -1,8 +1,8 @@
 import { Section, SectionHead } from "./Section";
 import { OngIcon } from "./icons";
-import { lineas } from "../content";
+import type { BloqueLineas } from "../contenido";
 
-export function Lineas() {
+export function Lineas({ datos: lineas }: { datos: BloqueLineas }) {
   return (
     <Section id="lineas">
       <SectionHead

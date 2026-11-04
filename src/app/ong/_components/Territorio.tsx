@@ -1,7 +1,7 @@
 import { Section, SectionHead } from "./Section";
-import { territorio } from "../content";
+import type { Territorio as DatosTerritorio } from "../contenido";
 
-export function Territorio() {
+export function Territorio({ datos: territorio }: { datos: DatosTerritorio }) {
   const { sitio } = territorio;
 
   return (

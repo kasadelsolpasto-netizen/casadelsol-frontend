@@ -1,7 +1,7 @@
 import { Section, SectionHead } from "./Section";
-import { tesis } from "../content";
+import type { Tesis as DatosTesis } from "../contenido";
 
-export function Tesis() {
+export function Tesis({ datos: tesis }: { datos: DatosTesis }) {
   return (
     <Section id="tesis">
       <SectionHead eyebrow={tesis.antetitulo} title={tesis.titulo} />

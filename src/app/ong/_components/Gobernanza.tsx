@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { FileText, Download } from "lucide-react";
 import { Section, SectionHead } from "./Section";
-import { gobernanza, identidad } from "../content";
+import type { Gobernanza as DatosGobernanza, Identidad } from "../contenido";
 
-export function Gobernanza() {
+export function Gobernanza({
+  datos: gobernanza,
+  identidad,
+}: {
+  datos: DatosGobernanza;
+  identidad: Identidad;
+}) {
   const documentos = gobernanza.documentos.filter((d) => d.archivo);
 
   return (

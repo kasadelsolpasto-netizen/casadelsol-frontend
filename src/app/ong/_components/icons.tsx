@@ -13,7 +13,7 @@ import {
   Globe,
   type LucideIcon,
 } from "lucide-react";
-import type { IconKey } from "../content";
+import type { IconKey } from "../contenido";
 
 /** Mapa único de claves de contenido a iconos; content.ts no importa JSX. */
 export const ICONS: Record<IconKey, LucideIcon> = {

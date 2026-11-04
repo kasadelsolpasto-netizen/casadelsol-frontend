@@ -1,9 +1,17 @@
 import Link from "next/link";
 import { ArrowRight, MapPin } from "lucide-react";
 import { Emblema } from "./Emblema";
-import { identidad, hero, secciones } from "../content";
+import type { Identidad, Hero as DatosHero, Seccion } from "../contenido";
 
-export function Hero() {
+export function Hero({
+  identidad,
+  hero,
+  secciones,
+}: {
+  identidad: Identidad;
+  hero: DatosHero;
+  secciones: Seccion[];
+}) {
   return (
     <header className="relative overflow-hidden border-b ong-hair">
       <div className="ong-horizon" aria-hidden="true" />

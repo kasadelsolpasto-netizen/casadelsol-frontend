@@ -2,9 +2,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { Mail, Phone, MapPin, ArrowUpRight } from "lucide-react";
 import { Section, SectionHead } from "./Section";
-import { contacto, identidad } from "../content";
+import type { Contacto as DatosContacto, Identidad } from "../contenido";
 
-export function Contacto() {
+export function Contacto({
+  datos: contacto,
+  identidad,
+}: {
+  datos: DatosContacto;
+  identidad: Identidad;
+}) {
   return (
     <div className="relative border-t ong-hair">
       <div className="ong-horizon opacity-70" aria-hidden="true" />
