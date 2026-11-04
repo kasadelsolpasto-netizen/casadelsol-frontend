@@ -388,35 +388,11 @@ const programas: BloqueProgramas = {
   antetitulo: "Portafolio",
   titulo: "Proyectos abiertos a inversión y cooperación",
   lead: "Cada proyecto indica su estado real de avance y lo que requiere para ejecutarse. No presentamos como ejecutado lo que está en formulación.",
-  items: [
-    {
-      id: "bioplastico",
-      nombre: "Laboratorio de bioplástico de biomasa local",
-      resumen:
-        "PENDIENTE: materia prima seleccionada, ruta técnica, aliado científico y escala proyectada del piloto.",
-      estado: "En formulación",
-      linea: "productivas",
-      requerimiento: "PENDIENTE: monto, contrapartida técnica y plazo",
-    },
-    {
-      id: "cuenca",
-      nombre: "Conservación y restauración de la alta cuenca",
-      resumen:
-        "PENDIENTE: alcance del predio, metas de restauración, vivero y esquema de monitoreo.",
-      estado: "En formulación",
-      linea: "ambiente",
-      requerimiento: "PENDIENTE",
-    },
-    {
-      id: "veedurias",
-      nombre: "Red de veedurías por el agua",
-      resumen:
-        "PENDIENTE: alcance territorial, número de veedurías proyectadas y contratos u objetos de seguimiento.",
-      estado: "En formulación",
-      linea: "control-social",
-      requerimiento: "PENDIENTE",
-    },
-  ],
+  /**
+   * Vacío a propósito: mientras no haya proyectos reales que presentar, la
+   * sección no se dibuja. Se cargan desde /admin/ong, y aparecen solas.
+   */
+  items: [],
 };
 
 /* ════════════════════════════════════════════════════════════════════════

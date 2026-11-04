@@ -2,6 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Mail, Phone, MapPin, ArrowUpRight } from "lucide-react";
 import { Section, SectionHead } from "./Section";
+import { Revelar } from "./Fluido";
+import { Ondas } from "./Ondas";
 import type { Contacto as DatosContacto, Identidad } from "../contenido";
 
 export function Contacto({
@@ -13,10 +15,10 @@ export function Contacto({
 }) {
   return (
     <div className="relative border-t ong-hair">
-      <div className="ong-horizon opacity-70" aria-hidden="true" />
-      <div className="ong-contour opacity-50" aria-hidden="true" />
+      <div className="ong-crepusculo" aria-hidden="true" />
 
       <Section id="contacto" className="relative">
+        <Revelar>
         <div className="grid gap-14 lg:grid-cols-2 lg:gap-20">
           <SectionHead
             eyebrow={contacto.antetitulo}
@@ -98,7 +100,14 @@ export function Contacto({
             </Link>
           </div>
         </footer>
+        </Revelar>
       </Section>
+
+      {/* La página termina en el agua */}
+      <Ondas
+        className="relative z-0 -mt-10 opacity-70"
+        color="var(--ong-tint-2)"
+      />
     </div>
   );
 }

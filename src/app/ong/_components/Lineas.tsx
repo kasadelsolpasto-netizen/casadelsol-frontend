@@ -1,10 +1,12 @@
 import { Section, SectionHead } from "./Section";
 import { OngIcon } from "./icons";
+import { Revelar } from "./Fluido";
 import type { BloqueLineas } from "../contenido";
 
 export function Lineas({ datos: lineas }: { datos: BloqueLineas }) {
   return (
     <Section id="lineas">
+      <Revelar>
       <SectionHead
         eyebrow={lineas.antetitulo}
         title={
@@ -15,6 +17,7 @@ export function Lineas({ datos: lineas }: { datos: BloqueLineas }) {
         }
         lead={lineas.lead}
       />
+      </Revelar>
 
       <div className="mt-14 grid gap-6 md:grid-cols-2">
         {lineas.items.map((linea, i) => {
@@ -24,11 +27,13 @@ export function Lineas({ datos: lineas }: { datos: BloqueLineas }) {
             lineas.items.length % 2 === 1 && i === lineas.items.length - 1;
 
           return (
-          <article
+          <Revelar
             key={linea.id}
-            className={`ong-panel ong-panel-lift group flex flex-col rounded-2xl p-8 ${
-              ancha ? "md:col-span-2" : ""
-            }`}
+            retraso={(i % 2) * 110}
+            className={ancha ? "md:col-span-2" : ""}
+          >
+          <article
+            className="ong-panel ong-panel-lift ong-aro group flex h-full flex-col rounded-2xl p-8"
           >
             <div className="flex items-start justify-between gap-4">
               <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--ong-tint-3)] text-[var(--ong-red)]">
@@ -77,6 +82,7 @@ export function Lineas({ datos: lineas }: { datos: BloqueLineas }) {
               </span>
             </footer>
           </article>
+          </Revelar>
           );
         })}
       </div>

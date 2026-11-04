@@ -232,3 +232,381 @@
     animation: none;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ATARDECER SOBRE EL AGUA
+   ───────────────────────────────────────────────────────────────────────────
+   El sol no se posa sobre la página: se pone. Baja hacia una línea de
+   horizonte, se disuelve en ella y vuelve a aparecer abajo convertido en
+   reflejo, roto por el oleaje. Todo el movimiento de la página obedece a esa
+   misma física: lento, continuo, sin rebotes.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ong-scope {
+  scroll-behavior: smooth;
+}
+
+/* ── Cielo ──────────────────────────────────────────────────────────────── */
+
+.ong-cielo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      62% 52% at 72% 22%,
+      rgba(178, 32, 26, 0.22) 0%,
+      rgba(208, 53, 44, 0.12) 34%,
+      rgba(220, 154, 148, 0.07) 56%,
+      transparent 76%
+    ),
+    linear-gradient(
+      to bottom,
+      #ffffff 0%,
+      #ffffff 30%,
+      #fff6f5 50%,
+      #fde9e6 70%,
+      #f8d7d2 88%,
+      #f4cac4 100%
+    );
+}
+
+/* Luz que respira, muy lenta */
+.ong-bruma {
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  background: radial-gradient(
+    42% 42% at 70% 28%,
+    rgba(255, 138, 120, 0.3) 0%,
+    transparent 68%
+  );
+  filter: blur(42px);
+  animation: ong-respirar 14s ease-in-out infinite;
+}
+
+@keyframes ong-respirar {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+/* ── Sol ────────────────────────────────────────────────────────────────── */
+
+/* Halo detrás del disco */
+.ong-bloom {
+  position: absolute;
+  inset: -38%;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(255, 108, 86, 0.42) 0%,
+    rgba(214, 60, 44, 0.2) 38%,
+    transparent 70%
+  );
+  filter: blur(26px);
+  animation: ong-respirar 11s ease-in-out infinite;
+}
+
+/* El disco se deshace hacia abajo, como el sol al tocar el mar */
+.ong-sol-disuelto {
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 54%,
+    rgba(0, 0, 0, 0.55) 78%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 54%,
+    rgba(0, 0, 0, 0.55) 78%,
+    transparent 100%
+  );
+}
+
+/* ── Horizonte ──────────────────────────────────────────────────────────── */
+
+.ong-horizonte {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(178, 32, 26, 0.35) 28%,
+    rgba(255, 138, 120, 0.7) 50%,
+    rgba(178, 32, 26, 0.35) 72%,
+    transparent 100%
+  );
+}
+
+/* ── Reflejo ────────────────────────────────────────────────────────────── */
+
+/* El sol invertido, difuminado y partido en bandas por el oleaje */
+.ong-reflejo {
+  transform: scaleY(-1);
+  filter: blur(2.4px) saturate(1.15);
+  opacity: 0.52;
+  mask-image: repeating-linear-gradient(
+      to top,
+      #000 0px,
+      #000 3px,
+      rgba(0, 0, 0, 0.25) 4px,
+      rgba(0, 0, 0, 0.25) 7px
+    ),
+    linear-gradient(to top, transparent 0%, #000 72%);
+  -webkit-mask-image: repeating-linear-gradient(
+      to top,
+      #000 0px,
+      #000 3px,
+      rgba(0, 0, 0, 0.25) 4px,
+      rgba(0, 0, 0, 0.25) 7px
+    ),
+    linear-gradient(to top, transparent 0%, #000 72%);
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
+  animation: ong-ondular 9s ease-in-out infinite;
+}
+
+@keyframes ong-ondular {
+  0%,
+  100% {
+    transform: scaleY(-1) scaleX(1);
+  }
+  50% {
+    transform: scaleY(-1) scaleX(1.022);
+  }
+}
+
+/* Brillos que recorren la superficie */
+.ong-destellos {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 9px,
+    rgba(255, 255, 255, 0.55) 9px,
+    rgba(255, 255, 255, 0.55) 10px
+  );
+  mask-image: radial-gradient(60% 70% at 50% 40%, #000 0%, transparent 85%);
+  -webkit-mask-image: radial-gradient(
+    60% 70% at 50% 40%,
+    #000 0%,
+    transparent 85%
+  );
+  animation: ong-deriva-v 7s linear infinite;
+}
+
+@keyframes ong-deriva-v {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 10px;
+  }
+}
+
+/* ── Oleaje ─────────────────────────────────────────────────────────────── */
+
+.ong-ola {
+  display: block;
+  width: 200%;
+  animation: ong-deriva-h linear infinite;
+}
+
+@keyframes ong-deriva-h {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROFUNDIDAD
+   ───────────────────────────────────────────────────────────────────────────
+   Un tramo de la página entra bajo el agua. Al redefinir aquí los mismos
+   tokens, todas las clases semánticas (ong-strong, ong-muted, ong-panel…)
+   se invierten solas: no hay una segunda hoja de estilos para el modo oscuro.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ong-profundo {
+  --ong-red: #ff6f60;
+  --ong-red-deep: #d94a3c;
+  --ong-red-bright: #ff9c90;
+  --ong-cuenca: #ff8f85;
+
+  --ong-tint-1: rgba(255, 255, 255, 0.035);
+  --ong-tint-2: rgba(255, 255, 255, 0.07);
+  --ong-tint-3: rgba(255, 140, 128, 0.3);
+
+  --ong-paper: #140405;
+  --ong-paper-warm: #1b0708;
+
+  --ong-ink: #fdeceb;
+  --ong-muted: #e6bcb7;
+  --ong-faint: #bf938e;
+  --ong-hair: rgba(255, 255, 255, 0.11);
+
+  background-color: var(--ong-paper);
+  color: var(--ong-ink);
+}
+
+/* Luz filtrándose desde la superficie */
+.ong-caustica {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      90% 55% at 50% -10%,
+      rgba(255, 111, 96, 0.26) 0%,
+      rgba(178, 32, 26, 0.12) 38%,
+      transparent 72%
+    ),
+    repeating-radial-gradient(
+      circle at 50% -30%,
+      transparent 0px,
+      transparent 54px,
+      rgba(255, 143, 133, 0.07) 54px,
+      rgba(255, 143, 133, 0.07) 56px
+    );
+}
+
+.ong-profundo .ong-panel:hover {
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 24px 60px -34px rgba(255, 111, 96, 0.6);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   APARICIÓN AL DESPLAZAR
+   ───────────────────────────────────────────────────────────────────────────
+   Entrada lenta, sin rebote: la curva imita algo que emerge del agua.
+   El estado oculto lo aplica el navegador solo después de montar, de modo que
+   sin JavaScript el contenido se ve igual.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ong-revelar {
+  transition:
+    opacity 1.1s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 1.1s cubic-bezier(0.22, 0.61, 0.36, 1),
+    filter 1.1s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.ong-sumergido {
+  opacity: 0;
+  transform: translateY(34px);
+  filter: blur(7px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BORDE VIVO  —  rescatado de la primera propuesta
+   ───────────────────────────────────────────────────────────────────────────
+   Un anillo cónico que gira detrás de la tarjeta y asoma en el borde al pasar
+   el cursor. Da intensidad sin ensuciar la lectura.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ong-aro {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Se anima el ángulo del degradado, no la geometría: rotar la caja agrandaba
+   su rectángulo envolvente y empujaba el ancho del documento. Donde @property
+   no exista, el aro simplemente no gira. */
+@property --ong-giro {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.ong-aro::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--ong-giro),
+    transparent 56%,
+    var(--ong-red) 74%,
+    var(--ong-cuenca) 87%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  animation: ong-girar 7s linear infinite;
+  mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  mask-clip: content-box, border-box;
+  -webkit-mask-clip: content-box, border-box;
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+}
+
+.ong-aro:hover::before {
+  opacity: 1;
+}
+
+@keyframes ong-girar {
+  to {
+    --ong-giro: 360deg;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOVIMIENTO REDUCIDO
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .ong-scope {
+    scroll-behavior: auto;
+  }
+  .ong-bruma,
+  .ong-bloom,
+  .ong-reflejo,
+  .ong-destellos,
+  .ong-ola,
+  .ong-aro::before {
+    animation: none;
+  }
+  .ong-revelar {
+    transition: none;
+  }
+  .ong-sumergido {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+
+/* ── Crepúsculo del pie ─────────────────────────────────────────────────── */
+
+.ong-crepusculo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    80% 70% at 50% 118%,
+    rgba(178, 32, 26, 0.16) 0%,
+    rgba(220, 154, 148, 0.1) 40%,
+    transparent 74%
+  );
+}

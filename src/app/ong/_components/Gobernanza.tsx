@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FileText, Download } from "lucide-react";
 import { Section, SectionHead } from "./Section";
+import { Revelar } from "./Fluido";
 import type { Gobernanza as DatosGobernanza, Identidad } from "../contenido";
 
 export function Gobernanza({
@@ -17,6 +18,7 @@ export function Gobernanza({
       <div className="ong-horizon opacity-60" aria-hidden="true" />
 
       <Section id="gobernanza" className="relative">
+        <Revelar>
         <SectionHead
           eyebrow={gobernanza.antetitulo}
           title={
@@ -105,6 +107,7 @@ export function Gobernanza({
             )}
           </div>
         </div>
+        </Revelar>
       </Section>
     </div>
   );
