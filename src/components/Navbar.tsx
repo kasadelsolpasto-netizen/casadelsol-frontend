@@ -161,7 +161,7 @@ export function Navbar() {
                    )}
 
                    {/* Opción Promotor */}
-                   {userProfile?.promoter_codes?.length > 0 && (
+                   {(userProfile?.promoter_codes?.length ?? 0) > 0 && (
                      <Link href="/profile/promoter" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item border-t border-zinc-900">
                         <DollarSign className="w-4 h-4 text-neon-green group-hover/item:scale-110 transition-transform" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Panel de Promotor</span>

@@ -485,7 +485,7 @@ export default function CommunityDashboard() {
 
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-                    Segmentos Requeridos <Info className="w-3 h-3 text-zinc-700" title="Solo los usuarios con estos tags verán esta promo" />
+                    Segmentos Requeridos <span title="Solo los usuarios con estos tags verán esta promo"><Info className="w-3 h-3 text-zinc-700" /></span>
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {Object.keys(TAG_INFO).map(tag => (
