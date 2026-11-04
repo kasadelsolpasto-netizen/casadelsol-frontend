@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, Loader2, XCircle, AlertTriangle } from 'lucide-react';
 
-type ViewState = 'checking' | 'approved' | 'rejected' | 'review' | 'timeout' | 'auth' | 'error';
+type ViewState = 'checking' | 'approved' | 'rejected' | 'review' | 'timeout' | 'abandoned' | 'auth' | 'error';
 
 const MAX_ATTEMPTS = 45; // ~3 min consultando cada 4 s
 const POLL_MS = 4000;
@@ -28,6 +28,9 @@ function BoldResult() {
   const params = useSearchParams();
   // Bold agrega estos parámetros a la URL de redirección
   const orderRef = params.get('bold-order-id') || '';
+  // Lo agrega la URL de abandono (originUrl) cuando el comprador cierra o cancela la pasarela:
+  // ahí no hay pago que esperar, así que se consulta una sola vez y se ofrece reintentar.
+  const abandoned = params.get('bold-abandoned') === '1';
 
   const [view, setView] = useState<ViewState>('checking');
   const [kind, setKind] = useState<'ticket' | 'shop' | null>(null);
@@ -75,8 +78,8 @@ function BoldResult() {
       }
 
       attempts.current += 1;
-      if (attempts.current >= MAX_ATTEMPTS) {
-        if (!cancelled) setView('timeout');
+      if (attempts.current >= (abandoned ? 1 : MAX_ATTEMPTS)) {
+        if (!cancelled) setView(abandoned ? 'abandoned' : 'timeout');
         return;
       }
       timer = setTimeout(tick, POLL_MS);
@@ -87,7 +90,7 @@ function BoldResult() {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [orderRef]);
+  }, [orderRef, abandoned]);
 
   const profileHref = (() => {
     const id = typeof document !== 'undefined' ? userIdFromToken(getToken()) : null;
@@ -132,6 +135,23 @@ function BoldResult() {
             Bold no aprobó el pago. No se te cobró nada. Puedes intentarlo de nuevo.
           </p>
           <Link href={kind === 'shop' ? '/shop' : '/events'} className="border border-zinc-600 px-8 py-3 rounded font-black uppercase tracking-widest text-sm">
+            Intentar de nuevo
+          </Link>
+        </>
+      )}
+
+      {view === 'abandoned' && (
+        <>
+          <AlertTriangle className="w-16 h-16 text-yellow-500 mb-6" />
+          <h1 className="text-2xl font-black uppercase tracking-widest mb-3">No completaste el pago</h1>
+          <p className="text-zinc-400 text-sm max-w-md mb-8">
+            Cerraste la pasarela antes de terminar, así que no se te cobró nada. Tu{' '}
+            {kind === 'shop' ? 'pedido' : 'selección'} sigue disponible: puedes intentarlo de nuevo.
+          </p>
+          <Link
+            href={kind === 'shop' ? '/shop' : '/events'}
+            className="bg-neon-purple text-white px-8 py-3 rounded font-black uppercase tracking-widest text-sm"
+          >
             Intentar de nuevo
           </Link>
         </>

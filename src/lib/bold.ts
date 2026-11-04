@@ -7,6 +7,19 @@
 
 const BOLD_SCRIPT_SRC = 'https://checkout.bold.co/library/boldPaymentButton.js';
 
+export interface BoldCustomerData {
+  email?: string;
+  fullName?: string;
+  phone?: string;
+  dialCode?: string;
+  documentNumber?: string;
+  documentType?: string;
+}
+
+/**
+ * Lo que devuelve el backend en `bold`. Todo viene ya armado y saneado en el servidor:
+ * aquí no se calcula ni se completa nada, solo se traslada a BoldCheckout.
+ */
 export interface BoldCheckoutData {
   apiKey: string;
   orderId: string;
@@ -14,11 +27,18 @@ export interface BoldCheckoutData {
   currency: string;
   integritySignature: string;
   description?: string;
+  /** Nanosegundos de época: pasado ese momento Bold ya no deja pagar. */
+  expirationDate?: string;
+  /** Campos del comercio para conciliar; el comprador no los ve. */
+  extraData1?: string;
+  extraData2?: string;
+  customerData?: BoldCustomerData;
 }
 
 export interface OpenBoldOptions extends BoldCheckoutData {
   redirectionUrl: string;
-  customerData?: { email?: string; fullName?: string };
+  /** A dónde vuelve el comprador si abandona o cancela. Por defecto, la página de resultado. */
+  originUrl?: string;
 }
 
 function loadBoldScript(): Promise<void> {
@@ -49,6 +69,16 @@ function loadBoldScript(): Promise<void> {
   });
 }
 
+/**
+ * A dónde vuelve el comprador que abandona el pago. Lleva la referencia y una marca para que
+ * la página de resultado muestre «pago no completado» de una vez, en vez de quedarse
+ * consultando un pago que nunca ocurrió.
+ */
+export function abandonUrl(redirectionUrl: string, orderId: string): string {
+  const sep = redirectionUrl.includes('?') ? '&' : '?';
+  return `${redirectionUrl}${sep}bold-order-id=${encodeURIComponent(orderId)}&bold-abandoned=1`;
+}
+
 export async function openBoldCheckout(opts: OpenBoldOptions): Promise<void> {
   await loadBoldScript();
 
@@ -59,14 +89,18 @@ export async function openBoldCheckout(opts: OpenBoldOptions): Promise<void> {
     apiKey: opts.apiKey,
     integritySignature: opts.integritySignature,
     redirectionUrl: opts.redirectionUrl,
+    originUrl: opts.originUrl || abandonUrl(opts.redirectionUrl, opts.orderId),
     renderMode: 'embedded',
   };
   if (opts.description) config.description = opts.description;
+  if (opts.expirationDate) config.expirationDate = opts.expirationDate;
+  if (opts.extraData1) config.extraData1 = opts.extraData1;
+  if (opts.extraData2) config.extraData2 = opts.extraData2;
 
-  const customer: Record<string, string> = {};
-  if (opts.customerData?.email) customer.email = opts.customerData.email;
-  if (opts.customerData?.fullName) customer.fullName = opts.customerData.fullName;
-  if (Object.keys(customer).length > 0) config.customerData = JSON.stringify(customer);
+  // Bold espera customerData como JSON en texto, no como objeto.
+  if (opts.customerData && Object.keys(opts.customerData).length > 0) {
+    config.customerData = JSON.stringify(opts.customerData);
+  }
 
   const checkout = new (window as any).BoldCheckout(config);
   checkout.open();
