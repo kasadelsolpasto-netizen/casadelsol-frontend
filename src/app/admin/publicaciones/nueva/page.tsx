@@ -10,6 +10,7 @@ import {
 import { AdminGuard } from '@/components/AdminGuard';
 import dynamic from 'next/dynamic';
 import SeoPanel from '@/components/SeoPanel';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 
 // Cargamos el editor solo en cliente (Tiptap no soporta SSR)
 const RichEditor = dynamic(() => import('@/components/RichEditor'), { ssr: false, loading: () => (
@@ -314,7 +315,7 @@ export default function NewPostPage() {
               {form.content ? (
                 <div
                   className="post-content text-sm line-clamp-[8] overflow-hidden"
-                  dangerouslySetInnerHTML={{ __html: form.content }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(form.content) }}
                 />
               ) : (
                 <p className="text-zinc-600 text-sm">El contenido aparecerá aquí...</p>

@@ -12,6 +12,7 @@ import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { discountedTotal } from '@/lib/promoter-tiers';
 import { usePromoDiscount } from '@/lib/use-promo-discount';
 import { sortStages } from '@/lib/sale-stage';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 
 export default function EventDetailClient({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -388,7 +389,7 @@ export default function EventDetailClient({ params }: { params: { id: string } }
             <div className="w-full overflow-hidden">
               <div 
                 className="post-content text-zinc-400 leading-relaxed break-words" 
-                dangerouslySetInnerHTML={{ __html: event.description || '' }} 
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(event.description) }} 
               />
             </div>
           </section>

@@ -3,6 +3,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import EventDetailClient from './EventDetailClient';
+import { toJsonLd } from '@/lib/sanitize-html';
 
 const API      = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
 const SITE_URL = 'https://kasadelsol.co';
@@ -139,7 +140,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
       {/* JSON-LD inyectado en el <head> — activa Event Rich Results en Google */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: toJsonLd(jsonLd) }}
       />
 
       {/* Toda la interactividad (checkout, wizard, etc.) en el client component */}

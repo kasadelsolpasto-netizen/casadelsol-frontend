@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Calendar, Megaphone, FileText, MessageSquare, Music } from 'lucide-react';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 
 const TYPE_META: Record<string, { label: string; Icon: any; tag: string }> = {
   ANNOUNCEMENT: { label: 'Anuncio',    Icon: Megaphone,     tag: 'bg-red-900/30 text-red-400 border-red-900/50' },
@@ -115,7 +116,7 @@ export default function PostDetailClient({ post }: { post: any }) {
         </h1>
 
         {/* Contenido HTML enriquecido */}
-        <div className="post-content" dangerouslySetInnerHTML={{ __html: post.content }} />
+        <div className="post-content" dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }} />
 
         {/* Galería */}
         {post.media_urls?.length > 0 && (

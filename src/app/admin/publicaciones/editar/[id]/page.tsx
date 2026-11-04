@@ -7,6 +7,7 @@ import { ArrowLeft, Loader2, Upload, Image as ImageIcon, X, Pin, Eye, EyeOff, Tr
 import { AdminGuard } from '@/components/AdminGuard';
 import dynamic from 'next/dynamic';
 import SeoPanel from '@/components/SeoPanel';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 
 const RichEditor = dynamic(() => import('@/components/RichEditor'), { ssr: false, loading: () => (
   <div className="rounded-2xl border border-zinc-800 bg-black h-64 flex items-center justify-center">
@@ -252,7 +253,7 @@ export default function EditPostPage() {
             <div className="p-6">
               <h2 className="text-xl font-black uppercase text-white mb-3 leading-tight">{form.title || 'Título...'}</h2>
               {form.content ? (
-                <div className="post-content text-sm line-clamp-[6] overflow-hidden" dangerouslySetInnerHTML={{ __html: form.content }} />
+                <div className="post-content text-sm line-clamp-[6] overflow-hidden" dangerouslySetInnerHTML={{ __html: sanitizeHtml(form.content) }} />
               ) : (
                 <p className="text-zinc-600 text-sm">Contenido...</p>
               )}

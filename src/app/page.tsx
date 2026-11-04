@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { ArrowRight, Calendar, MapPin, Tag } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 
 const TYPE_META: Record<string, { label: string; tag: string }> = {
   ANNOUNCEMENT: { label: 'Anuncio',  tag: 'bg-red-900/30 text-red-400 border-red-900/40' },
@@ -41,7 +42,7 @@ export default async function Home() {
         <div className="mb-16">
           <h1 
             className="text-4xl md:text-6xl font-black uppercase tracking-widest text-white mb-4"
-            dangerouslySetInnerHTML={{ __html: brandConfig.homeTitle || defaultTitle }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(brandConfig.homeTitle || defaultTitle) }}
           />
           <p className="text-lg text-zinc-400 max-w-2xl text-balance whitespace-pre-line">
             {brandConfig.homeDescription || defaultDesc}

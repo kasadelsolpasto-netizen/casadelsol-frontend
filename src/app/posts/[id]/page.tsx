@@ -3,6 +3,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import PostDetailClient from './PostDetailClient';
+import { toJsonLd } from '@/lib/sanitize-html';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
 const SITE_URL = 'https://kasadelsol.co';
@@ -110,7 +111,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
       {/* JSON-LD inyectado en <head> */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: toJsonLd(jsonLd) }}
       />
 
       {/* Componente cliente (reacciones, interactividad) */}
