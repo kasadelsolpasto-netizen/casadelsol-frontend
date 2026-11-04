@@ -1,28 +1,31 @@
 import type { ReactNode } from "react";
 
-/** Encabezado de sección: antetítulo + título + bajada opcional. */
 export function SectionHead({
   eyebrow,
   title,
   lead,
   align = "left",
+  tone = "sun",
 }: {
   eyebrow: string;
   title: ReactNode;
   lead?: string;
   align?: "left" | "center";
+  tone?: "sun" | "water";
 }) {
-  const centered = align === "center";
+  const centrado = align === "center";
   return (
-    <div className={centered ? "text-center mx-auto max-w-2xl" : "max-w-3xl"}>
-      <p className="ong-eyebrow">{eyebrow}</p>
-      <h2 className="ong-title text-3xl md:text-5xl mt-3">{title}</h2>
+    <div className={centrado ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
+      <p className={`ong-eyebrow ${tone === "water" ? "ong-eyebrow-water" : ""}`}>
+        {eyebrow}
+      </p>
+      <h2 className="ong-title mt-4 text-3xl md:text-5xl">{title}</h2>
       <div
-        className={`ong-rule mt-6 w-24 ${centered ? "mx-auto" : ""}`}
+        className={`ong-rule mt-7 w-28 ${centrado ? "mx-auto" : ""}`}
         aria-hidden="true"
       />
       {lead && (
-        <p className="mt-6 text-zinc-400 text-base md:text-lg leading-relaxed text-balance">
+        <p className="mt-7 text-base leading-relaxed text-zinc-400 md:text-lg">
           {lead}
         </p>
       )}
@@ -30,7 +33,6 @@ export function SectionHead({
   );
 }
 
-/** Contenedor de sección con ancla, padding y ancho máximo consistentes. */
 export function Section({
   id,
   children,
@@ -43,7 +45,7 @@ export function Section({
   return (
     <section
       id={id}
-      className={`scroll-mt-28 max-w-7xl mx-auto px-6 py-20 md:py-28 ${className}`}
+      className={`mx-auto max-w-7xl scroll-mt-28 px-6 py-20 md:py-28 ${className}`}
     >
       {children}
     </section>

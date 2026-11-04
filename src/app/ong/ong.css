@@ -1,57 +1,74 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   CONCEPTO GRÁFICO — FUNDACIÓN (/ong)
+   CONCEPTO GRÁFICO — «SOL Y CUENCA»
    ───────────────────────────────────────────────────────────────────────────
-   La fundación conserva el ADN de Kasa del Sol (fondo negro, tipografía
-   Outfit, mayúsculas de peso alto) pero cambia el acento: en lugar del neón
-   de rave, una paleta solar — oro, ámbar y brasa — sobre la que el verde neón
-   de la marca aparece solo como señal secundaria.
+   La Fundación se dirige a inversores, cooperantes y entidades. El registro
+   visual es institucional, no festivo: fondo profundo, trazo fino de
+   cartografía, tipografía amplia y mucho aire.
 
-   Todos los colores están tokenizados aquí. Para cambiar el concepto gráfico
-   basta reemplazar estos valores.
+   La dualidad cromática codifica la tesis de la entidad:
+     · oro   — el sol: origen, cultura, juventud, energía
+     · agua  — la cuenca: hídrico, selva, conservación
+
+   Conserva el ADN de Kasa del Sol (negro, Outfit, mayúsculas de peso alto)
+   pero abandona el neón de rave. Todos los colores están tokenizados aquí.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .ong-scope {
-  /* Acentos solares */
-  --ong-sun: #ffc53d;
-  --ong-amber: #ff9b1a;
-  --ong-ember: #ff5f1f;
-  --ong-deep: #b23a00;
+  /* Sol */
+  --ong-sun: #e8b04b;
+  --ong-sun-deep: #c98a2e;
+  --ong-ember: #b8551f;
 
-  /* Señal secundaria heredada de la marca */
-  --ong-signal: #39ff14;
+  /* Cuenca */
+  --ong-water: #3bbda8;
+  --ong-water-deep: #1c7f74;
+  --ong-canopy: #15614f;
 
   /* Superficies */
-  --ong-ink: #050301;
-  --ong-surface: rgba(255, 197, 61, 0.04);
-  --ong-line: rgba(255, 197, 61, 0.14);
-  --ong-line-soft: rgba(255, 255, 255, 0.06);
+  --ong-ink: #050706;
+  --ong-surface: rgba(255, 255, 255, 0.022);
+  --ong-line: rgba(232, 176, 75, 0.2);
+  --ong-line-water: rgba(59, 189, 168, 0.22);
+  --ong-line-soft: rgba(255, 255, 255, 0.07);
+
+  background-color: var(--ong-ink);
 }
 
-/* ── Tipografía de sección ──────────────────────────────────────────────── */
+/* ── Tipografía ─────────────────────────────────────────────────────────── */
 
 .ong-eyebrow {
   font-size: 0.625rem;
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.3em;
+  letter-spacing: 0.32em;
   color: var(--ong-sun);
+}
+
+.ong-eyebrow-water {
+  color: var(--ong-water);
 }
 
 .ong-title {
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: -0.015em;
-  line-height: 1.05;
+  letter-spacing: -0.02em;
+  line-height: 1.02;
   color: #fff;
 }
 
-/* ── Texto y bordes con acento ──────────────────────────────────────────── */
+/* Cifra o dato institucional */
+.ong-mono {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* ── Acentos ────────────────────────────────────────────────────────────── */
 
 .ong-gradient-text {
   background-image: linear-gradient(
     100deg,
     var(--ong-sun) 0%,
-    var(--ong-amber) 45%,
+    var(--ong-sun-deep) 50%,
     var(--ong-ember) 100%
   );
   -webkit-background-clip: text;
@@ -59,81 +76,116 @@
   color: transparent;
 }
 
-.ong-sun-glow {
-  text-shadow: 0 0 24px rgba(255, 155, 26, 0.45);
+.ong-gradient-water {
+  background-image: linear-gradient(
+    100deg,
+    var(--ong-water) 0%,
+    var(--ong-water-deep) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .ong-rule {
   height: 1px;
   background-image: linear-gradient(
     90deg,
-    var(--ong-ember) 0%,
-    var(--ong-sun) 35%,
+    var(--ong-sun) 0%,
+    var(--ong-water) 55%,
     transparent 100%
   );
 }
 
-/* ── Panel base ─────────────────────────────────────────────────────────── */
+/* ── Paneles ────────────────────────────────────────────────────────────── */
 
 .ong-panel {
-  background: rgba(10, 7, 3, 0.55);
+  background: var(--ong-surface);
   border: 1px solid var(--ong-line-soft);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  transition: border-color 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease;
+  transition: border-color 0.45s ease, transform 0.45s ease,
+    background-color 0.45s ease;
 }
 
 .ong-panel:hover {
   border-color: var(--ong-line);
-  box-shadow: 0 0 0 1px rgba(255, 197, 61, 0.06),
-    0 24px 60px -30px rgba(255, 155, 26, 0.35);
+  background: rgba(232, 176, 75, 0.035);
+}
+
+.ong-panel-water:hover {
+  border-color: var(--ong-line-water);
+  background: rgba(59, 189, 168, 0.035);
 }
 
 .ong-panel-lift:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
 }
 
-/* ── Fondo: amanecer y trama ────────────────────────────────────────────── */
+/* Sello institucional (NIT, vigilancia, objeto) */
+.ong-seal {
+  border: 1px solid var(--ong-line-soft);
+  background: rgba(255, 255, 255, 0.015);
+}
 
-.ong-dawn {
+/* ── Fondos ─────────────────────────────────────────────────────────────── */
+
+/* Amanecer sobre la cuenca: oro arriba, agua abajo */
+.ong-horizon {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
     radial-gradient(
-      120% 70% at 50% 0%,
-      rgba(255, 95, 31, 0.16) 0%,
-      rgba(255, 155, 26, 0.07) 32%,
-      transparent 68%
+      100% 60% at 50% -5%,
+      rgba(232, 176, 75, 0.13) 0%,
+      rgba(184, 85, 31, 0.05) 38%,
+      transparent 70%
     ),
     radial-gradient(
-      60% 40% at 85% 15%,
-      rgba(255, 197, 61, 0.08) 0%,
-      transparent 70%
+      80% 50% at 50% 105%,
+      rgba(28, 127, 116, 0.14) 0%,
+      transparent 68%
     );
 }
 
+/* Curvas de nivel — trama cartográfica */
+.ong-contour {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.45;
+  background-image: repeating-radial-gradient(
+    circle at 50% 120%,
+    transparent 0px,
+    transparent 46px,
+    rgba(59, 189, 168, 0.11) 46px,
+    rgba(59, 189, 168, 0.11) 47px
+  );
+  mask-image: linear-gradient(to top, #000 0%, transparent 85%);
+  -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 85%);
+}
+
+/* Retícula fina de referencia */
 .ong-grid {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.5;
+  opacity: 0.6;
   background-image: linear-gradient(
       to right,
-      rgba(255, 197, 61, 0.05) 1px,
+      rgba(255, 255, 255, 0.028) 1px,
       transparent 1px
     ),
-    linear-gradient(to bottom, rgba(255, 197, 61, 0.05) 1px, transparent 1px);
-  background-size: 72px 72px;
-  mask-image: radial-gradient(70% 60% at 50% 10%, #000 0%, transparent 100%);
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: radial-gradient(65% 55% at 50% 15%, #000 0%, transparent 100%);
   -webkit-mask-image: radial-gradient(
-    70% 60% at 50% 10%,
+    65% 55% at 50% 15%,
     #000 0%,
     transparent 100%
   );
 }
 
-/* ── Rotación lenta del disco solar ─────────────────────────────────────── */
+/* ── Movimiento ─────────────────────────────────────────────────────────── */
 
 @keyframes ong-rotate {
   from {
@@ -145,27 +197,27 @@
 }
 
 .ong-rotate-slow {
-  animation: ong-rotate 90s linear infinite;
+  animation: ong-rotate 180s linear infinite;
   transform-origin: center;
 }
 
-@keyframes ong-breathe {
+@keyframes ong-drift {
   0%,
   100% {
-    opacity: 0.55;
+    opacity: 0.5;
   }
   50% {
-    opacity: 1;
+    opacity: 0.9;
   }
 }
 
-.ong-breathe {
-  animation: ong-breathe 6s ease-in-out infinite;
+.ong-drift {
+  animation: ong-drift 9s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ong-rotate-slow,
-  .ong-breathe {
+  .ong-drift {
     animation: none;
   }
 }

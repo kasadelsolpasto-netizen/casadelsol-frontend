@@ -118,13 +118,13 @@ export function Navbar() {
         </Link>
 
         <div className="flex items-center gap-4">
-          {/* Fundacion — pagina publica de la ONG */}
+          {/* Fundación — página pública de la ONG */}
           <Link
             href="/ong"
             className={`hidden sm:inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors ${pathname?.startsWith('/ong') ? 'text-amber-400' : 'text-zinc-500 hover:text-amber-400'}`}
           >
             <Sun className="w-3.5 h-3.5" />
-            Fundacion
+            Fundación
           </Link>
 
           {!user ? (

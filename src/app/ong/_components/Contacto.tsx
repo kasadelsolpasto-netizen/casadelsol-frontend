@@ -5,15 +5,16 @@ import { contacto, identidad } from "../content";
 
 export function Contacto() {
   return (
-    <div className="relative border-t border-zinc-900/80">
-      <div className="ong-dawn opacity-70" aria-hidden="true" />
+    <div className="relative border-t border-white/5">
+      <div className="ong-horizon opacity-70" aria-hidden="true" />
+      <div className="ong-contour opacity-50" aria-hidden="true" />
 
       <Section id="contacto" className="relative">
         <div className="grid gap-14 lg:grid-cols-2 lg:gap-20">
           <SectionHead
-            eyebrow="Escríbenos"
+            eyebrow={contacto.antetitulo}
             title={contacto.titulo}
-            lead={contacto.descripcion}
+            lead={contacto.lead}
           />
 
           <div className="space-y-4">
@@ -23,7 +24,7 @@ export function Contacto() {
                 className="ong-panel group flex items-center gap-5 rounded-2xl p-6"
               >
                 <Mail className="h-5 w-5 shrink-0 text-[var(--ong-sun)]" />
-                <span className="flex-1 text-sm font-bold tracking-wide text-zinc-200 break-all">
+                <span className="ong-mono flex-1 break-all text-sm font-bold text-zinc-200">
                   {contacto.correo}
                 </span>
                 <ArrowUpRight className="h-4 w-4 shrink-0 text-zinc-600 transition-colors group-hover:text-[var(--ong-sun)]" />
@@ -36,7 +37,7 @@ export function Contacto() {
                 className="ong-panel group flex items-center gap-5 rounded-2xl p-6"
               >
                 <Phone className="h-5 w-5 shrink-0 text-[var(--ong-sun)]" />
-                <span className="flex-1 text-sm font-bold tracking-wide text-zinc-200">
+                <span className="ong-mono flex-1 text-sm font-bold text-zinc-200">
                   {contacto.telefono}
                 </span>
                 <ArrowUpRight className="h-4 w-4 shrink-0 text-zinc-600 transition-colors group-hover:text-[var(--ong-sun)]" />
@@ -45,8 +46,8 @@ export function Contacto() {
 
             {contacto.direccion && (
               <div className="ong-panel flex items-center gap-5 rounded-2xl p-6">
-                <MapPin className="h-5 w-5 shrink-0 text-[var(--ong-sun)]" />
-                <span className="text-sm font-bold tracking-wide text-zinc-200">
+                <MapPin className="h-5 w-5 shrink-0 text-[var(--ong-water)]" />
+                <span className="text-sm font-bold text-zinc-200">
                   {contacto.direccion}
                 </span>
               </div>
@@ -72,18 +73,13 @@ export function Contacto() {
           </div>
         </div>
 
-        {/* Pie legal */}
-        <footer className="mt-20 border-t border-zinc-900 pt-8">
+        <footer className="mt-20 border-t border-white/5 pt-8">
           <div className="flex flex-col gap-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
-            <p>
-              {identidad.nombre}
-              {identidad.nit && ` · NIT ${identidad.nit}`}
+            <p className="ong-mono">
+              {identidad.nombre} · NIT {identidad.nit} · {identidad.domicilio}
             </p>
-            <Link
-              href="/"
-              className="transition-colors hover:text-[var(--ong-sun)]"
-            >
-              ← Volver a Kasa del Sol
+            <Link href="/" className="transition-colors hover:text-[var(--ong-sun)]">
+              ← Kasa del Sol
             </Link>
           </div>
         </footer>

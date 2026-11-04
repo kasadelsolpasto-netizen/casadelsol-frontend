@@ -1,16 +1,17 @@
 /**
- * kasadelsol.co/ong — Página principal de la fundación.
+ * kasadelsol.co/ong — Fundación Kasa del Sol.
  *
- * La maquetación se compone de secciones independientes. Todo el texto, las
- * cifras y los enlaces se editan en ./content.ts; el concepto gráfico
- * (paleta, trama, disco solar) está tokenizado en ./ong.css.
+ * Página institucional dirigida a inversores, cooperantes y entidades.
+ * Todo el contenido se edita en ./content.ts; el concepto gráfico
+ * «Sol y cuenca» está tokenizado en ./ong.css.
  */
 import { Hero } from "./_components/Hero";
-import { Manifiesto } from "./_components/Manifiesto";
-import { Pilares } from "./_components/Pilares";
+import { Tesis } from "./_components/Tesis";
+import { Lineas } from "./_components/Lineas";
+import { Territorio } from "./_components/Territorio";
 import { Programas } from "./_components/Programas";
-import { Impacto } from "./_components/Impacto";
-import { Participa } from "./_components/Participa";
+import { Gobernanza } from "./_components/Gobernanza";
+import { Vinculacion } from "./_components/Vinculacion";
 import { Aliados } from "./_components/Aliados";
 import { Contacto } from "./_components/Contacto";
 
@@ -18,11 +19,12 @@ export default function OngPage() {
   return (
     <div className="min-h-screen">
       <Hero />
-      <Manifiesto />
-      <Pilares />
+      <Tesis />
+      <Lineas />
+      <Territorio />
       <Programas />
-      <Impacto />
-      <Participa />
+      <Gobernanza />
+      <Vinculacion />
       <Aliados />
       <Contacto />
     </div>

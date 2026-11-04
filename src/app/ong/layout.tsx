@@ -2,16 +2,18 @@ import type { Metadata } from "next";
 import "./ong.css";
 import { identidad } from "./content";
 
+const descripcion =
+  "Fundación Kasa del Sol (NIT 902.014.359-1): conservación de la alta cuenca amazónica, alternativas productivas, defensa del agua, control social a lo público, derechos humanos y cultura. Pasto, Nariño.";
+
 export const metadata: Metadata = {
-  title: `${identidad.nombre} | Kasa del Sol`,
-  description:
-    "Fundación de Kasa del Sol: cultura, formación y trabajo comunitario en el territorio.",
+  title: `${identidad.nombre} | Entidad sin ánimo de lucro`,
+  description: descripcion,
   alternates: { canonical: "/ong" },
   openGraph: {
     title: identidad.nombre,
-    description:
-      "Fundación de Kasa del Sol: cultura, formación y trabajo comunitario en el territorio.",
+    description: descripcion,
     url: "https://kasadelsol.co/ong",
+    siteName: identidad.nombre,
     type: "website",
     locale: "es_CO",
   },

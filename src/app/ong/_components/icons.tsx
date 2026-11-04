@@ -1,35 +1,39 @@
 import {
   Sun,
-  Heart,
-  Music,
-  BookOpen,
-  Sprout,
-  Users,
+  Droplets,
+  Leaf,
   Scale,
-  Megaphone,
-  Sparkles,
+  ShieldCheck,
+  Search,
+  Users,
+  GraduationCap,
+  Music,
+  FlaskConical,
+  Handshake,
   Globe,
   type LucideIcon,
 } from "lucide-react";
 import type { IconKey } from "../content";
 
-/** Mapa único de claves de contenido a iconos. content.ts no importa JSX. */
+/** Mapa único de claves de contenido a iconos; content.ts no importa JSX. */
 export const ICONS: Record<IconKey, LucideIcon> = {
-  sun: Sun,
-  heart: Heart,
-  music: Music,
-  book: BookOpen,
-  sprout: Sprout,
-  users: Users,
-  scale: Scale,
-  megaphone: Megaphone,
-  sparkles: Sparkles,
-  globe: Globe,
+  sol: Sun,
+  agua: Droplets,
+  hoja: Leaf,
+  balanza: Scale,
+  escudo: ShieldCheck,
+  lupa: Search,
+  comunidad: Users,
+  formacion: GraduationCap,
+  cultura: Music,
+  laboratorio: FlaskConical,
+  convenio: Handshake,
+  globo: Globe,
 };
 
 export function OngIcon({
   name,
-  className = "w-6 h-6",
+  className = "w-5 h-5",
 }: {
   name: IconKey;
   className?: string;
