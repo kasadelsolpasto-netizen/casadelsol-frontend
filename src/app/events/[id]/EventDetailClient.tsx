@@ -137,14 +137,11 @@ export default function EventDetailClient({ params }: { params: { id: string } }
       // Bold no tiene callback de éxito en JS: tras pagar vuelve a /checkout/bold-result,
       // que confirma el pago con el servidor y muestra las entradas.
       if (data.gateway === 'bold') {
-        const boldBuyer = attendees[0];
+        // Los datos del comprador (correo, nombre y documento) ya vienen saneados desde el
+        // servidor dentro de `data.bold`: no se sobreescriben desde el navegador.
         await openBoldCheckout({
           ...data.bold,
           redirectionUrl: `${window.location.origin}/checkout/bold-result`,
-          customerData: {
-            email: boldBuyer?.attendee_email,
-            fullName: boldBuyer?.attendee_name,
-          },
         });
         setWizardLoading(false);
         setShowWizard(false);
