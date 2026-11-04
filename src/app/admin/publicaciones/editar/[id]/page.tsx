@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { ArrowLeft, Loader2, Upload, Image as ImageIcon, X, Pin, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { AdminGuard } from '@/components/AdminGuard';
@@ -26,7 +26,9 @@ const POST_TYPES = [
   { value: 'SETLIST',      label: 'Setlist',       color: 'text-neon-green', bg: 'bg-green-900/20',  border: 'border-green-900/50' },
 ];
 
-export default function EditPostPage({ params }: { params: { id: string } }) {
+export default function EditPostPage() {
+  // Next 15: en componentes cliente el id de la URL se lee con useParams()
+  const params = useParams<{ id: string }>();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);

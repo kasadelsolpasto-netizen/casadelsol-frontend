@@ -1,9 +1,12 @@
 "use client";
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, UserPlus, Loader2, Check, DollarSign, Users, Trash2, Star } from 'lucide-react';
 
-export default function TaquillaEventPage({ params }: { params: { id: string } }) {
+export default function TaquillaEventPage() {
+  // Next 15: en componentes cliente el id de la URL se lee con useParams()
+  const params = useParams<{ id: string }>();
   const [event, setEvent] = useState<any>(null);
   const [sales, setSales] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);

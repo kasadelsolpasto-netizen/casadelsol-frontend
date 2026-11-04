@@ -19,11 +19,11 @@ async function getPost(id: string) {
   }
 }
 
-// ── generateMetadata — Next.js 14 ────────────────────────────────────────────
+// ── generateMetadata — Next.js 15 (params llega como promesa) ────────────────────────────────────────────
 export async function generateMetadata(
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<Metadata> {
-  const post = await getPost(params.id);
+  const post = await getPost((await params).id);
   if (!post) return { title: 'Publicación no encontrada | Kasa del Sol' };
 
   // Usar campos SEO si el admin los definió; si no, usar defaults del post
@@ -61,8 +61,8 @@ export async function generateMetadata(
 }
 
 // ── Página principal (Server) ────────────────────────────────────────────────
-export default async function PostDetailPage({ params }: { params: { id: string } }) {
-  const post = await getPost(params.id);
+export default async function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const post = await getPost((await params).id);
   if (!post) notFound();
 
   // ── JSON-LD: Article Schema.org ──────────────────────────────────────────

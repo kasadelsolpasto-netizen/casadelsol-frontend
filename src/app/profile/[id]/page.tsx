@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { 
   Ticket, User, Star, CheckCircle, 
   X, Share2, Gift, Zap, 
@@ -20,7 +20,9 @@ const BENEFIT_ICONS: Record<string, any> = {
   ACCESS: Zap
 };
 
-export default function ProfilePage({ params }: { params: { id: string } }) {
+export default function ProfilePage() {
+  // Next 15: en componentes cliente el id de la URL se lee con useParams()
+  const params = useParams<{ id: string }>();
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [benefits, setBenefits] = useState<any[]>([]);

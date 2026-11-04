@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { Image as ImageIcon, Upload, Plus, Trash2, ArrowLeft, Loader2, Save } from 'lucide-react';
@@ -20,7 +20,9 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default function EditEventPage({ params }: { params: { id: string } }) {
+export default function EditEventPage() {
+  // Next 15: en componentes cliente el id de la URL se lee con useParams()
+  const params = useParams<{ id: string }>();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({

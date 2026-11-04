@@ -1,4 +1,5 @@
 "use client";
+import { useParams } from 'next/navigation';
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -42,7 +43,9 @@ function isTab(value: string): value is Tab {
  *  - Ventas: la lista de compradores paginada y la taquilla en puerta.
  * Las pestañas se montan la primera vez que se abren y conservan su estado (promotor abierto, página, filtros) al cambiar.
  */
-export default function EventSalesStatsPage({ params }: { params: { id: string } }) {
+export default function EventSalesStatsPage() {
+  // Next 15: en componentes cliente el id de la URL se lee con useParams()
+  const params = useParams<{ id: string }>();
   const [data, setData] = useState<EventStats | null>(null);
   const [walkIns, setWalkIns] = useState<WalkIn[]>([]);
   const [loading, setLoading] = useState(true);

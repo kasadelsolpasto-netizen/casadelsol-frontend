@@ -1,11 +1,13 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { Calendar, MapPin, Share2, MessageCircle, Mail, CheckCircle, XCircle, Download, ArrowLeft } from 'lucide-react';
 import { formatSavedAt, isTransientFailure, loadOffline, removeOffline, saveOffline } from '@/lib/offline-tickets';
 
-export default function PublicTicketPage({ params }: { params: { token: string } }) {
+export default function PublicTicketPage() {
+  // Next 15: en componentes cliente el token de la URL se lee con useParams()
+  const params = useParams<{ token: string }>();
   const router = useRouter();
   const [ticket, setTicket] = useState<any>(null);
   const [loading, setLoading] = useState(true);

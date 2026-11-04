@@ -21,9 +21,9 @@ async function getEvent(id: string) {
 
 // ── generateMetadata ─────────────────────────────────────────────────────────
 export async function generateMetadata(
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<Metadata> {
-  const event = await getEvent(params.id);
+  const event = await getEvent((await params).id);
   if (!event) return { title: `Evento no encontrado | ${SITE_NAME}` };
 
   const title       = event.seo_title       || `${event.title} | ${SITE_NAME}`;
@@ -60,8 +60,8 @@ export async function generateMetadata(
 }
 
 // ── Página principal (Server) ────────────────────────────────────────────────
-export default async function EventPage({ params }: { params: { id: string } }) {
-  const event = await getEvent(params.id);
+export default async function EventPage({ params }: { params: Promise<{ id: string }> }) {
+  const event = await getEvent((await params).id);
   if (!event || event.status !== 'PUBLISHED') notFound();
 
   const slug      = event.seo_slug        || event.id;
@@ -143,7 +143,7 @@ export default async function EventPage({ params }: { params: { id: string } }) 
       />
 
       {/* Toda la interactividad (checkout, wizard, etc.) en el client component */}
-      <EventDetailClient params={params} />
+      <EventDetailClient params={await params} />
     </>
   );
 }
