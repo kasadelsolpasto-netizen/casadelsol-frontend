@@ -21,7 +21,7 @@ export function Aliados() {
               className="h-10 w-auto object-contain opacity-60 transition-opacity hover:opacity-100"
             />
           ) : (
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500 transition-colors hover:text-zinc-300">
+            <span className="text-xs font-black uppercase tracking-[0.2em] ong-faint transition-colors hover:ong-muted">
               {aliado.nombre}
             </span>
           );

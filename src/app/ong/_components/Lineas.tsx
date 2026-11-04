@@ -31,18 +31,18 @@ export function Lineas() {
             }`}
           >
             <div className="flex items-start justify-between gap-4">
-              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--ong-line)] text-[var(--ong-sun)]">
+              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--ong-tint-3)] text-[var(--ong-red)]">
                 <OngIcon name={linea.icono} className="h-5 w-5" />
               </span>
-              <span className="ong-mono text-[10px] font-black tracking-[0.2em] text-zinc-700">
+              <span className="ong-mono text-[10px] font-black tracking-[0.2em] ong-faint">
                 {String(i + 1).padStart(2, "0")}
               </span>
             </div>
 
-            <h3 className="mt-6 text-lg font-black uppercase leading-snug tracking-wide text-white transition-colors group-hover:text-[var(--ong-sun)]">
+            <h3 className="mt-6 text-lg font-black uppercase leading-snug tracking-wide ong-strong transition-colors group-hover:text-[var(--ong-red)]">
               {linea.titulo}
             </h3>
-            <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+            <p className="mt-3 text-sm leading-relaxed ong-muted">
               {linea.sumario}
             </p>
 
@@ -54,12 +54,12 @@ export function Lineas() {
               {linea.acciones.map((accion, j) => (
                 <li
                   key={j}
-                  className={`flex gap-3 text-sm text-zinc-500 ${
+                  className={`flex gap-3 text-sm ong-faint ${
                     ancha ? "md:py-1.5" : ""
                   }`}
                 >
                   <span
-                    className="mt-[0.55rem] h-px w-3 shrink-0 bg-[var(--ong-water)] opacity-60"
+                    className="mt-[0.55rem] h-px w-3 shrink-0 bg-[var(--ong-red-bright)] opacity-60"
                     aria-hidden="true"
                   />
                   <span className="leading-relaxed">{accion}</span>
@@ -68,11 +68,11 @@ export function Lineas() {
             </ul>
 
             {/* Anclaje estatutario */}
-            <footer className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/5 pt-5">
-              <span className="ong-mono text-[10px] font-black uppercase tracking-[0.18em] text-[var(--ong-sun)]">
+            <footer className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-1 border-t ong-hair pt-5">
+              <span className="ong-mono text-[10px] font-black uppercase tracking-[0.18em] text-[var(--ong-red)]">
                 {linea.fundamento.articulo}
               </span>
-              <span className="ong-mono text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+              <span className="ong-mono text-[10px] uppercase tracking-[0.14em] ong-faint">
                 {linea.fundamento.norma}
               </span>
             </footer>

@@ -1,51 +1,66 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   CONCEPTO GRÁFICO — «SOL Y CUENCA»
+   CONCEPTO GRÁFICO — FUNDACIÓN KASA DEL SOL
    ───────────────────────────────────────────────────────────────────────────
-   La Fundación se dirige a inversores, cooperantes y entidades. El registro
-   visual es institucional, no festivo: fondo profundo, trazo fino de
-   cartografía, tipografía amplia y mucho aire.
+   Toma la identidad real de la marca: el sol andino de volutas sobre fondo
+   blanco, en rojo. A diferencia del sitio de eventos —negro y neón—, la
+   Fundación se presenta en papel blanco con contenido rojo: el registro de
+   una institución, no de una fiesta.
 
-   La dualidad cromática codifica la tesis de la entidad:
-     · oro   — el sol: origen, cultura, juventud, energía
-     · agua  — la cuenca: hídrico, selva, conservación
+   El sistema es monocromo. La dualidad «sol y cuenca» no se expresa con un
+   segundo tono sino con peso: el sol es rojo macizo; la cuenca, línea fina en
+   rojo claro. Las transparencias del concepto anterior se resuelven como
+   tintes claros del mismo rojo, nunca como opacidad sobre oscuro.
 
-   Conserva el ADN de Kasa del Sol (negro, Outfit, mayúsculas de peso alto)
-   pero abandona el neón de rave. Todos los colores están tokenizados aquí.
+   Un solo bloque de tokens gobierna toda la página.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .ong-scope {
-  /* Sol */
-  --ong-sun: #e8b04b;
-  --ong-sun-deep: #c98a2e;
-  --ong-ember: #b8551f;
+  /* Rojo de marca, tomado del logo */
+  --ong-red: #b2201a;
+  --ong-red-deep: #8a1812;
+  --ong-red-bright: #d0352c;
 
-  /* Cuenca */
-  --ong-water: #3bbda8;
-  --ong-water-deep: #1c7f74;
-  --ong-canopy: #15614f;
+  /* Tintes: las «transparencias» del concepto, resueltas en claro */
+  --ong-tint-1: #fdf6f5;
+  --ong-tint-2: #f9eae8;
+  --ong-tint-3: #f2d6d3;
+  --ong-cuenca: #dc9a94;
 
-  /* Superficies */
-  --ong-ink: #050706;
-  --ong-surface: rgba(255, 255, 255, 0.022);
-  --ong-line: rgba(232, 176, 75, 0.2);
-  --ong-line-water: rgba(59, 189, 168, 0.22);
-  --ong-line-soft: rgba(255, 255, 255, 0.07);
+  /* Papel */
+  --ong-paper: #ffffff;
+  --ong-paper-warm: #fdf8f7;
 
-  background-color: var(--ong-ink);
+  /* Tinta */
+  --ong-ink: #2a1512;
+  --ong-muted: #6b4a45;
+  --ong-faint: #8a6762;
+  --ong-hair: #eedcd9;
+
+  background-color: var(--ong-paper);
+  color: var(--ong-ink);
 }
 
-/* ── Tipografía ─────────────────────────────────────────────────────────── */
+/* ── Texto ──────────────────────────────────────────────────────────────── */
+
+.ong-strong {
+  color: var(--ong-ink);
+}
+.ong-muted {
+  color: var(--ong-muted);
+}
+.ong-faint {
+  color: var(--ong-faint);
+}
+.ong-brand {
+  color: var(--ong-red);
+}
 
 .ong-eyebrow {
   font-size: 0.625rem;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.32em;
-  color: var(--ong-sun);
-}
-
-.ong-eyebrow-water {
-  color: var(--ong-water);
+  color: var(--ong-red);
 }
 
 .ong-title {
@@ -53,10 +68,9 @@
   text-transform: uppercase;
   letter-spacing: -0.02em;
   line-height: 1.02;
-  color: #fff;
+  color: var(--ong-ink);
 }
 
-/* Cifra o dato institucional */
 .ong-mono {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
@@ -67,20 +81,21 @@
 .ong-gradient-text {
   background-image: linear-gradient(
     100deg,
-    var(--ong-sun) 0%,
-    var(--ong-sun-deep) 50%,
-    var(--ong-ember) 100%
+    var(--ong-red) 0%,
+    var(--ong-red-bright) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
+/* La cuenca: mismo rojo, menos peso */
 .ong-gradient-water {
   background-image: linear-gradient(
     100deg,
-    var(--ong-water) 0%,
-    var(--ong-water-deep) 100%
+    var(--ong-red) 0%,
+    #c8716a 62%,
+    var(--ong-cuenca) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -88,94 +103,100 @@
 }
 
 .ong-rule {
-  height: 1px;
+  height: 2px;
   background-image: linear-gradient(
     90deg,
-    var(--ong-sun) 0%,
-    var(--ong-water) 55%,
+    var(--ong-red) 0%,
+    var(--ong-cuenca) 60%,
     transparent 100%
   );
 }
 
-/* ── Paneles ────────────────────────────────────────────────────────────── */
+/* ── Superficies ────────────────────────────────────────────────────────── */
+
+.ong-hair {
+  border-color: var(--ong-hair);
+}
+
+.ong-card {
+  background-color: var(--ong-paper);
+}
 
 .ong-panel {
-  background: var(--ong-surface);
-  border: 1px solid var(--ong-line-soft);
-  transition: border-color 0.45s ease, transform 0.45s ease,
-    background-color 0.45s ease;
+  background: var(--ong-paper);
+  border: 1px solid var(--ong-hair);
+  transition: border-color 0.4s ease, transform 0.4s ease,
+    background-color 0.4s ease, box-shadow 0.4s ease;
 }
 
 .ong-panel:hover {
-  border-color: var(--ong-line);
-  background: rgba(232, 176, 75, 0.035);
+  border-color: var(--ong-tint-3);
+  background: var(--ong-tint-1);
+  box-shadow: 0 18px 40px -28px rgba(178, 32, 26, 0.45);
 }
 
 .ong-panel-water:hover {
-  border-color: var(--ong-line-water);
-  background: rgba(59, 189, 168, 0.035);
+  border-color: var(--ong-cuenca);
 }
 
 .ong-panel-lift:hover {
   transform: translateY(-3px);
 }
 
-/* Sello institucional (NIT, vigilancia, objeto) */
 .ong-seal {
-  border: 1px solid var(--ong-line-soft);
-  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid var(--ong-hair);
+  background: var(--ong-tint-1);
 }
 
 /* ── Fondos ─────────────────────────────────────────────────────────────── */
 
-/* Amanecer sobre la cuenca: oro arriba, agua abajo */
+/* Amanecer: tinte rojo que se desvanece hacia el papel */
 .ong-horizon {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
     radial-gradient(
-      100% 60% at 50% -5%,
-      rgba(232, 176, 75, 0.13) 0%,
-      rgba(184, 85, 31, 0.05) 38%,
-      transparent 70%
+      100% 62% at 50% -8%,
+      rgba(178, 32, 26, 0.08) 0%,
+      rgba(208, 53, 44, 0.03) 42%,
+      transparent 72%
     ),
     radial-gradient(
-      80% 50% at 50% 105%,
-      rgba(28, 127, 116, 0.14) 0%,
-      transparent 68%
+      80% 50% at 50% 108%,
+      rgba(220, 154, 148, 0.16) 0%,
+      transparent 70%
     );
 }
 
-/* Curvas de nivel — trama cartográfica */
+/* Curvas de nivel de la cuenca */
 .ong-contour {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.45;
+  opacity: 0.55;
   background-image: repeating-radial-gradient(
-    circle at 50% 120%,
+    circle at 50% 122%,
     transparent 0px,
     transparent 46px,
-    rgba(59, 189, 168, 0.11) 46px,
-    rgba(59, 189, 168, 0.11) 47px
+    rgba(220, 154, 148, 0.32) 46px,
+    rgba(220, 154, 148, 0.32) 47px
   );
-  mask-image: linear-gradient(to top, #000 0%, transparent 85%);
-  -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 85%);
+  mask-image: linear-gradient(to top, #000 0%, transparent 82%);
+  -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 82%);
 }
 
-/* Retícula fina de referencia */
+/* Retícula de referencia */
 .ong-grid {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.6;
   background-image: linear-gradient(
       to right,
-      rgba(255, 255, 255, 0.028) 1px,
+      rgba(178, 32, 26, 0.045) 1px,
       transparent 1px
     ),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+    linear-gradient(to bottom, rgba(178, 32, 26, 0.045) 1px, transparent 1px);
   background-size: 96px 96px;
   mask-image: radial-gradient(65% 55% at 50% 15%, #000 0%, transparent 100%);
   -webkit-mask-image: radial-gradient(
@@ -183,6 +204,11 @@
     #000 0%,
     transparent 100%
   );
+}
+
+/* Sección sobre papel templado */
+.ong-warm {
+  background-color: var(--ong-paper-warm);
 }
 
 /* ── Movimiento ─────────────────────────────────────────────────────────── */
@@ -197,27 +223,12 @@
 }
 
 .ong-rotate-slow {
-  animation: ong-rotate 180s linear infinite;
+  animation: ong-rotate 220s linear infinite;
   transform-origin: center;
 }
 
-@keyframes ong-drift {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 0.9;
-  }
-}
-
-.ong-drift {
-  animation: ong-drift 9s ease-in-out infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .ong-rotate-slow,
-  .ong-drift {
+  .ong-rotate-slow {
     animation: none;
   }
 }

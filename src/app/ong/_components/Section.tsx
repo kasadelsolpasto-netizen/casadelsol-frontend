@@ -25,7 +25,7 @@ export function SectionHead({
         aria-hidden="true"
       />
       {lead && (
-        <p className="mt-7 text-base leading-relaxed text-zinc-400 md:text-lg">
+        <p className="mt-7 text-base leading-relaxed ong-muted md:text-lg">
           {lead}
         </p>
       )}

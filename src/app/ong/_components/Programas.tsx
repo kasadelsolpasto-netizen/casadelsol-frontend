@@ -12,7 +12,7 @@ function tituloLinea(id: string) {
 function Tarjeta({ programa }: { programa: Programa }) {
   const cuerpo = (
     <>
-      <div className="relative h-40 w-full shrink-0 overflow-hidden bg-[#070a09]">
+      <div className="relative h-40 w-full shrink-0 overflow-hidden bg-[var(--ong-tint-1)]">
         {programa.imagen ? (
           <Image
             src={programa.imagen}
@@ -26,40 +26,40 @@ function Tarjeta({ programa }: { programa: Programa }) {
             className="absolute inset-0"
             style={{
               backgroundImage:
-                "repeating-radial-gradient(circle at 50% 130%, transparent 0px, transparent 22px, rgba(59,189,168,0.14) 22px, rgba(59,189,168,0.14) 23px), radial-gradient(60% 80% at 50% -10%, rgba(232,176,75,0.14) 0%, transparent 70%)",
+                "repeating-radial-gradient(circle at 50% 130%, transparent 0px, transparent 22px, rgba(220,154,148,0.45) 22px, rgba(220,154,148,0.45) 23px), radial-gradient(60% 80% at 50% -10%, rgba(178,32,26,0.10) 0%, transparent 70%)",
             }}
             aria-hidden="true"
           />
         )}
-        <span className="absolute left-5 top-5 rounded-full border border-white/10 bg-black/70 px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-[var(--ong-sun)] backdrop-blur-sm">
+        <span className="absolute left-5 top-5 rounded-full border ong-hair bg-white/85 px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-[var(--ong-red)] backdrop-blur-sm">
           {programa.estado}
         </span>
       </div>
 
       <div className="flex flex-1 flex-col p-7">
-        <p className="ong-mono text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600">
+        <p className="ong-mono text-[9px] font-black uppercase tracking-[0.2em] ong-faint">
           {tituloLinea(programa.linea)}
         </p>
-        <h3 className="mt-3 text-lg font-black uppercase leading-snug tracking-wide text-white transition-colors group-hover:text-[var(--ong-sun)]">
+        <h3 className="mt-3 text-lg font-black uppercase leading-snug tracking-wide ong-strong transition-colors group-hover:text-[var(--ong-red)]">
           {programa.nombre}
         </h3>
-        <p className="mt-3 flex-1 text-sm leading-relaxed text-zinc-400">
+        <p className="mt-3 flex-1 text-sm leading-relaxed ong-muted">
           {programa.resumen}
         </p>
 
         {programa.requerimiento && (
-          <div className="mt-6 border-t border-white/5 pt-5">
-            <p className="text-[9px] font-black uppercase tracking-[0.22em] text-zinc-600">
+          <div className="mt-6 border-t ong-hair pt-5">
+            <p className="text-[9px] font-black uppercase tracking-[0.22em] ong-faint">
               Requiere
             </p>
-            <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+            <p className="mt-2 text-xs leading-relaxed ong-muted">
               {programa.requerimiento}
             </p>
           </div>
         )}
 
         {programa.enlace && (
-          <span className="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 transition-colors group-hover:text-[var(--ong-sun)]">
+          <span className="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] ong-muted transition-colors group-hover:text-[var(--ong-red)]">
             Ver ficha
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
           </span>

@@ -11,7 +11,7 @@ export function Tesis() {
           {tesis.parrafos.map((p, i) => (
             <p
               key={i}
-              className="text-base leading-relaxed text-zinc-400 md:text-lg"
+              className="text-base leading-relaxed ong-muted md:text-lg"
             >
               {p}
             </p>
@@ -21,7 +21,7 @@ export function Tesis() {
         {/* Destacado */}
         <aside className="relative lg:pt-4">
           <div
-            className="absolute left-0 top-0 h-full w-px bg-gradient-to-b from-[var(--ong-sun)] via-[var(--ong-water)] to-transparent"
+            className="absolute left-0 top-0 h-full w-px bg-gradient-to-b from-[var(--ong-red)] via-[var(--ong-cuenca)] to-transparent"
             aria-hidden="true"
           />
           <blockquote className="pl-8">

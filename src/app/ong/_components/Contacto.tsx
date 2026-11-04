@@ -1,11 +1,12 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Mail, Phone, MapPin, ArrowUpRight } from "lucide-react";
 import { Section, SectionHead } from "./Section";
 import { contacto, identidad } from "../content";
 
 export function Contacto() {
   return (
-    <div className="relative border-t border-white/5">
+    <div className="relative border-t ong-hair">
       <div className="ong-horizon opacity-70" aria-hidden="true" />
       <div className="ong-contour opacity-50" aria-hidden="true" />
 
@@ -23,11 +24,11 @@ export function Contacto() {
                 href={`mailto:${contacto.correo}`}
                 className="ong-panel group flex items-center gap-5 rounded-2xl p-6"
               >
-                <Mail className="h-5 w-5 shrink-0 text-[var(--ong-sun)]" />
-                <span className="ong-mono flex-1 break-all text-sm font-bold text-zinc-200">
+                <Mail className="h-5 w-5 shrink-0 text-[var(--ong-red)]" />
+                <span className="ong-mono flex-1 break-all text-sm font-bold ong-strong">
                   {contacto.correo}
                 </span>
-                <ArrowUpRight className="h-4 w-4 shrink-0 text-zinc-600 transition-colors group-hover:text-[var(--ong-sun)]" />
+                <ArrowUpRight className="h-4 w-4 shrink-0 ong-faint transition-colors group-hover:text-[var(--ong-red)]" />
               </Link>
             )}
 
@@ -36,18 +37,18 @@ export function Contacto() {
                 href={`tel:${contacto.telefono.replace(/\s+/g, "")}`}
                 className="ong-panel group flex items-center gap-5 rounded-2xl p-6"
               >
-                <Phone className="h-5 w-5 shrink-0 text-[var(--ong-sun)]" />
-                <span className="ong-mono flex-1 text-sm font-bold text-zinc-200">
+                <Phone className="h-5 w-5 shrink-0 text-[var(--ong-red)]" />
+                <span className="ong-mono flex-1 text-sm font-bold ong-strong">
                   {contacto.telefono}
                 </span>
-                <ArrowUpRight className="h-4 w-4 shrink-0 text-zinc-600 transition-colors group-hover:text-[var(--ong-sun)]" />
+                <ArrowUpRight className="h-4 w-4 shrink-0 ong-faint transition-colors group-hover:text-[var(--ong-red)]" />
               </Link>
             )}
 
             {contacto.direccion && (
               <div className="ong-panel flex items-center gap-5 rounded-2xl p-6">
-                <MapPin className="h-5 w-5 shrink-0 text-[var(--ong-water)]" />
-                <span className="text-sm font-bold text-zinc-200">
+                <MapPin className="h-5 w-5 shrink-0 text-[var(--ong-red-bright)]" />
+                <span className="text-sm font-bold ong-strong">
                   {contacto.direccion}
                 </span>
               </div>
@@ -61,7 +62,7 @@ export function Contacto() {
                       href={red.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 rounded-full border border-zinc-800 px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:border-[var(--ong-sun)] hover:text-[var(--ong-sun)]"
+                      className="inline-flex items-center gap-2 rounded-full border ong-hair px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] ong-muted transition-colors hover:border-[var(--ong-red)] hover:text-[var(--ong-red)]"
                     >
                       {red.label}
                       <ArrowUpRight className="h-3 w-3" />
@@ -73,12 +74,20 @@ export function Contacto() {
           </div>
         </div>
 
-        <footer className="mt-20 border-t border-white/5 pt-8">
-          <div className="flex flex-col gap-4 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
+        <footer className="mt-20 border-t ong-hair pt-10">
+          {/* Firma institucional */}
+          <Image
+            src="/ong/marca.webp"
+            alt={identidad.nombre}
+            width={900}
+            height={485}
+            className="mb-8 h-auto w-44 md:w-52"
+          />
+          <div className="flex flex-col gap-4 text-[10px] font-bold uppercase tracking-[0.2em] ong-faint sm:flex-row sm:items-center sm:justify-between">
             <p className="ong-mono">
               {identidad.nombre} · NIT {identidad.nit} · {identidad.domicilio}
             </p>
-            <Link href="/" className="transition-colors hover:text-[var(--ong-sun)]">
+            <Link href="/" className="transition-colors hover:text-[var(--ong-red)]">
               ← Kasa del Sol
             </Link>
           </div>

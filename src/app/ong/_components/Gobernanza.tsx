@@ -7,7 +7,7 @@ export function Gobernanza() {
   const documentos = gobernanza.documentos.filter((d) => d.archivo);
 
   return (
-    <div className="relative border-y border-white/5">
+    <div className="relative border-y ong-hair">
       <div className="ong-horizon opacity-60" aria-hidden="true" />
 
       <Section id="gobernanza" className="relative">
@@ -23,16 +23,16 @@ export function Gobernanza() {
         />
 
         {/* Garantías estatutarias */}
-        <ul className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-white/5 bg-white/5 md:grid-cols-2">
+        <ul className="mt-14 grid gap-px overflow-hidden rounded-2xl border ong-hair bg-[var(--ong-hair)] md:grid-cols-2">
           {gobernanza.garantias.map((g) => (
-            <li key={g.id} className="bg-[#050706] p-8">
-              <h3 className="text-sm font-black uppercase leading-snug tracking-wide text-white">
+            <li key={g.id} className="ong-card p-8">
+              <h3 className="text-sm font-black uppercase leading-snug tracking-wide ong-strong">
                 {g.titulo}
               </h3>
-              <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+              <p className="mt-3 text-sm leading-relaxed ong-muted">
                 {g.texto}
               </p>
-              <p className="ong-mono mt-5 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--ong-water)]">
+              <p className="ong-mono mt-5 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--ong-red-bright)]">
                 {g.fundamento}
               </p>
             </li>
@@ -41,7 +41,7 @@ export function Gobernanza() {
 
         {/* Ficha institucional */}
         <div className="mt-12 grid gap-8 lg:grid-cols-[1fr_1fr]">
-          <dl className="divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/5">
+          <dl className="divide-y divide-[var(--ong-hair)] overflow-hidden rounded-2xl border ong-hair">
             {[
               { k: "Razón social", v: identidad.nombre },
               { k: "NIT", v: identidad.nit },
@@ -58,10 +58,10 @@ export function Gobernanza() {
                 key={fila.k}
                 className="grid gap-1 px-7 py-5 sm:grid-cols-[0.8fr_1.2fr] sm:gap-6"
               >
-                <dt className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-600">
+                <dt className="text-[10px] font-black uppercase tracking-[0.18em] ong-faint">
                   {fila.k}
                 </dt>
-                <dd className="ong-mono text-sm leading-relaxed text-zinc-200">
+                <dd className="ong-mono text-sm leading-relaxed ong-strong">
                   {fila.v}
                 </dd>
               </div>
@@ -81,17 +81,17 @@ export function Gobernanza() {
                       rel="noopener noreferrer"
                       className="ong-panel group flex items-center gap-4 rounded-xl p-5"
                     >
-                      <FileText className="h-4 w-4 shrink-0 text-[var(--ong-sun)]" />
-                      <span className="flex-1 text-sm font-bold text-zinc-200">
+                      <FileText className="h-4 w-4 shrink-0 text-[var(--ong-red)]" />
+                      <span className="flex-1 text-sm font-bold ong-strong">
                         {d.nombre}
                       </span>
-                      <Download className="h-4 w-4 shrink-0 text-zinc-600 transition-colors group-hover:text-[var(--ong-sun)]" />
+                      <Download className="h-4 w-4 shrink-0 ong-faint transition-colors group-hover:text-[var(--ong-red)]" />
                     </Link>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-6 text-sm leading-relaxed text-zinc-500">
+              <p className="mt-6 text-sm leading-relaxed ong-faint">
                 Los estatutos vigentes, el certificado de existencia y
                 representación legal, el RUT y los informes anuales de gestión se
                 entregan a solicitud de entidades, cooperantes y donantes.

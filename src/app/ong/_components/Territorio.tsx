@@ -5,7 +5,7 @@ export function Territorio() {
   const { sitio } = territorio;
 
   return (
-    <div className="relative border-y border-white/5">
+    <div className="relative border-y ong-hair">
       <div className="ong-horizon opacity-80" aria-hidden="true" />
       <div className="ong-contour opacity-70" aria-hidden="true" />
 
@@ -26,14 +26,14 @@ export function Territorio() {
             {territorio.parrafos.map((p, i) => (
               <p
                 key={i}
-                className="text-base leading-relaxed text-zinc-400 md:text-lg"
+                className="text-base leading-relaxed ong-muted md:text-lg"
               >
                 {p}
               </p>
             ))}
 
             {sitio.publicarUbicacion && (
-              <p className="ong-mono inline-flex rounded-full border border-[var(--ong-line-water)] px-5 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ong-water)]">
+              <p className="ong-mono inline-flex rounded-full border border-[var(--ong-cuenca)] px-5 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ong-red-bright)]">
                 Humedal de importancia internacional · {sitio.denominacion}
               </p>
             )}
@@ -41,13 +41,13 @@ export function Territorio() {
 
           {/* Marcadores del territorio */}
           <div>
-            <dl className="divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/5">
+            <dl className="divide-y divide-[var(--ong-hair)] overflow-hidden rounded-2xl border ong-hair">
               {territorio.marcadores.map((m) => (
                 <div
                   key={m.id}
                   className="flex items-baseline justify-between gap-6 px-7 py-6"
                 >
-                  <dt className="text-[10px] font-black uppercase leading-relaxed tracking-[0.18em] text-zinc-500">
+                  <dt className="text-[10px] font-black uppercase leading-relaxed tracking-[0.18em] ong-faint">
                     {m.etiqueta}
                   </dt>
                   <dd className="ong-mono ong-gradient-water shrink-0 text-3xl font-black">
@@ -56,7 +56,7 @@ export function Territorio() {
                 </div>
               ))}
             </dl>
-            <p className="mt-5 text-xs leading-relaxed text-zinc-600">
+            <p className="mt-5 text-xs leading-relaxed ong-faint">
               {territorio.nota}
             </p>
           </div>
