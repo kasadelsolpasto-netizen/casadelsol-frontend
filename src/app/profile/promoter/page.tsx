@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Ticket, CheckCircle2, AlertTriangle, Loader2, ChevronLeft, ChevronDown, ClipboardList, Link2, MessageCircle, Copy } from 'lucide-react';
+import { Ticket, CheckCircle2, AlertTriangle, Loader2, ChevronLeft, ChevronDown, ClipboardList, Link2, MessageCircle, Copy, ShieldCheck } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
 import { discountedTotal, formatTierDate, tierMessage, tierStatus } from '@/lib/promoter-tiers';
@@ -14,6 +14,8 @@ import PromoterSummary from '@/components/promoter/PromoterSummary';
 import PromoterSales, { type SalesFilter } from '@/components/promoter/PromoterSales';
 import { apiFetch } from '@/lib/kasa-api';
 import ProfileTabs from '@/components/profile/ProfileTabs';
+import PartnerArea from '@/components/promoter/PartnerArea';
+import { type Grant } from '@/lib/partners';
 import type { Summary } from '@/lib/sales-view';
 
 type SoldInfo = {
@@ -111,7 +113,9 @@ export default function PromoterDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'vender' | 'ventas' | 'enlaces'>('vender');
+  const [tab, setTab] = useState<'vender' | 'ventas' | 'enlaces' | 'socio'>('vender');
+  // Habilitaciones de socio: si tiene alguna activa, aparece su pestaña.
+  const [grants, setGrants] = useState<Grant[]>([]);
   const [summary, setSummary] = useState<{ totals: Summary; events: Array<{ event: { id: string; title: string } }> } | null>(null);
   const [salesKind, setSalesKind] = useState<SalesFilter>('ALL');
   const [salesKey, setSalesKey] = useState(0); // sube cuando se registra una venta, para que "Mis ventas" se recargue
@@ -196,6 +200,13 @@ export default function PromoterDashboard() {
         
         setProfile(profileData);
         loadSummary();
+
+        // Habilitaciones de socio. Si falla, el panel sigue igual: solo no aparece la pestaña.
+        try {
+          setGrants(await apiFetch<Grant[]>('/partners/me'));
+        } catch {
+          // no es socio, o no se pudo consultar
+        }
 
         // Fetch Events
         const resEvents = await fetch(`${API_URL}/events`);
@@ -406,11 +417,16 @@ export default function PromoterDashboard() {
           }}
         />
 
-        <div role="tablist" aria-label="Secciones del panel" className="mt-5 grid grid-cols-3 gap-1 p-1 rounded-2xl bg-zinc-950 border border-zinc-900">
+        <div
+          role="tablist"
+          aria-label="Secciones del panel"
+          className={`mt-5 grid gap-1 p-1 rounded-2xl bg-zinc-950 border border-zinc-900 ${grants.length > 0 ? 'grid-cols-4' : 'grid-cols-3'}`}
+        >
           {([
             { key: 'vender', label: 'Vender', Icon: Ticket },
             { key: 'ventas', label: 'Mis ventas', Icon: ClipboardList },
             { key: 'enlaces', label: 'Enlaces', Icon: Link2 },
+            ...(grants.length > 0 ? [{ key: 'socio' as const, label: 'Socio', Icon: ShieldCheck }] : []),
           ] as const).map(({ key, label, Icon }) => (
             <button
               key={key}
@@ -689,6 +705,8 @@ export default function PromoterDashboard() {
           )}
 
           {tab === 'enlaces' && <PromoLinks events={events} codes={profile?.promoter_codes ?? []} />}
+
+          {tab === 'socio' && <PartnerArea />}
         </div>
       </main>
     </div>

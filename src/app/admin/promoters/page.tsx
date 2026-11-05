@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, CheckCircle2, XCircle, Ticket, Activity, Percent, Pencil, Trash2, X, Save, AlertTriangle, ChevronDown, ChevronUp, Trophy, MousePointerClick, ShoppingCart, TrendingUp } from 'lucide-react';
 import TierEditor from '@/components/admin/TierEditor';
+import PartnerGrantsPanel from '@/components/admin/PartnerGrantsPanel';
 import {
   draftsFromTiers,
   draftsToPayload,
@@ -505,6 +506,14 @@ export default function PromotersAdminPage() {
         </div>
 
       </div>
+
+      {/* ══════════ SOCIOS ═══════════════════════════════════════════════ */}
+      <section className="mt-14">
+        <PartnerGrantsPanel
+          events={events}
+          promoters={codes.map((c: any) => ({ promoter_email: c.promoter?.email, promoter_name: c.promoter?.name }))}
+        />
+      </section>
 
       {/* ══════════ RANKING POR EVENTO ══════════════════════════════════ */}
       <section className="mt-14">

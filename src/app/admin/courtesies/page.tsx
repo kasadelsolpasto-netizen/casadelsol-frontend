@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import CourtesyBulkImport from '@/components/admin/courtesies/CourtesyBulkImport';
+import CourtesyTypesManager from '@/components/admin/courtesies/CourtesyTypesManager';
+import { COURTESY_KIND_HINT, COURTESY_KIND_LABEL, type CourtesyKind, type CourtesyType } from '@/lib/partners';
 
 export default function CourtesiesAdminPage() {
   const router = useRouter();
@@ -15,12 +17,15 @@ export default function CourtesiesAdminPage() {
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [courtesies, setCourtesies] = useState<any[]>([]);
-  const [ticketTypes, setTicketTypes] = useState<any[]>([]);
+  // Denominaciones DE CORTESÍA del evento (su propia métrica, no las boletas que se venden).
+  const [ticketTypes, setTicketTypes] = useState<CourtesyType[]>([]);
   const [eventLoading, setEventLoading] = useState(false);
   
   // Form State
   const [mode, setMode] = useState<'SINGLE' | 'BULK'>('SINGLE');
-  const [singleForm, setSingleForm] = useState({ name: '', dni: '', email: '', ticket_type_id: '' });
+  const [singleForm, setSingleForm] = useState<{ name: string; dni: string; email: string; ticket_type_id: string; quantity: string; kind: CourtesyKind }>(
+    { name: '', dni: '', email: '', ticket_type_id: '', quantity: '1', kind: 'PERSONAL' },
+  );
   const [submitting, setSubmitting] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
@@ -70,7 +75,14 @@ export default function CourtesiesAdminPage() {
         setCourtesies(data.courtesies);
         setTicketTypes(data.ticketTypes);
         if (data.ticketTypes.length > 0) {
-          setSingleForm(prev => ({ ...prev, ticket_type_id: data.ticketTypes[0].id }));
+          const first = data.ticketTypes[0];
+          setSingleForm(prev => ({
+            ...prev,
+            ticket_type_id: prev.ticket_type_id && data.ticketTypes.some((t: CourtesyType) => t.id === prev.ticket_type_id)
+              ? prev.ticket_type_id
+              : first.id,
+            kind: first.transferable_default ? 'LIBRE' : prev.kind,
+          }));
         }
       }
     } catch (error) {}
@@ -130,8 +142,10 @@ export default function CourtesiesAdminPage() {
     e.preventDefault();
     if (!selectedEvent) return;
     
-    const payload = [singleForm];
-    if (!singleForm.name || !singleForm.email || !singleForm.ticket_type_id) return alert('Completa los datos.');
+    const quantity = Number(singleForm.quantity) || 1;
+    const payload = [{ ...singleForm, quantity }];
+    if (!singleForm.name || !singleForm.email) return alert('Completa el nombre y el correo.');
+    if (!Number.isInteger(quantity) || quantity < 1) return alert('La cantidad debe ser un número entero de 1 o más.');
 
     setSubmitting(true);
     const tokenRow = document.cookie.split('; ').find(row => row.startsWith('kasa_auth_token='));
@@ -150,7 +164,8 @@ export default function CourtesiesAdminPage() {
 
       const resBody = await res.json().catch(() => null);
       if (res.ok) {
-        setSingleForm({ name: '', dni: '', email: '', ticket_type_id: ticketTypes[0]?.id || '' });
+        setSingleForm(prev => ({ name: '', dni: '', email: '', ticket_type_id: prev.ticket_type_id || ticketTypes[0]?.id || '', quantity: '1', kind: prev.kind }));
+        setUserSearchQuery('');
         fetchEventDetails(selectedEvent.id);
         fetchEvents(); // Update metrics on main screen
         // El servidor responde por cada registro: avisar de los que no se pudieron crear.
@@ -158,7 +173,7 @@ export default function CourtesiesAdminPage() {
         // Creadas, pero el proveedor de correo rechazó el envío: hay que pasarles el enlace a mano.
         const noMail = Array.isArray(resBody) ? resBody.filter((r: any) => r?.status !== 'error' && r?.email_sent === false) : [];
         if (failed.length > 0 || noMail.length > 0) {
-          let msg = `Procesadas ${resBody.length - failed.length} de ${resBody.length}.`;
+          let msg = `Emitidas ${resBody.length - failed.length} de ${resBody.length} cortesías.`;
           if (failed.length > 0) {
             msg += '\n\nNo se pudieron crear:\n' + failed.map((r: any) => `• ${r.email || '(sin correo)'}: ${r.message}`).join('\n');
           }
@@ -251,6 +266,11 @@ export default function CourtesiesAdminPage() {
                       <p className="text-xl font-black text-neon-green">{event.metrics.claimed}</p>
                     </div>
                   </div>
+                  {event.metrics.quota !== null && event.metrics.quota !== undefined && (
+                    <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                      Cupo de cortesías: <span className="text-white">{event.metrics.quota - event.metrics.quota_left}/{event.metrics.quota}</span>
+                    </p>
+                  )}
                 </div>
                 <div className="bg-zinc-900/50 p-4 border-t border-zinc-900 flex justify-between items-center group-hover:bg-neon-purple group-hover:border-neon-purple transition-all">
                   <span className="text-xs font-black uppercase tracking-widest text-zinc-400 group-hover:text-black">Gestionar Cortesías</span>
@@ -275,6 +295,11 @@ export default function CourtesiesAdminPage() {
   
   // Real Attendance Calculation from enriched courtesies
   const realAttendance = courtesies.filter(c => c.attended).length;
+  // Cuántas cortesías se emitieron de una sola vez a nombre de la misma persona.
+  const groupSizes: Record<string, number> = {};
+  for (const c of courtesies) if (c.group_id) groupSizes[c.group_id] = (groupSizes[c.group_id] ?? 0) + 1;
+  const hasQuota = ticketTypes.some(t => !t.unlimited);
+  const quotaLeft = ticketTypes.reduce((s, t) => s + (t.unlimited ? 0 : t.available), 0);
 
   return (
     <div className="min-h-screen bg-[#050505] p-6 lg:p-12 font-sans pb-24">
@@ -323,10 +348,25 @@ export default function CourtesiesAdminPage() {
           </div>
         </div>
 
+        {/* Cupo propio de las cortesías: no sale de las boletas que se venden. */}
+        <div className="mb-12 flex flex-wrap items-center gap-x-6 gap-y-2 text-[10px] font-black uppercase tracking-widest">
+          <span className="text-zinc-500">
+            Personales <span className="text-neon-purple">{courtesies.filter(c => (c.kind ?? 'PERSONAL') === 'PERSONAL').length}</span>
+          </span>
+          <span className="text-zinc-500">
+            Libres <span className="text-neon-green">{courtesies.filter(c => c.kind === 'LIBRE').length}</span>
+          </span>
+          {hasQuota && (
+            <span className="text-zinc-500">
+              Cupo de cortesías disponible <span className="text-white">{quotaLeft}</span>
+            </span>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* EMISSION FORM */}
-          <div className="lg:col-span-1">
-            <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-6 sticky top-6">
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-6">
               <h2 className="text-xl font-black uppercase text-white mb-6">Nueva Cortesía</h2>
               
               <div className="flex bg-black rounded-lg p-1 mb-6 border border-zinc-900">
@@ -431,17 +471,66 @@ export default function CourtesiesAdminPage() {
                   </div>
                 )}
 
-                <div className={mode === 'BULK' ? 'hidden' : ''}>
-                  <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 mt-2">Tipo de Entrada a Regalar</label>
-                  <select 
-                    value={singleForm.ticket_type_id} 
-                    onChange={e => setSingleForm({...singleForm, ticket_type_id: e.target.value})} 
-                    className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-purple transition-colors appearance-none"
-                  >
-                    {ticketTypes.map(t => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
-                    ))}
-                  </select>
+                <div className={mode === 'BULK' ? 'hidden' : 'space-y-4'}>
+                  <div>
+                    <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 mt-2">Denominación de Cortesía</label>
+                    <select 
+                      value={singleForm.ticket_type_id} 
+                      onChange={e => {
+                        const t = ticketTypes.find(x => x.id === e.target.value);
+                        setSingleForm({ ...singleForm, ticket_type_id: e.target.value, kind: t?.transferable_default ? 'LIBRE' : singleForm.kind });
+                      }} 
+                      className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-purple transition-colors appearance-none"
+                    >
+                      {ticketTypes.length === 0 && <option value="">Cortesía general (se crea sola)</option>}
+                      {ticketTypes.map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}{t.unlimited ? '' : ` · quedan ${t.available}`}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[10px] text-zinc-600 mt-1.5 font-bold">
+                      No es una boleta de venta: las cortesías tienen su propio cupo y no causan dinero.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Cantidad para esta persona</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={singleForm.quantity}
+                      onChange={e => setSingleForm({ ...singleForm, quantity: e.target.value })}
+                      className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-purple transition-colors"
+                    />
+                    <p className="text-[10px] text-zinc-600 mt-1.5 font-bold">
+                      Se emiten varias entradas independientes a su nombre, cada una con su propio QR.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Clase de Cortesía</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(['PERSONAL', 'LIBRE'] as CourtesyKind[]).map(k => (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => setSingleForm({ ...singleForm, kind: k })}
+                          className={`py-3 px-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
+                            singleForm.kind === k
+                              ? k === 'LIBRE'
+                                ? 'bg-neon-green/10 border-neon-green text-neon-green'
+                                : 'bg-neon-purple/10 border-neon-purple text-neon-purple'
+                              : 'bg-black border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                          }`}
+                        >
+                          {COURTESY_KIND_LABEL[k]}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-zinc-600 mt-1.5 font-bold">{COURTESY_KIND_HINT[singleForm.kind]}</p>
+                  </div>
                 </div>
 
                 <button 
@@ -449,10 +538,16 @@ export default function CourtesiesAdminPage() {
                   disabled={submitting}
                   className={`w-full mt-4 bg-white text-black font-black uppercase tracking-widest py-4 rounded-xl hover:bg-neon-purple hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${mode === 'BULK' ? 'hidden' : ''}`}
                 >
-                  {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Upload className="w-4 h-4" /> Emitir Cortesía{mode === 'BULK' ? 's' : ''}</>}
+                  {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Upload className="w-4 h-4" /> Emitir {Number(singleForm.quantity) > 1 ? `${Number(singleForm.quantity)} Cortesías` : 'Cortesía'}</>}
                 </button>
               </form>
             </div>
+
+            <CourtesyTypesManager
+              eventId={selectedEvent.id}
+              types={ticketTypes}
+              onChanged={() => { fetchEventDetails(selectedEvent.id); fetchEvents(true); }}
+            />
           </div>
 
           {/* LIST OF COURTESIES */}
@@ -468,7 +563,8 @@ export default function CourtesiesAdminPage() {
                   <thead>
                     <tr className="bg-black/50 text-[10px] font-black text-zinc-500 uppercase tracking-widest">
                       <th className="p-4 border-b border-zinc-900">Invitado</th>
-                      <th className="p-4 border-b border-zinc-900">Entrada</th>
+                      <th className="p-4 border-b border-zinc-900">Denominación</th>
+                      <th className="p-4 border-b border-zinc-900">Clase</th>
                       <th className="p-4 border-b border-zinc-900">Estado</th>
                       <th className="p-4 border-b border-zinc-900 text-right">Acción</th>
                     </tr>
@@ -477,11 +573,28 @@ export default function CourtesiesAdminPage() {
                     {courtesies.map((c) => (
                       <tr key={c.id} className="border-b border-zinc-900/50 hover:bg-zinc-900/30 transition-colors">
                         <td className="p-4">
-                          <p className="font-bold text-white">{c.name}</p>
+                          <p className="font-bold text-white">
+                            {c.name}
+                            {c.group_id && (groupSizes[c.group_id] ?? 0) > 1 && (
+                              <span className="ml-2 text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                                ({groupSizes[c.group_id]} juntas)
+                              </span>
+                            )}
+                          </p>
                           <p className="text-xs text-zinc-500">{c.email}</p>
                         </td>
                         <td className="p-4">
                           <span className="bg-zinc-900 text-zinc-400 text-[10px] px-2 py-1 rounded font-black uppercase tracking-widest">{c.ticket_type?.name}</span>
+                        </td>
+                        <td className="p-4">
+                          <span
+                            className={`text-[10px] px-2 py-1 rounded font-black uppercase tracking-widest ${
+                              c.kind === 'LIBRE' ? 'bg-neon-green/10 text-neon-green' : 'bg-neon-purple/10 text-neon-purple'
+                            }`}
+                            title={COURTESY_KIND_HINT[(c.kind ?? 'PERSONAL') as CourtesyKind]}
+                          >
+                            {COURTESY_KIND_LABEL[(c.kind ?? 'PERSONAL') as CourtesyKind]}
+                          </span>
                         </td>
                         <td className="p-4">
                           {c.attended ? (
@@ -526,7 +639,7 @@ export default function CourtesiesAdminPage() {
                     ))}
                     {courtesies.length === 0 && (
                       <tr>
-                        <td colSpan={4} className="p-8 text-center text-zinc-500 font-bold">
+                        <td colSpan={5} className="p-8 text-center text-zinc-500 font-bold">
                           Aún no has emitido cortesías para este evento.
                         </td>
                       </tr>
