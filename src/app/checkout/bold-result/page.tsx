@@ -33,7 +33,7 @@ function BoldResult() {
   const abandoned = params.get('bold-abandoned') === '1';
 
   const [view, setView] = useState<ViewState>('checking');
-  const [kind, setKind] = useState<'ticket' | 'shop' | null>(null);
+  const [kind, setKind] = useState<'ticket' | 'shop' | 'wallet' | null>(null);
   const attempts = useRef(0);
 
   useEffect(() => {
@@ -114,15 +114,17 @@ function BoldResult() {
           <CheckCircle2 className="w-16 h-16 text-neon-green mb-6" />
           <h1 className="text-3xl font-black uppercase tracking-widest mb-3">¡Pago confirmado!</h1>
           <p className="text-zinc-400 text-sm max-w-md mb-8">
-            {kind === 'shop'
+            {kind === 'wallet'
+              ? 'Recibimos tu pago. Tu saldo ya está disponible en tu pase.'
+              : kind === 'shop'
               ? 'Recibimos tu pago. Tu pedido ya está en preparación.'
               : 'Recibimos tu pago. Tus entradas ya están disponibles en tu perfil.'}
           </p>
           <Link
-            href={kind === 'shop' ? '/shop' : profileHref}
+            href={kind === 'wallet' ? '/pase' : kind === 'shop' ? '/shop' : profileHref}
             className="bg-neon-green text-black px-8 py-3 rounded font-black uppercase tracking-widest text-sm"
           >
-            {kind === 'shop' ? 'Volver a la tienda' : 'Ver mis entradas'}
+            {kind === 'wallet' ? 'Ver mi saldo' : kind === 'shop' ? 'Volver a la tienda' : 'Ver mis entradas'}
           </Link>
         </>
       )}
@@ -134,7 +136,7 @@ function BoldResult() {
           <p className="text-zinc-400 text-sm max-w-md mb-8">
             Bold no aprobó el pago. No se te cobró nada. Puedes intentarlo de nuevo.
           </p>
-          <Link href={kind === 'shop' ? '/shop' : '/events'} className="border border-zinc-600 px-8 py-3 rounded font-black uppercase tracking-widest text-sm">
+          <Link href={kind === 'wallet' ? '/pase' : kind === 'shop' ? '/shop' : '/events'} className="border border-zinc-600 px-8 py-3 rounded font-black uppercase tracking-widest text-sm">
             Intentar de nuevo
           </Link>
         </>
@@ -145,11 +147,13 @@ function BoldResult() {
           <AlertTriangle className="w-16 h-16 text-yellow-500 mb-6" />
           <h1 className="text-2xl font-black uppercase tracking-widest mb-3">No completaste el pago</h1>
           <p className="text-zinc-400 text-sm max-w-md mb-8">
-            Cerraste la pasarela antes de terminar, así que no se te cobró nada. Tu{' '}
-            {kind === 'shop' ? 'pedido' : 'selección'} sigue disponible: puedes intentarlo de nuevo.
+            Cerraste la pasarela antes de terminar, así que no se te cobró nada.{' '}
+            {kind === 'wallet'
+              ? 'Tu saldo quedó igual: puedes volver a recargar cuando quieras.'
+              : `Tu ${kind === 'shop' ? 'pedido' : 'selección'} sigue disponible: puedes intentarlo de nuevo.`}
           </p>
           <Link
-            href={kind === 'shop' ? '/shop' : '/events'}
+            href={kind === 'wallet' ? '/pase' : kind === 'shop' ? '/shop' : '/events'}
             className="bg-neon-purple text-white px-8 py-3 rounded font-black uppercase tracking-widest text-sm"
           >
             Intentar de nuevo
@@ -176,12 +180,13 @@ function BoldResult() {
           <AlertTriangle className="w-16 h-16 text-yellow-500 mb-6" />
           <h1 className="text-2xl font-black uppercase tracking-widest mb-3">Aún no vemos tu pago</h1>
           <p className="text-zinc-400 text-sm max-w-md mb-8">
-            Bold a veces tarda unos minutos en confirmar. Si ya pagaste, tu {kind === 'shop' ? 'pedido' : 'entrada'} se
-            registrará automáticamente. Revisa tu perfil en unos minutos o escríbenos con el código{' '}
+            Bold a veces tarda unos minutos en confirmar. Si ya pagaste, tu{' '}
+            {kind === 'wallet' ? 'recarga' : kind === 'shop' ? 'pedido' : 'entrada'} se registrará automáticamente.
+            Revisa en unos minutos o escríbenos con el código{' '}
             <span className="font-mono text-white">{orderRef}</span>.
           </p>
-          <Link href={profileHref} className="border border-zinc-600 px-8 py-3 rounded font-black uppercase tracking-widest text-sm">
-            Ir a mi perfil
+          <Link href={kind === 'wallet' ? '/pase' : profileHref} className="border border-zinc-600 px-8 py-3 rounded font-black uppercase tracking-widest text-sm">
+            {kind === 'wallet' ? 'Ir a mi pase' : 'Ir a mi perfil'}
           </Link>
         </>
       )}
