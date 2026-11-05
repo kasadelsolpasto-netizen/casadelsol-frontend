@@ -1,16 +1,14 @@
 import Link from "next/link";
 import { ArrowRight, MapPin } from "lucide-react";
 import { Atardecer } from "./Atardecer";
-import type { Identidad, Hero as DatosHero, Seccion } from "../contenido";
+import type { Identidad, Hero as DatosHero } from "../contenido";
 
 export function Hero({
   identidad,
   hero,
-  secciones,
 }: {
   identidad: Identidad;
   hero: DatosHero;
-  secciones: Seccion[];
 }) {
   return (
     <header className="relative flex min-h-[94vh] flex-col justify-end overflow-hidden">
@@ -68,24 +66,6 @@ export function Hero({
         </p>
       </div>
 
-      {/* Índice de secciones */}
-      <nav
-        aria-label="Secciones"
-        className="relative z-10 border-t ong-hair bg-white/70 backdrop-blur-md"
-      >
-        <ul className="mx-auto flex max-w-7xl items-center gap-8 overflow-x-auto px-6 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {secciones.map((s) => (
-            <li key={s.id} className="shrink-0">
-              <Link
-                href={`#${s.id}`}
-                className="text-[10px] font-black uppercase tracking-[0.24em] ong-faint transition-colors duration-500 hover:text-[var(--ong-red)]"
-              >
-                {s.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
     </header>
   );
 }

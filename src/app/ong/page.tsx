@@ -11,6 +11,7 @@
 import { obtener } from "@/lib/ong-almacen";
 import { componer } from "@/lib/ong-contenido";
 import { Hero } from "./_components/Hero";
+import { Barra } from "./_components/Barra";
 import { Tesis } from "./_components/Tesis";
 import { Lineas } from "./_components/Lineas";
 import { Territorio } from "./_components/Territorio";
@@ -29,7 +30,8 @@ export default async function OngPage() {
 
   return (
     <div className="min-h-screen">
-      <Hero identidad={c.identidad} hero={c.hero} secciones={c.secciones} />
+      <Hero identidad={c.identidad} hero={c.hero} />
+      <Barra secciones={c.secciones} identidad={c.identidad} />
 
       <Revelar>
         <Tesis datos={c.tesis} />

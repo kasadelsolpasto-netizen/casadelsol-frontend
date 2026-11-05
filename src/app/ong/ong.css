@@ -38,6 +38,13 @@
 
   background-color: var(--ong-paper);
   color: var(--ong-ink);
+  min-height: 100vh;
+}
+
+/* El sitio de eventos tiñe la selección de morado; aquí no corresponde. */
+.ong-scope ::selection {
+  background: var(--ong-red);
+  color: #fff;
 }
 
 /* ── Texto ──────────────────────────────────────────────────────────────── */

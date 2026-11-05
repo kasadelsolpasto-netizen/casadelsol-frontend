@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./ong.css";
 import { CONTENIDO_BASE } from "./contenido";
 
@@ -17,6 +17,12 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_CO",
   },
+};
+
+/* El sitio de eventos pinta de negro la barra del navegador en móvil; la
+   Fundación es blanca y debe anunciarlo. */
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
 };
 
 export default function OngLayout({
