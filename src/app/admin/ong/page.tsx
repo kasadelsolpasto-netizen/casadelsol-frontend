@@ -320,7 +320,7 @@ export default function EditorOng() {
               <div className="space-y-6">
                 <Texto etiqueta="Antetítulo" valor={doc.hero.antetitulo}
                   cambiar={(v) => poner("hero", { ...doc.hero, antetitulo: v })} />
-                <Texto etiqueta="Titular" valor={doc.hero.titular} ayuda="El titular se compone en pantalla como «Sol y cuenca»."
+                <Texto etiqueta="Titular" valor={doc.hero.titular} ayuda="Es el titular grande de la portada."
                   cambiar={(v) => poner("hero", { ...doc.hero, titular: v })} />
                 <Area etiqueta="Entrada" valor={doc.hero.entrada} filas={5}
                   ayuda="La tesis en una frase. Es lo primero que lee un inversor."

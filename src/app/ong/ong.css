@@ -502,3 +502,38 @@
     transparent 74%
   );
 }
+
+
+/* ── Titileo del agua ───────────────────────────────────────────────────── */
+
+/* Dos campos de ruido que se relevan. El filtro se calcula una sola vez; lo
+   que se anima es una opacidad, así que el agua se mueve sin coste por
+   fotograma. */
+@keyframes ong-marea-a {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes ong-marea-b {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+.ong-agua-a {
+  animation: ong-marea-a 11s ease-in-out infinite;
+}
+
+.ong-agua-b {
+  animation: ong-marea-b 11s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ong-agua-a {
+    animation: none;
+    opacity: 1;
+  }
+  .ong-agua-b {
+    animation: none;
+    opacity: 0;
+  }
+}

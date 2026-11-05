@@ -19,15 +19,9 @@ export function Hero({
       <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 pt-[36vh] sm:pt-28 md:pb-28 md:pt-36">
         <p className="ong-eyebrow">{hero.antetitulo}</p>
 
-        <h1 className="ong-title mt-7 max-w-3xl text-[clamp(2.3rem,8.4vw,7rem)]">
-          <span className="ong-gradient-text">Sol</span>
-          <span className="ong-faint"> y </span>
-          <span className="ong-gradient-water">cuenca</span>
+        <h1 className="ong-title ong-gradient-text mt-7 max-w-[min(100%,640px)] text-[clamp(2rem,5.9vw,5.2rem)]">
+          {hero.titular}
         </h1>
-
-        <p className="mt-6 text-xs font-black uppercase tracking-[0.3em] ong-muted sm:text-sm">
-          {identidad.nombre}
-        </p>
 
         <p className="mt-9 max-w-2xl text-base leading-relaxed ong-muted md:text-xl md:leading-relaxed">
           {hero.entrada}

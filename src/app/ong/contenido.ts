@@ -183,7 +183,7 @@ const secciones: Seccion[] = [
 
 const hero: Hero = {
   antetitulo: "Entidad sin ánimo de lucro · Pasto, Nariño",
-  titular: "Sol y cuenca",
+  titular: "Fundación Kasa del Sol",
   /** Tesis en una frase. Es lo primero que lee un inversor. */
   entrada:
     "Trabajamos donde nace el agua del Amazonas y donde se forma la juventud: dos extremos de una misma cadena. Conservación de la alta cuenca amazónica, alternativas productivas, defensa del agua, control social a lo público y cultura como forma de organización.",
