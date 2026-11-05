@@ -11,7 +11,7 @@ type ProblemKind = 'network' | 'server' | 'rate' | 'session' | 'forbidden';
 type ScanStatus =
   | { type: 'idle' }
   | { type: 'loading'; note?: string }
-  | { type: 'admitted'; name: string; ticket: string; time: string; replayed?: boolean }
+  | { type: 'admitted'; name: string; ticket: string; time: string; replayed?: boolean; courtesyKind?: 'PERSONAL' | 'LIBRE' | null; dni?: string | null }
   | { type: 'shop_success'; name: string; total: number }
   | { type: 'shop_error'; message: string }
   | { type: 'shop_order'; order: any; intent: 'PAY' | 'DELIVER' }
@@ -23,7 +23,7 @@ type ScanStatus =
 type DniStatus =
   | { type: 'idle' }
   | { type: 'loading' }
-  | { type: 'admitted'; name: string; ticket: string; dni: string }
+  | { type: 'admitted'; name: string; ticket: string; dni: string; courtesyKind?: 'PERSONAL' | 'LIBRE' | null }
   | { type: 'already_used'; message: string }
   | { type: 'not_found'; message: string }
   | { type: 'error'; message: string };
@@ -216,6 +216,9 @@ export default function ScannerPage() {
           ticket: r.data.ticket_type?.name || 'Entrada',
           time: new Date().toLocaleTimeString('es-CO'),
           replayed: r.replayed,
+          // Cortesía personal: en la puerta hay que comparar la cédula del titular.
+          courtesyKind: (r.data as any)?.courtesy_kind ?? null,
+          dni: (r.data as any)?.attendee_dni ?? null,
         });
         return false;
       case 'already_used':
@@ -382,7 +385,7 @@ export default function ScannerPage() {
       });
       if (r.kind === 'session_expired') setSessionExpired(true);
       if (r.kind === 'ok') {
-        setDniStatus({ type: 'admitted', name: r.data.attendee_name || 'Asistente', ticket: r.data.ticket_type?.name || 'Entrada', dni: r.data.attendee_dni || dni });
+        setDniStatus({ type: 'admitted', name: r.data.attendee_name || 'Asistente', ticket: r.data.ticket_type?.name || 'Entrada', dni: r.data.attendee_dni || dni, courtesyKind: (r.data as any)?.courtesy_kind ?? null });
       } else if (r.kind === 'already_used') {
         setDniStatus({ type: 'already_used', message: r.message || 'Entrada ya utilizada.' });
       } else if (r.kind === 'invalid' || r.kind === 'wrong_event') {
@@ -516,6 +519,16 @@ export default function ScannerPage() {
                     <p className="text-black font-black text-2xl uppercase leading-tight">{status.name}</p>
                     {status.type === 'admitted' && status.ticket && <p className="text-black/70 font-black text-lg uppercase">{status.ticket}</p>}
                     {status.type === 'admitted' && status.replayed && <p className="text-black/60 font-bold text-xs uppercase mt-1">Registrada hace instantes (reintento)</p>}
+                    {status.type === 'admitted' && status.courtesyKind === 'PERSONAL' && (
+                      <p className="mt-2 inline-block bg-black/80 text-white font-black text-sm uppercase tracking-widest px-3 py-1.5 rounded-lg">
+                        Cortesía personal · pide la cédula{status.dni ? ` ${status.dni}` : ''}
+                      </p>
+                    )}
+                    {status.type === 'admitted' && status.courtesyKind === 'LIBRE' && (
+                      <p className="mt-2 inline-block bg-black/60 text-white font-black text-xs uppercase tracking-widest px-3 py-1.5 rounded-lg">
+                        Cortesía libre · no pidas cédula
+                      </p>
+                    )}
                     {status.type === 'shop_success' && <p className="text-black/60 font-black text-xl">{Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(status.total)}</p>}
                   </div>
                 </div>
@@ -603,6 +616,12 @@ export default function ScannerPage() {
                   <p className="text-black font-black text-3xl uppercase tracking-tight">{dniStatus.name}</p>
                   <p className="text-black/70 font-bold text-sm">{dniStatus.ticket}</p>
                   <p className="text-black/50 font-mono text-xs">CC {dniStatus.dni}</p>
+                  {dniStatus.courtesyKind === 'PERSONAL' && (
+                    <p className="bg-black/80 text-white font-black text-xs uppercase tracking-widest px-3 py-1.5 rounded-lg">Cortesía personal · verifica la cédula</p>
+                  )}
+                  {dniStatus.courtesyKind === 'LIBRE' && (
+                    <p className="bg-black/60 text-white font-black text-xs uppercase tracking-widest px-3 py-1.5 rounded-lg">Cortesía libre</p>
+                  )}
                   <p className="text-black font-black text-xl mt-1">✅ ENTRADA VÁLIDA — QUEMADA</p>
                 </div>
               )}
