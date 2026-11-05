@@ -13,7 +13,8 @@ import {
   Settings,
   ChevronDown,
   DollarSign,
-  Music
+  Music,
+  Wallet
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -160,6 +161,12 @@ export function Navbar() {
                      </Link>
                    )}
 
+                   {/* Mi pase: el QR permanente con las entradas y el saldo */}
+                   <Link href="/pase" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item border-t border-zinc-900">
+                      <Wallet className="w-4 h-4 text-neon-green group-hover/item:scale-110 transition-transform" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Mi Pase y Saldo</span>
+                   </Link>
+
                    {/* Opción Promotor */}
                    {userProfile?.promoter_codes?.length > 0 && (
                      <Link href="/profile/promoter" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item border-t border-zinc-900">
@@ -207,6 +214,12 @@ export function Navbar() {
 
          {user && (
            <>
+              <Link href="/pase" className={`flex flex-col items-center gap-1 group relative ${isActive('/pase') ? 'text-neon-green' : 'text-zinc-600 hover:text-zinc-300'}`}>
+                 <Wallet className={`w-6 h-6 transition-all ${isActive('/pase') ? 'drop-shadow-[0_0_8px_rgba(57,255,20,0.5)]' : 'group-hover:scale-110'}`} />
+                 <span className="text-[8px] font-black uppercase tracking-wider">Pase</span>
+                 {isActive('/pase') && <div className="absolute -bottom-2 w-1 h-1 rounded-full bg-neon-green shadow-[0_0_10px_#39FF14]" />}
+              </Link>
+
               <Link href={`/promos`} className={`flex flex-col items-center gap-1 group relative ${pathname?.includes('promos') ? 'text-orange-500' : 'text-zinc-600 hover:text-zinc-300'}`}>
                  <Tag className={`w-6 h-6 transition-all ${pathname?.includes('promos') ? 'drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'group-hover:scale-110'}`} />
                  <span className="text-[8px] font-black uppercase tracking-wider">Promos</span>
