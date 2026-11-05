@@ -12,7 +12,6 @@ import type { Territorio as DatosTerritorio } from "../contenido";
  * el centro del relato: bajo la superficie está el territorio.
  */
 export function Territorio({ datos: territorio }: { datos: DatosTerritorio }) {
-  const { sitio } = territorio;
 
   return (
     <div className="ong-profundo relative">
@@ -51,11 +50,6 @@ export function Territorio({ datos: territorio }: { datos: DatosTerritorio }) {
                 </p>
               ))}
 
-              {sitio.publicarUbicacion && (
-                <p className="ong-mono inline-flex rounded-full border border-[var(--ong-tint-3)] px-5 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ong-red-bright)]">
-                  Humedal de importancia internacional · {sitio.denominacion}
-                </p>
-              )}
             </div>
           </Revelar>
 
@@ -79,6 +73,37 @@ export function Territorio({ datos: territorio }: { datos: DatosTerritorio }) {
               {territorio.nota}
             </p>
           </Revelar>
+        </div>
+
+        {/* Zonas de trabajo */}
+        <div className="mt-16 grid gap-6 md:grid-cols-2">
+          {territorio.zonas.map((z, i) => (
+            <Revelar key={z.id} retraso={i * 120}>
+              <article className="ong-panel ong-aro flex h-full flex-col rounded-2xl p-8">
+                <h3 className="text-lg font-black uppercase leading-snug tracking-wide ong-strong">
+                  {z.nombre}
+                </h3>
+                <p className="ong-mono mt-3 text-[10px] font-black uppercase leading-relaxed tracking-[0.14em] text-[var(--ong-red-bright)]">
+                  {z.ambito}
+                </p>
+                <p className="mt-5 text-sm leading-relaxed ong-muted">
+                  {z.descripcion}
+                </p>
+
+                <ul className="mt-7 flex-1 space-y-3 border-t ong-hair pt-6">
+                  {z.apuestas.map((a, j) => (
+                    <li key={j} className="flex gap-3 text-sm ong-muted">
+                      <span
+                        className="mt-[0.5rem] h-px w-3.5 shrink-0 bg-[var(--ong-cuenca)]"
+                        aria-hidden="true"
+                      />
+                      <span className="leading-relaxed">{a}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            </Revelar>
+          ))}
         </div>
       </Section>
 

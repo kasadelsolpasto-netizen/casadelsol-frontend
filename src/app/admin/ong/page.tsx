@@ -38,6 +38,7 @@ import type {
   Sello,
   Marcador,
   Seccion,
+  Zona,
   Documento,
   Red,
 } from "@/app/ong/contenido";
@@ -417,13 +418,25 @@ export default function EditorOng() {
                 <ListaTextos etiqueta="Párrafos" nombreElemento="párrafo" filas={5}
                   valores={doc.territorio.parrafos}
                   cambiar={(v) => poner("territorio", { ...doc.territorio, parrafos: v })} />
-                <Texto etiqueta="Denominación del sitio Ramsar" valor={doc.territorio.sitio.denominacion}
-                  cambiar={(v) => poner("territorio", { ...doc.territorio, sitio: { ...doc.territorio.sitio, denominacion: v } })} />
-                <Interruptor
-                  etiqueta="Publicar la ubicación del sitio"
-                  valor={doc.territorio.sitio.publicarUbicacion}
-                  cambiar={(v) => poner("territorio", { ...doc.territorio, sitio: { ...doc.territorio.sitio, publicarUbicacion: v } })}
-                  ayuda="Apagado, la página habla del humedal y de la cuenca sin señalar el predio."
+                <Lista<Zona>
+                  titulo="Zonas de trabajo"
+                  nombreElemento="zona"
+                  elementos={doc.territorio.zonas}
+                  cambiar={(v) => poner("territorio", { ...doc.territorio, zonas: v })}
+                  nuevo={() => ({ id: `zona-${Date.now()}`, nombre: "", ambito: "", descripcion: "", apuestas: [] })}
+                  rotulo={(z) => z.nombre}
+                  pintar={(z, set) => (
+                    <>
+                      <Texto etiqueta="Nombre" valor={z.nombre} cambiar={(v) => set({ ...z, nombre: v })} />
+                      <Texto etiqueta="Ámbito" valor={z.ambito}
+                        ayuda="Ubicación y condición del lugar, en una línea. No se describen predios."
+                        cambiar={(v) => set({ ...z, ambito: v })} />
+                      <Area etiqueta="Descripción" valor={z.descripcion} filas={3}
+                        cambiar={(v) => set({ ...z, descripcion: v })} />
+                      <ListaTextos etiqueta="Apuestas" nombreElemento="apuesta" filas={2}
+                        valores={z.apuestas} cambiar={(v) => set({ ...z, apuestas: v })} />
+                    </>
+                  )}
                 />
                 <Area etiqueta="Nota al pie de los indicadores" valor={doc.territorio.nota} filas={2}
                   cambiar={(v) => poner("territorio", { ...doc.territorio, nota: v })} />

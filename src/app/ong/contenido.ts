@@ -55,11 +55,22 @@ export type BloqueLineas = {
 
 export type Marcador = { id: string; valor: string; etiqueta: string };
 
+/** Una zona de trabajo: dónde es, qué es y qué se quiere levantar allí. */
+export type Zona = {
+  id: string;
+  nombre: string;
+  /** Ubicación y condición del lugar, en una línea. */
+  ambito: string;
+  descripcion: string;
+  /** Las apuestas grandes de la zona. */
+  apuestas: string[];
+};
+
 export type Territorio = {
   antetitulo: string;
   titulo: string;
   parrafos: string[];
-  sitio: { denominacion: string; publicarUbicacion: boolean };
+  zonas: Zona[];
   marcadores: Marcador[];
   nota: string;
 };
@@ -186,7 +197,7 @@ const hero: Hero = {
   titular: "Fundación Kasa del Sol",
   /** Tesis en una frase. Es lo primero que lee un inversor. */
   entrada:
-    "Trabajamos donde nace el agua del Amazonas y donde se forma la juventud: dos extremos de una misma cadena. Conservación de la alta cuenca amazónica, alternativas productivas, defensa del agua, control social a lo público y cultura como forma de organización.",
+    "Trabajamos donde nace el agua del Amazonas, con la juventud que se está formando y con las comunidades que sostienen el territorio. Conservación de la alta cuenca amazónica, alternativas productivas, defensa del agua, control social a lo público y cultura como forma de organización.",
   sellos: [
     { id: "nit", etiqueta: "NIT", valor: "902.014.359-1" },
     { id: "ivc", etiqueta: "Vigilancia", valor: "Gobernación de Nariño" },
@@ -208,6 +219,7 @@ const tesis: Tesis = {
   parrafos: [
     "En el sur de Colombia nace una de las cuencas de agua dulce más determinantes del planeta. Lo que ocurre en los páramos y humedales de Nariño y del piedemonte andino-amazónico se decide río abajo, en miles de kilómetros de selva. Y se decide también arriba: en quién compra la tierra, en qué se produce sobre ella, en qué contratos públicos se ejecutan y en qué comunidades quedan en pie para defenderla.",
     "La Fundación Kasa del Sol no separa esos planos. Conservar la alta cuenca exige alternativas productivas que no dependan del extractivismo; exige vigilancia sobre los recursos públicos destinados al ambiente; exige comunidades formadas y organizadas; y exige que las poblaciones que sostienen ese territorio —campesinas, indígenas, jóvenes— no sean desplazadas, criminalizadas ni exterminadas. Cada una de nuestras líneas es un tramo de esa misma cadena.",
+    "Por eso el trabajo tiene dos destinatarios inseparables: la juventud que se forma y la comunidad que ya está. A la primera se la acompaña en su oficio y en su organización; a la segunda se la respalda en lo que viene haciendo y se le abre una alternativa donde hoy solo hay el camino que destruye el territorio para poder vivir de él.",
     "Por eso una fundación que produce festivales también litiga por el agua, investiga bioplásticos y constituye veedurías ciudadanas. No son frentes dispersos: son los puntos donde una misma estructura de despojo puede romperse.",
   ],
   /** Frase de cierre, tipográficamente destacada. */
@@ -344,20 +356,37 @@ const territorio: Territorio = {
   antetitulo: "Territorio",
   titulo: "Donde nace el Amazonas",
   parrafos: [
-    "El trabajo de conservación de la Fundación se concentra en la alta cuenca amazónica, en el departamento de Nariño: el tramo donde el agua andina inicia el recorrido que alimenta el sistema fluvial más extenso del planeta. Es un territorio de humedales de importancia internacional, de economía campesina e indígena, y de una presión creciente sobre el suelo y el agua.",
-    "PENDIENTE: párrafo sobre el predio de operación — extensión, ecosistema, vocación de conservación y qué se proyecta instalar allí (vivero, laboratorio de bioplástico, estación de monitoreo, centro de formación).",
+    "De la laguna de La Cocha nace el río Guamués, que baja al Putumayo y por él al Amazonas. El agua que alimenta el sistema fluvial más extenso del planeta empieza su recorrido aquí, en el corregimiento de El Encano, en Pasto: cerca de 39.000 hectáreas declaradas humedal de importancia internacional, en el complejo de páramos de La Cocha y el Patascoy.",
+    "La Fundación trabaja en dos zonas de Nariño que se complementan. Arriba, la alta cuenca: fría, húmeda, donde se protege el nacimiento del agua. Abajo, la tierra templada: donde las alternativas productivas pueden escalar y donde la cultura encuentra su escenario.",
+    "En ambas, el trabajo es comunitario. No se hace sobre las comunidades que habitan el territorio, sino con ellas y desde su propio proyecto de vida.",
   ],
-  /**
-   * Sitio Ramsar de operación.
-   * PENDIENTE: confirmar denominación oficial y decidir si se publica la
-   * ubicación precisa. Mientras `publicarUbicacion` sea false, la página habla
-   * del humedal y de la cuenca sin señalar el predio.
-   */
-  sitio: {
-    denominacion: "PENDIENTE: nombre oficial del sitio Ramsar",
-    publicarUbicacion: false,
-  },
-  /** Datos del territorio. Solo se publican los verificables. */
+  zonas: [
+    {
+      id: "cocha",
+      nombre: "Alta cuenca amazónica",
+      ambito:
+        "Valle del río Encano, bajo la serranía del Patascoy · El Encano, Pasto · humedal Ramsar",
+      descripcion:
+        "El páramo y el bosque altoandino que sostienen el nacimiento del agua, y una economía campesina que lleva generaciones conviviendo con ellos. Es el punto exacto en que la conservación deja de ser una abstracción: lo que se protege aquí llega a miles de kilómetros de selva.",
+      apuestas: [
+        "Un centro de conexión y encuentro para las culturas del mundo",
+        "Un área de conservación del bosque altoandino y de las fuentes de agua",
+        "Reconversión del trabajo: que quienes hoy derivan su sustento de la tala y de la caza pasen a vivir del cuidado del bosque y de su fauna",
+      ],
+    },
+    {
+      id: "templada",
+      nombre: "Tierra templada del norte",
+      ambito: "Ladera cálida al norte de Pasto · clima templado todo el año",
+      descripcion:
+        "Un piso térmico distinto, a menos de una hora de la capital del departamento, con suelos y accesos que permiten lo que la alta montaña no: instalar, producir y recibir. Es la zona donde la alternativa productiva deja de ser ensayo y empieza a sostenerse.",
+      apuestas: [
+        "Una planta de proceso de bioplástico a partir de biomasa de la región",
+        "Un área de conservación",
+        "Un centro de experiencia musical, entendida como escenario mayor del disfrute vital",
+      ],
+    },
+  ],
   marcadores: [
     { id: "m1", valor: "—", etiqueta: "PENDIENTE: hectáreas bajo manejo o conservación" },
     { id: "m2", valor: "—", etiqueta: "PENDIENTE: comunidades del área de influencia" },
