@@ -298,9 +298,7 @@
   }
 }
 
-/* ── Sol ────────────────────────────────────────────────────────────────── */
-
-/* Halo detrás del disco */
+/* ── Halo del sol ───────────────────────────────────────────────────────── */
 .ong-bloom {
   position: absolute;
   inset: -38%;
@@ -314,110 +312,6 @@
   );
   filter: blur(26px);
   animation: ong-respirar 11s ease-in-out infinite;
-}
-
-/* El disco se deshace hacia abajo, como el sol al tocar el mar */
-.ong-sol-disuelto {
-  mask-image: linear-gradient(
-    to bottom,
-    #000 0%,
-    #000 54%,
-    rgba(0, 0, 0, 0.55) 78%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    #000 0%,
-    #000 54%,
-    rgba(0, 0, 0, 0.55) 78%,
-    transparent 100%
-  );
-}
-
-/* ── Horizonte ──────────────────────────────────────────────────────────── */
-
-.ong-horizonte {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 1px;
-  pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(178, 32, 26, 0.35) 28%,
-    rgba(255, 138, 120, 0.7) 50%,
-    rgba(178, 32, 26, 0.35) 72%,
-    transparent 100%
-  );
-}
-
-/* ── Reflejo ────────────────────────────────────────────────────────────── */
-
-/* El sol invertido, difuminado y partido en bandas por el oleaje */
-.ong-reflejo {
-  transform: scaleY(-1);
-  filter: blur(2.4px) saturate(1.15);
-  opacity: 0.52;
-  mask-image: repeating-linear-gradient(
-      to top,
-      #000 0px,
-      #000 3px,
-      rgba(0, 0, 0, 0.25) 4px,
-      rgba(0, 0, 0, 0.25) 7px
-    ),
-    linear-gradient(to top, transparent 0%, #000 72%);
-  -webkit-mask-image: repeating-linear-gradient(
-      to top,
-      #000 0px,
-      #000 3px,
-      rgba(0, 0, 0, 0.25) 4px,
-      rgba(0, 0, 0, 0.25) 7px
-    ),
-    linear-gradient(to top, transparent 0%, #000 72%);
-  mask-composite: intersect;
-  -webkit-mask-composite: source-in;
-  animation: ong-ondular 9s ease-in-out infinite;
-}
-
-@keyframes ong-ondular {
-  0%,
-  100% {
-    transform: scaleY(-1) scaleX(1);
-  }
-  50% {
-    transform: scaleY(-1) scaleX(1.022);
-  }
-}
-
-/* Brillos que recorren la superficie */
-.ong-destellos {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0px,
-    transparent 9px,
-    rgba(255, 255, 255, 0.55) 9px,
-    rgba(255, 255, 255, 0.55) 10px
-  );
-  mask-image: radial-gradient(60% 70% at 50% 40%, #000 0%, transparent 85%);
-  -webkit-mask-image: radial-gradient(
-    60% 70% at 50% 40%,
-    #000 0%,
-    transparent 85%
-  );
-  animation: ong-deriva-v 7s linear infinite;
-}
-
-@keyframes ong-deriva-v {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 0 10px;
-  }
 }
 
 /* ── Oleaje ─────────────────────────────────────────────────────────────── */
@@ -580,8 +474,6 @@
   }
   .ong-bruma,
   .ong-bloom,
-  .ong-reflejo,
-  .ong-destellos,
   .ong-ola,
   .ong-aro::before {
     animation: none;

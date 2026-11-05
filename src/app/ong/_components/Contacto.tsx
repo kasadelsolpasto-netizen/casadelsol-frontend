@@ -1,9 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Mail, Phone, MapPin, ArrowUpRight } from "lucide-react";
 import { Section, SectionHead } from "./Section";
 import { Revelar } from "./Fluido";
 import { Ondas } from "./Ondas";
+import { SolEntero } from "./Sol";
 import type { Contacto as DatosContacto, Identidad } from "../contenido";
 
 export function Contacto({
@@ -84,13 +84,14 @@ export function Contacto({
 
         <footer className="mt-20 border-t ong-hair pt-10">
           {/* Firma institucional */}
-          <Image
-            src="/ong/marca.webp"
-            alt={identidad.nombre}
-            width={900}
-            height={485}
-            className="mb-8 h-auto w-44 md:w-52"
-          />
+          <div className="mb-8 flex items-center gap-4">
+            <SolEntero className="h-14 w-14 shrink-0" />
+            <span className="text-lg font-black uppercase leading-[1.05] tracking-[0.14em] ong-brand">
+              Kasa
+              <br />
+              del Sol
+            </span>
+          </div>
           <div className="flex flex-col gap-4 text-[10px] font-bold uppercase tracking-[0.2em] ong-faint sm:flex-row sm:items-center sm:justify-between">
             <p className="ong-mono">
               {identidad.nombre} · NIT {identidad.nit} · {identidad.domicilio}
