@@ -5,7 +5,7 @@
  *
  * Ritmo: 128 BPM en 4/4, con capas de polirritmia/polimetría sobre la rejilla de semicorcheas:
  *   - tresillo 3-3-2 (rim/clave)               → pulso `p3`
- *   - campana euclidiana E(5,16)               → pulso `p5`
+ *   - pulso euclidiano E(5,16), solo visual       → pulso `p5`
  *   - toms en ciclo de 7 semicorcheas (7 vs 16) → pulso `p7`
  *   - congas en ciclo de 12 (3/4 sobre 4/4)
  * La animación principal va a la mitad del tempo (un pulso cada 2 negras) → `half`.
@@ -21,7 +21,8 @@ export const SPEC_BINS = 32;
 
 // ── Patrones (1 = golpe) ─────────────────────────────────────────────
 const TRESILLO = [1,0,0,1, 0,0,1,0, 1,0,0,1, 0,0,1,0];          // 3-3-2 ×2
-const BELL     = [1,0,0,1, 0,0,1,0, 0,1,0,0, 1,0,0,0];          // E(5,16)
+// Pulso euclidiano E(5,16): ya no suena (se retiró la campana), solo marca los destellos de Orión
+const PENTA    = [1,0,0,1, 0,0,1,0, 0,1,0,0, 1,0,0,0];
 const TOMS7    = [2,0,1,0,3,1,0];                               // 1 grave · 2 medio · 3 agudo
 const CONGA12  = [2,0,1,1, 0,1,2,0, 1,0,1,0];                   // 1 abierta · 2 slap
 const SHAKER   = [0.5,0.2,0.9,0.3, 0.5,0.2,0.9,0.4, 0.5,0.2,0.9,0.3, 0.5,0.3,1,0.4];
@@ -209,24 +210,6 @@ function rim(t: number) {
   o.stop(t + 0.05);
 }
 
-function bell(t: number, accent: boolean) {
-  const c = ctx!;
-  [587, 845].forEach((f) => {
-    const o = c.createOscillator();
-    o.type = 'square';
-    o.frequency.value = accent ? f * 1.19 : f;
-    const g = c.createGain();
-    g.gain.setValueAtTime(0.045, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
-    const hp = c.createBiquadFilter();
-    hp.type = 'highpass';
-    hp.frequency.value = 500;
-    o.connect(hp).connect(g).connect(percBus);
-    o.start(t);
-    o.stop(t + 0.18);
-  });
-}
-
 function acid(t: number, s: number) {
   const note = ACID[s];
   if (!note.f) return;
@@ -274,7 +257,6 @@ function schedule() {
     if (s % 4 === 2 && bar >= 1) noiseHit(t, 'highpass', 8000, 0.08, 0.12);   // hat abierto
 
     if (bar >= 1 && TRESILLO[s]) rim(tp);
-    if (bar >= 2 && BELL[s]) bell(tp, s === 0);
     if (bar >= 2) {
       const tm = TOMS7[step % 7];
       if (tm) drum(tp, TOM_F[tm], 0.3, 0.42 * TOM_VEL[step % 6] * hum());
@@ -349,7 +331,7 @@ export function sample(t: number) {
   rave.halfPhase = (pos % 8) / 8;
   rave.half = dec(pos % 8, 0.9);
   rave.p3 = dec(age(TRESILLO, pos % 16), 1.6);
-  rave.p5 = dec(age(BELL, pos % 16), 1.3);
+  rave.p5 = dec(age(PENTA, pos % 16), 1.3);
   rave.p7 = dec(age(TOMS7, pos % 7), 1.4);
 
   if (live) {

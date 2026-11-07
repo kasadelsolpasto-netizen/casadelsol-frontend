@@ -240,7 +240,7 @@ body {
 }
 
 /* Título: gira con el cursor (no con la música). Su contorno es un borde luminoso
-   que sí reacciona: brilla a medio tempo y destella con la campana. */
+   que reacciona con suavidad: brilla a medio tempo. */
 .title-stage { perspective: 900px; }
 .title-3d {
   transform-origin: 30% 50%;
@@ -249,10 +249,9 @@ body {
     calc(var(--mx) * -3px) calc(var(--my) * 3px) 0 #bf00ff,
     calc(var(--mx) * -6px) calc(var(--my) * 6px) 0 rgba(191,0,255,.6),
     calc(var(--mx) * -9px) calc(var(--my) * 9px) 0 rgba(191,0,255,.35);
-  -webkit-text-stroke: 1px rgba(57,255,20,calc(.35 + var(--viz-half) * .6));
   filter:
-    drop-shadow(0 0 1px rgba(57,255,20,calc(.5 + var(--viz-p5) * .5)))
-    drop-shadow(0 0 calc(4px + var(--viz-half) * 14px) rgba(57,255,20,calc(.25 + var(--viz-half) * .5)));
+    drop-shadow(0 0 1px rgba(57,255,20,calc(.55 + var(--viz-half) * .2)))
+    drop-shadow(0 0 calc(4px + var(--viz-half) * 5px) rgba(57,255,20,calc(.2 + var(--viz-half) * .18)));
   will-change: transform, filter;
 }
 

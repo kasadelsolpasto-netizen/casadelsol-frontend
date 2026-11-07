@@ -10,7 +10,7 @@ import { rave, sample, SPEC_BINS } from "@/lib/rave-engine";
  * de la música dispara su propio elemento:
  *   half → onda de choque del piso y latido del sol
  *   p3   → anillos que emanan del sol (tresillo 3-3-2)
- *   p5   → destellos de las estrellas de Orión (campana 5:16)
+ *   p5   → destellos de las estrellas de Orión (pulso euclidiano 5:16)
  *   p7   → crestas de la cordillera-ecualizador (toms en ciclo de 7)
  * En el cosmos, al fondo, las estrellas de Orión (sin trazos): Betelgeuse, Rigel, el cinturón
  * y la nebulosa M42. La cámara sigue el cursor o la inclinación del teléfono.
@@ -51,7 +51,7 @@ uniform vec2 uRes;
 uniform float uTime, uBeats, uBass, uMid, uHigh, uBeat, uHalf, uP3, uP5, uP7;
 uniform vec2 uMouse;
 uniform vec3 uOrion;               // centro x, centro y (pantalla), escala por grado
-uniform vec3 uLayout;              // horizonte base, radio del sol, altura del sol sobre el horizonte
+uniform vec4 uLayout;              // horizonte base, radio del sol, altura del sol sobre el horizonte, x del sol
 uniform vec4 uStar[${STAR_N}];     // x, y (grados locales), magnitud, tipo
 uniform sampler2D uSpec;
 
@@ -78,7 +78,7 @@ void main(){
   float halfT = uBeats * 0.5;                       // reloj a medio tempo
   float sway = sin(halfT * 3.14159) * 0.02;         // deriva de cámara: un vaivén cada 2 negras
   uv = rot(-uMouse.x * 0.10 + sway) * uv;
-  float horizon = uLayout.x - uMouse.y * 0.08;
+  float horizon = uLayout.x - uMouse.y * 0.10;
   float camX = uMouse.x * 0.9;
 
   vec3 col = vec3(0.0);
@@ -99,7 +99,8 @@ void main(){
     }
 
     // ── SOL ── late a medio tempo
-    vec2 sp = uv - vec2(-camX * 0.18, horizon + uLayout.z);
+    float sunX = uLayout.w - camX * 0.18;
+    vec2 sp = uv - vec2(sunX, horizon + uLayout.z);
     float r = uLayout.y + uHalf * 0.025 + uBass * 0.015;
     float d = length(sp);
     float disc = smoothstep(r, r - 0.004, d);
@@ -161,7 +162,7 @@ void main(){
     vec3 lc = mix(P, G, fog);
     col = lc * g * (0.35 + uBass * 0.6 + wave * 2.5) * fog;
     col += lc * wave * 0.22 * fog;
-    float refl = exp(-abs(uv.x + camX * 0.18) * 7.0) * exp(y * 6.0);
+    float refl = exp(-abs(uv.x - (uLayout.w - camX * 0.18)) * 7.0) * exp(y * 6.0);
     col += mix(G, P, 0.5) * refl * 0.25 * (0.5 + uHalf);
     col += P * 0.35 * exp(y * 22.0);
   }
@@ -268,8 +269,16 @@ export function RaveScene() {
         // Composición: Orión al centro del cielo, sobre el sol, en el hueco entre título y flyer
         const halfW = (canvas.width / canvas.height) / 2;
         const wide = halfW > 0.6;
-        gl.uniform3f(U.uLayout, wide ? -0.16 : -0.08, wide ? 0.15 : 0.16, wide ? 0.08 : 0.1);
-        gl.uniform3f(U.uOrion, 0.0, wide ? 0.215 : 0.3, wide ? 0.0165 : 0.0115);
+        // Encuadre cercano (el de la primera versión): horizonte alto y sol grande.
+        // Sol a la izquierda y Orión a la derecha para que no se pisen.
+        if (wide) {
+          const off = Math.min(0.42, halfW - 0.3);
+          gl.uniform4f(U.uLayout, 0.04, 0.24, 0.2, -off);
+          gl.uniform3f(U.uOrion, off + 0.02, 0.26, 0.019);
+        } else {
+          gl.uniform4f(U.uLayout, 0.0, 0.17, 0.15, -halfW * 0.45);
+          gl.uniform3f(U.uOrion, halfW * 0.55, 0.3, 0.0105);
+        }
       }
     };
     resize();
