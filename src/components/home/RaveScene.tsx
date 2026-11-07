@@ -31,11 +31,17 @@ const ORION: [string, number, number, number, number][] = [
 ];
 const STAR_N = ORION.length;
 
-/** Proyección local (grados, este a la izquierda), centrada en el cinturón. */
+/** Giro de la constelación en pantalla (grados, antihorario). */
+const ORION_TILT = 55;
+
+/** Proyección local (grados, este a la izquierda), centrada en el cinturón y girada ORION_TILT. */
 function orionLocal() {
+  const a = (ORION_TILT * Math.PI) / 180;
+  const c = Math.cos(a), s = Math.sin(a);
   return ORION.map(([, ra, dec]) => {
     const x = -(ra - 5.6) * 15 * Math.cos((dec * Math.PI) / 180);
-    return [x, dec + 1] as const;
+    const y = dec + 1;
+    return [x * c - y * s, x * s + y * c] as const;
   });
 }
 
@@ -274,10 +280,10 @@ export function RaveScene() {
         if (wide) {
           const off = Math.min(0.42, halfW - 0.3);
           gl.uniform4f(U.uLayout, 0.04, 0.24, 0.2, -off);
-          gl.uniform3f(U.uOrion, off + 0.02, 0.26, 0.019);
+          gl.uniform3f(U.uOrion, off * 0.62, 0.26, 0.019 * 0.9);
         } else {
           gl.uniform4f(U.uLayout, 0.0, 0.17, 0.15, -halfW * 0.45);
-          gl.uniform3f(U.uOrion, halfW * 0.55, 0.3, 0.0105);
+          gl.uniform3f(U.uOrion, halfW * 0.38, 0.3, 0.0105 * 0.9);
         }
       }
     };
