@@ -318,8 +318,8 @@ function age(pattern: number[], pos: number) {
 
 /** Actualiza `rave` para el cuadro actual. `t` en ms (requestAnimationFrame). */
 export function sample(t: number) {
-  rave.mx += (rave.tx - rave.mx) * 0.06;
-  rave.my += (rave.ty - rave.my) * 0.06;
+  rave.mx += (rave.tx - rave.mx) * 0.035;
+  rave.my += (rave.ty - rave.my) * 0.035;
 
   const live = rave.playing && ctx;
   // Posición del reloj en semicorcheas (con audio, el reloj del audio manda)
@@ -329,7 +329,8 @@ export function sample(t: number) {
   const dec = (a: number, k: number) => Math.exp(-a * k);
   rave.beat = dec((pos % 4), 2.2);
   rave.halfPhase = (pos % 8) / 8;
-  rave.half = dec(pos % 8, 0.9);
+  // Respiración suave a medio tempo (máximo en el primer tiempo de cada par de negras)
+  rave.half = Math.pow(0.5 + 0.5 * Math.cos(rave.halfPhase * Math.PI * 2), 2);
   rave.p3 = dec(age(TRESILLO, pos % 16), 1.6);
   rave.p5 = dec(age(PENTA, pos % 16), 1.3);
   rave.p7 = dec(age(TOMS7, pos % 7), 1.4);
@@ -352,15 +353,11 @@ export function sample(t: number) {
       rave.spec[i] = m;
     }
   } else {
-    // En silencio: misma polirritmia, más tenue
-    rave.beat *= 0.5;
-    rave.bass = 0.18 + rave.half * 0.3;
-    rave.mid = 0.15 + rave.p3 * 0.2;
-    rave.high = 0.1 + rave.p5 * 0.25;
+    // En silencio el ecualizador es fiel: casi plano, con un perfil quieto y bajo
+    rave.beat = 0;
+    rave.bass = rave.mid = rave.high = 0;
     for (let i = 0; i < SPEC_BINS; i++) {
-      const band = i < 6 ? rave.half : i < 16 ? rave.p7 : rave.p5;
-      const base = 0.5 + 0.5 * Math.sin(i * 0.7 + t / 900);
-      rave.spec[i] = Math.floor((0.1 + base * 0.18 + band * 0.4) * 255);
+      rave.spec[i] = Math.floor((0.05 + 0.04 * (0.5 + 0.5 * Math.sin(i * 0.9))) * 255);
     }
   }
 }

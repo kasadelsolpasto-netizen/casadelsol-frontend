@@ -3,17 +3,16 @@ import { useEffect, useRef } from "react";
 import { rave, sample, SPEC_BINS } from "@/lib/rave-engine";
 
 /**
- * Escena 3D de la portada (WebGL, un solo shader de pantalla completa).
+ * Escena 3D de la portada (WebGL, un solo shader de pantalla completa), en la línea del
+ * cañón de líneas de chauss.cz: la cuadrícula es un VALLE andino tipo Pasto, con laderas y
+ * cerros a ambos lados, dibujado como malla sobre el relieve (raymarching de un campo de alturas).
  *
- * Todo el movimiento va a MEDIO TEMPO (un ciclo cada 2 negras): avance del piso,
- * franjas del sol, deriva de la cámara. Sobre ese pulso, cada capa polirrítmica
- * de la música dispara su propio elemento:
- *   half → onda de choque del piso y latido del sol
- *   p3   → anillos que emanan del sol (tresillo 3-3-2)
- *   p5   → destellos de las estrellas de Orión (pulso euclidiano 5:16)
- *   p7   → crestas de la cordillera-ecualizador (toms en ciclo de 7)
- * En el cosmos, al fondo, las estrellas de Orión (sin trazos): Betelgeuse, Rigel, el cinturón
- * y la nebulosa M42. La cámara sigue el cursor o la inclinación del teléfono.
+ * Ritmo visual delicado: nada se mueve a más de la mitad del tempo. La cámara avanza una celda
+ * por compás, el sol respira cada 2 negras, los anillos salen uno por compás y las estrellas
+ * titilan cada 2 compases. La única excepción es la cordillera-ecualizador del fondo, que sigue
+ * fielmente el espectro de la música.
+ * En el cosmos, las estrellas de Orión (sin trazos): Betelgeuse, Rigel, el cinturón y M42.
+ * La cámara sigue el cursor o la inclinación del teléfono.
  */
 
 // ── Orión tal como se ve desde Pasto (1,21° N · 77,28° O) al amanecer del 30 de junio de 1988,
@@ -47,7 +46,7 @@ const FRAG = `
 #extension GL_OES_standard_derivatives : enable
 precision highp float;
 uniform vec2 uRes;
-uniform float uTime, uBeats, uBass, uMid, uHigh, uBeat, uHalf, uP3, uP5, uP7;
+uniform float uTime, uBeats, uHalf, uFocal;
 uniform vec2 uMouse;
 uniform vec3 uOrion;               // centro x, centro y (pantalla), escala por grado
 uniform vec4 uLayout;              // horizonte base, radio del sol, altura del sol sobre el horizonte, x del sol
@@ -57,123 +56,146 @@ uniform sampler2D uSpec;
 const vec3 G = vec3(0.224, 1.0, 0.078);
 const vec3 P = vec3(0.749, 0.0, 1.0);
 const vec3 C = vec3(0.0, 1.0, 1.0);
+const float TAU = 6.28318;
+const float CAM_H = 1.5;
+const float FAR = 150.0;
 
 float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 mat2 rot(float a){ float c = cos(a), s = sin(a); return mat2(c, -s, s, c); }
 
+float vnoise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+float fbm(vec2 p){
+  float v = 0.0, a = 0.5;
+  for (int k = 0; k < 3; k++) { v += a * vnoise(p); p = p * 2.03 + 17.1; a *= 0.5; }
+  return v;
+}
+
+// Eje del valle: serpentea suavemente, como la hoya del río Pasto
+float valleyAxis(float z){ return sin(z * 0.035) * 3.0 + sin(z * 0.09 + 1.7) * 1.2; }
+
+// Relieve: fondo de valle casi plano, laderas que suben y cerros redondeados (tipo andino)
+float terrain(vec2 p){
+  float d = abs(p.x - valleyAxis(p.y));
+  float slope = smoothstep(2.0, 16.0, d);
+  float hills = fbm(p * 0.07) * 1.6 + vnoise(p * 0.35) * 0.3;
+  float h = slope * slope * (3.0 + hills * 2.8);
+  h += (1.0 - slope) * 0.12 * sin(p.x * 0.6) * sin(p.y * 0.45);   // ondulación suave del fondo
+  return min(h, 7.0);
+}
+
 float lineGrid(vec2 p){
-  vec2 w = fwidth(p) * 1.2;
+  vec2 w = fwidth(p) * 1.1;
   vec2 g = abs(fract(p - 0.5) - 0.5) / max(w, 1e-4);
   return 1.0 - min(min(g.x, g.y), 1.0);
-}
-float segDist(vec2 p, vec2 a, vec2 b){
-  vec2 pa = p - a, ba = b - a;
-  float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
-  return length(pa - ba * h);
 }
 
 void main(){
   vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
-  float halfT = uBeats * 0.5;                       // reloj a medio tempo
-  float sway = sin(halfT * 3.14159) * 0.02;         // deriva de cámara: un vaivén cada 2 negras
-  uv = rot(-uMouse.x * 0.10 + sway) * uv;
-  float horizon = uLayout.x - uMouse.y * 0.10;
+  float halfT = uBeats * 0.5;                        // reloj a medio tempo
+  float barT = uBeats * 0.25;                        // un ciclo por compás
+  float sway = sin(uBeats * TAU / 16.0) * 0.01;      // vaivén muy lento: uno cada 4 compases
+  uv = rot(-uMouse.x * 0.06 + sway) * uv;
+  float horizon = uLayout.x - uMouse.y * 0.08;
   float camX = uMouse.x * 0.9;
-
-  vec3 col = vec3(0.0);
   float y = uv.y - horizon;
 
-  if (y > 0.0) {
-    // ── COSMOS ──
-    col = mix(vec3(0.02, 0.0, 0.045), vec3(0.0), clamp(y * 2.5, 0.0, 1.0));
-    col += P * 0.10 * exp(-y * 6.0);
+  // ── COSMOS ──
+  vec3 col = mix(vec3(0.02, 0.0, 0.045), vec3(0.0), clamp(y * 2.5, 0.0, 1.0));
+  col += P * 0.10 * exp(-abs(y) * 6.0);
 
-    // polvo estelar de fondo
-    vec2 sc = uv * 90.0 + vec2(camX * 4.0, 0.0);
-    vec2 cell = floor(sc);
-    float h = hash(cell);
-    if (h > 0.975) {
-      float tw = 0.5 + 0.5 * sin(h * 50.0 + halfT * 6.2832);
-      col += vec3(0.8, 0.9, 1.0) * smoothstep(0.18, 0.0, length(fract(sc) - 0.5)) * (0.15 + 0.35 * tw + uHigh * 0.6) * smoothstep(0.0, 0.2, y);
-    }
-
-    // ── SOL ── late a medio tempo
-    float sunX = uLayout.w - camX * 0.18;
-    vec2 sp = uv - vec2(sunX, horizon + uLayout.z);
-    float r = uLayout.y + uHalf * 0.025 + uBass * 0.015;
-    float d = length(sp);
-    float disc = smoothstep(r, r - 0.004, d);
-    float band = (sp.y + r) / (2.0 * r);
-    float cut = step(fract(sp.y * 34.0 - halfT), 0.25 + 0.75 * clamp(band * 1.7, 0.0, 1.0));
-    disc *= mix(cut, 1.0, step(0.55, band));
-    vec3 sunCol = mix(P, G, smoothstep(-r, r * 0.9, sp.y));
-    col = mix(col, sunCol * (1.05 + uHalf * 0.5), disc);
-    col += sunCol * 0.45 * exp(-max(d - r, 0.0) * 7.0) * (0.45 + uHalf * 0.8);
-
-    // anillos del tresillo: cada golpe 3-3-2 lanza un anillo
-    float ringR = r + (1.0 - uP3) * 0.55;
-    float ring = exp(-abs(d - ringR) * 140.0) * uP3;
-    col += mix(G, C, 0.4) * ring * 0.9 * step(r, d);
-
-    // ── ORIÓN ── al fondo, paralaje menor que el sol (más lejos)
-    vec2 op = uv - vec2(uOrion.x - camX * 0.07, uOrion.y - uMouse.y * 0.03);
-    float s = uOrion.z;
-    for (int i = 0; i < ${STAR_N}; i++) {
-      vec4 st = uStar[i];
-      vec2 q = op - st.xy * s;
-      float dd = length(q);
-      float bright = clamp(1.25 - st.z * 0.25, 0.25, 1.3);
-      float tw = 0.8 + 0.7 * uP5 * (0.5 + 0.5 * sin(float(i) * 2.39 + halfT * 3.14159));
-      vec3 sc2 = st.w < 0.5 ? vec3(0.9, 0.95, 1.0) : st.w < 1.5 ? vec3(1.0, 0.5, 0.25) : st.w < 2.5 ? vec3(0.6, 0.8, 1.0) : vec3(0.9, 0.3, 1.0);
-      if (st.w > 2.5) {
-        // nebulosa de Orión
-        col += sc2 * exp(-dd / 0.04) * 0.4 * (0.7 + uP5 * 0.5);
-      } else {
-        float size = 0.0035 + bright * 0.0055;
-        float core = smoothstep(size, 0.0, dd);
-        float glow = exp(-dd / (size * 3.2)) * 0.7;
-        float spk = 0.35 + uP5 * 0.9;
-        float spikes = (exp(-abs(q.x) * 700.0) * exp(-abs(q.y) * 30.0) + exp(-abs(q.y) * 700.0) * exp(-abs(q.x) * 30.0)) * bright * spk;
-        col += sc2 * (core * 1.5 + glow + spikes * 0.7) * bright * tw;
-      }
-    }
-
-    // ── CORDILLERA-ECUALIZADOR ── crestas con los toms (p7)
-    float sx = abs(uv.x + camX * 0.06);
-    float bin = clamp(sx * 0.9, 0.0, 0.999);
-    float jag = 0.012 * sin(uv.x * 90.0) + 0.008 * sin(uv.x * 37.0 + 1.3);
-    float m = texture2D(uSpec, vec2(bin, 0.5)).r;
-    float ridge = 0.015 + m * 0.20 * (0.55 + sx * 0.6) + jag;
-    if (y < ridge) {
-      col = mix(vec3(0.0), P * 0.08, y / max(ridge, 1e-3));
-      float edge = smoothstep(0.006, 0.0, ridge - y);
-      col += mix(G, P, bin) * edge * (0.5 + m * 1.2 + uP7 * 0.8);
-    }
-  } else {
-    // ── PISO ── avanza una línea cada 2 negras
-    float z = 0.35 / (-y + 1e-3);
-    vec2 w = vec2(uv.x * z + camX * z * 0.25 + camX * 2.0, z + uBeats);
-    w.x += uMouse.x * z * z * 0.015;
-    float g = lineGrid(w * vec2(1.0, 0.5));
-    float fog = exp(-z * 0.11);
-    // onda de choque a medio tempo
-    float wave = exp(-abs(z - (1.0 - uHalf) * 24.0) * 0.5) * uHalf;
-    vec3 lc = mix(P, G, fog);
-    col = lc * g * (0.35 + uBass * 0.6 + wave * 2.5) * fog;
-    col += lc * wave * 0.22 * fog;
-    float refl = exp(-abs(uv.x - (uLayout.w - camX * 0.18)) * 7.0) * exp(y * 6.0);
-    col += mix(G, P, 0.5) * refl * 0.25 * (0.5 + uHalf);
-    col += P * 0.35 * exp(y * 22.0);
+  vec2 sc = uv * 90.0 + vec2(camX * 4.0, 0.0);
+  float h0 = hash(floor(sc));
+  if (h0 > 0.975) {
+    float tw = 0.5 + 0.5 * sin(h0 * 50.0 + barT * TAU * 0.5);   // titileo: un ciclo cada 2 compases
+    col += vec3(0.8, 0.9, 1.0) * smoothstep(0.18, 0.0, length(fract(sc) - 0.5)) * (0.2 + 0.35 * tw) * smoothstep(0.0, 0.2, y);
   }
 
-  // línea de horizonte: marca el bombo (cada negra)
-  col += G * smoothstep(0.004, 0.0, abs(y)) * (0.35 + uBeat * 0.7);
+  // ── SOL ── respira a medio tempo
+  float sunX = uLayout.w - camX * 0.18;
+  vec2 sp = uv - vec2(sunX, horizon + uLayout.z);
+  float r = uLayout.y + uHalf * 0.012;
+  float d = length(sp);
+  float disc = smoothstep(r, r - 0.004, d);
+  float band = (sp.y + r) / (2.0 * r);
+  float cut = step(fract(sp.y * 34.0 - barT * 0.5), 0.25 + 0.75 * clamp(band * 1.7, 0.0, 1.0));
+  disc *= mix(cut, 1.0, step(0.55, band));
+  vec3 sunCol = mix(P, G, smoothstep(-r, r * 0.9, sp.y));
+  col = mix(col, sunCol * (1.05 + uHalf * 0.2), disc);
+  col += sunCol * 0.4 * exp(-max(d - r, 0.0) * 7.0) * (0.5 + uHalf * 0.3);
 
-  col += (hash(gl_FragCoord.xy + fract(uTime) * 100.0) - 0.5) * 0.06;
+  // un anillo por compás, lento y tenue
+  float ringR = r + fract(barT) * 0.6;
+  float ring = exp(-abs(d - ringR) * 120.0) * (1.0 - fract(barT)) * 0.5;
+  col += mix(G, C, 0.4) * ring * step(r, d);
+
+  // ── ORIÓN ──
+  vec2 op = uv - vec2(uOrion.x - camX * 0.07, uOrion.y - uMouse.y * 0.03);
+  float s = uOrion.z;
+  for (int i = 0; i < ${STAR_N}; i++) {
+    vec4 st = uStar[i];
+    vec2 q = op - st.xy * s;
+    float dd = length(q);
+    float bright = clamp(1.25 - st.z * 0.25, 0.25, 1.3);
+    float tw = 0.85 + 0.25 * sin(float(i) * 2.39 + barT * TAU * 0.5);
+    vec3 sc2 = st.w < 0.5 ? vec3(0.9, 0.95, 1.0) : st.w < 1.5 ? vec3(1.0, 0.5, 0.25) : st.w < 2.5 ? vec3(0.6, 0.8, 1.0) : vec3(0.9, 0.3, 1.0);
+    if (st.w > 2.5) {
+      col += sc2 * exp(-dd / 0.04) * 0.4 * tw;
+    } else {
+      float size = 0.0035 + bright * 0.0055;
+      float core = smoothstep(size, 0.0, dd);
+      float glow = exp(-dd / (size * 3.2)) * 0.7;
+      float spikes = (exp(-abs(q.x) * 700.0) * exp(-abs(q.y) * 30.0) + exp(-abs(q.y) * 700.0) * exp(-abs(q.x) * 30.0)) * bright * 0.5;
+      col += sc2 * (core * 1.5 + glow + spikes * 0.7) * bright * tw;
+    }
+  }
+
+  // ── CORDILLERA-ECUALIZADOR ── fiel al espectro (la única que sigue la música en tiempo real)
+  float sx = abs(uv.x + camX * 0.06);
+  float bin = clamp(sx * 0.9, 0.0, 0.999);
+  float m = texture2D(uSpec, vec2(bin, 0.5)).r;
+  float ridge = 0.01 + m * 0.24 * (0.6 + sx * 0.5);
+  if (y > 0.0 && y < ridge) {
+    col = mix(vec3(0.0), P * 0.08, clamp(y / max(ridge, 1e-3), 0.0, 1.0));
+    float edge = smoothstep(0.005, 0.0, ridge - y);
+    col += mix(G, P, bin) * edge * (0.35 + m * 1.3);
+  }
+
+  // ── VALLE ── raymarching del relieve, malla que sigue el terreno
+  float travel = barT;                                // una celda por compás
+  vec3 ro = vec3(valleyAxis(travel) + camX * 1.2, CAM_H, travel);
+  vec3 rd = normalize(vec3(uv.x, y, uFocal));
+  float t = 0.3;
+  bool hit = false;
+  for (int k = 0; k < 80; k++) {
+    vec3 p = ro + rd * t;
+    float dh = p.y - terrain(p.xz);
+    if (dh < 0.002 * t) { hit = true; break; }
+    if (t > FAR || (rd.y > 0.0 && p.y > 7.5)) break;
+    t += clamp(dh * 0.45, 0.01 + t * 0.006, 2.2);
+  }
+  // Lo que el raymarching no alcanza bajo el horizonte es el fondo lejano del valle (plano)
+  if (!hit && rd.y < 0.0) { t = CAM_H / -rd.y; hit = true; }
+  if (hit) {
+    vec3 p = ro + rd * t;
+    float fog = exp(-t * 0.02);
+    float g = lineGrid(p.xz * vec2(1.0, 0.8));
+    float elev = clamp(p.y / 4.0, 0.0, 1.0);
+    vec3 lc = mix(P, G, clamp(fog * 1.3 - elev * 0.3, 0.0, 1.0));
+    vec3 fill = mix(vec3(0.015, 0.0, 0.03), vec3(0.0), elev);
+    col = fill + lc * g * (0.6 + uHalf * 0.15) * (0.25 + 0.75 * fog);
+    col += P * 0.1 * (1.0 - fog);                       // bruma tenue de la distancia
+  }
+
+  // grano de película, cambia despacio
+  col += (hash(gl_FragCoord.xy + floor(uTime * 6.0) * 13.0) - 0.5) * 0.04;
   vec2 q = gl_FragCoord.xy / uRes;
   col *= 0.35 + 0.65 * pow(16.0 * q.x * q.y * (1.0 - q.x) * (1.0 - q.y), 0.25);
 
-  gl_FragColor = vec4(col * 0.82, 1.0);
+  gl_FragColor = vec4(col * 0.85, 1.0);
 }
 `;
 
@@ -188,7 +210,7 @@ function compile(gl: WebGLRenderingContext, type: number, src: string) {
   return s;
 }
 
-const UNIFORMS = ["uRes", "uTime", "uBeats", "uBass", "uMid", "uHigh", "uBeat", "uHalf", "uP3", "uP5", "uP7", "uMouse", "uOrion", "uLayout", "uStar", "uSpec"];
+const UNIFORMS = ["uRes", "uTime", "uBeats", "uHalf", "uFocal", "uMouse", "uOrion", "uLayout", "uStar", "uSpec"];
 const CSS_VARS = ["--viz-beat", "--viz-half", "--viz-bass", "--viz-high", "--viz-p3", "--viz-p5", "--mx", "--my"];
 
 export function RaveScene() {
@@ -258,7 +280,9 @@ export function RaveScene() {
       gl.uniform1i(U.uSpec, 0);
     }
 
-    const scale = coarse ? 0.5 : 0.75;
+    // Resolución interna: parte de 0,75 (0,5 en móvil) y baja sola si el equipo no alcanza ~40 fps
+    let scale = coarse ? 0.5 : 0.75;
+    const MIN_SCALE = 0.3;
     const resize = () => {
       canvas.width = Math.max(1, Math.floor(window.innerWidth * scale));
       canvas.height = Math.max(1, Math.floor(window.innerHeight * scale));
@@ -276,6 +300,8 @@ export function RaveScene() {
           const y = horizon + lift;                                       // sobre la cordillera, bajo el menú
           gl.uniform3f(U.uOrion, x, y, scale);
         };
+        // Campo de visión: más abierto en pantallas angostas para que se vean ambas laderas
+        gl.uniform1f(U.uFocal, wide ? 1.5 : 0.75);
         if (wide) place(0.04, 0.24, 0.2, -Math.min(0.42, halfW - 0.3), 0.0171, 0.22);
         else place(0.0, 0.17, 0.15, -halfW * 0.75, 0.009, 0.2);
       }
@@ -284,9 +310,20 @@ export function RaveScene() {
     window.addEventListener("resize", resize);
 
     let raf = 0;
+    let last = 0, slow = 0, frames = 0;
     const frame = (t: number) => {
       raf = requestAnimationFrame(frame);
-      if (document.hidden) return;
+      if (document.hidden) { last = 0; return; }
+      if (last) {
+        const dt = t - last;
+        frames++;
+        if (dt > 25) slow++;
+        if (frames >= 45) {
+          if (slow > 25 && scale > MIN_SCALE) { scale = Math.max(MIN_SCALE, scale * 0.8); resize(); }
+          frames = 0; slow = 0;
+        }
+      }
+      last = t;
       sample(t);
 
       root.style.setProperty("--viz-beat", rave.beat.toFixed(3));
@@ -304,14 +341,7 @@ export function RaveScene() {
         gl.uniform2f(U.uRes, canvas.width, canvas.height);
         gl.uniform1f(U.uTime, t / 1000);
         gl.uniform1f(U.uBeats, rave.beats);
-        gl.uniform1f(U.uBass, rave.bass);
-        gl.uniform1f(U.uMid, rave.mid);
-        gl.uniform1f(U.uHigh, rave.high);
-        gl.uniform1f(U.uBeat, rave.beat);
         gl.uniform1f(U.uHalf, rave.half);
-        gl.uniform1f(U.uP3, rave.p3);
-        gl.uniform1f(U.uP5, rave.p5);
-        gl.uniform1f(U.uP7, rave.p7);
         gl.uniform2f(U.uMouse, rave.mx, rave.my);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
       }

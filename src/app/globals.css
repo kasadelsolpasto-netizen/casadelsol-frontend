@@ -235,7 +235,7 @@ body {
 .crt-lines {
   pointer-events: none; position: fixed; inset: 0; z-index: 60;
   background: repeating-linear-gradient(0deg, #00000030, #00000030 1px, #0000 1px 3px);
-  opacity: calc(.45 + var(--viz-high) * .6);
+  opacity: .5;
   mix-blend-mode: multiply;
 }
 
@@ -262,15 +262,15 @@ body {
   transform:
     rotateY(calc(var(--mx) * 22deg))
     rotateX(calc(var(--my) * 16deg))
-    scale(calc(1 + var(--viz-half) * .03));
-  transition: transform 60ms linear;
+    scale(calc(1 + var(--viz-half) * .012));
+  transition: transform 120ms linear;
   will-change: transform;
 }
 .flyer-img { transform: translateZ(0); filter: brightness(calc(.92 + var(--viz-half) * .3)) saturate(calc(1 + var(--viz-bass) * .4)); }
-.flyer-float { transform: translateZ(50px); opacity: calc(.55 + var(--viz-p5) * .45); }
+.flyer-float { transform: translateZ(50px); opacity: calc(.7 + var(--viz-half) * .3); }
 .flyer-stamp { transform: translateX(-50%) translateZ(80px); }
 .flyer-halo {
-  transform: translateZ(-60px) scale(calc(1 + var(--viz-half) * .08));
+  transform: translateZ(-60px) scale(calc(1 + var(--viz-half) * .04));
   background: radial-gradient(closest-side, rgba(57,255,20,calc(.18 + var(--viz-half) * .45)), rgba(191,0,255,.18) 60%, transparent);
   filter: blur(24px);
 }
