@@ -16,34 +16,27 @@ import { rave, sample, SPEC_BINS } from "@/lib/rave-engine";
  * y la nebulosa M42. La cámara sigue el cursor o la inclinación del teléfono.
  */
 
-// ── Orión (ascensión recta en horas, declinación en grados, magnitud, tipo de color) ──
+// ── Orión tal como se ve desde Pasto (1,21° N · 77,28° O) al amanecer del 30 de junio de 1988,
+// 6:08 a. m. hora de Colombia, mirando al oriente. En junio Orión sale junto con el Sol:
+// aparece "acostada", a la derecha (sur) del Sol, con la cabeza (Meissa) hacia el norte.
+// Coordenadas locales en grados, centradas en Alnilam: x = azimut (derecha = sur), y = altura.
+// Calculadas con precesión a 1988; el cinturón está a 14,5° de altura y 24,7° al sur del Sol.
 // tipo: 0 blanca · 1 roja (Betelgeuse) · 2 azul (Rigel) · 3 nebulosa
 const ORION: [string, number, number, number, number][] = [
-  ["Betelgeuse", 5.919, 7.41, 0.5, 1],
-  ["Bellatrix", 5.419, 6.35, 1.6, 0],
-  ["Meissa", 5.585, 9.93, 3.4, 0],
-  ["Mintaka", 5.533, -0.3, 2.2, 0],
-  ["Alnilam", 5.604, -1.2, 1.7, 0],
-  ["Alnitak", 5.679, -1.94, 1.8, 0],
-  ["Saiph", 5.796, -9.67, 2.1, 0],
-  ["Rigel", 5.242, -8.2, 0.1, 2],
-  ["M42", 5.588, -5.39, 3.0, 3],
+  // nombre,      x,     y,   magnitud, tipo
+  ["Betelgeuse", -8.74, -4.62, 0.5, 1],
+  ["Bellatrix", -7.47, 2.84, 1.6, 0],
+  ["Meissa", -11.13, 0.3, 3.4, 0],
+  ["Mintaka", -0.87, 1.08, 2.2, 0],
+  ["Alnilam", 0, 0, 1.7, 0],
+  ["Alnitak", 0.71, -1.16, 1.8, 0],
+  ["Saiph", 8.39, -3.24, 2.1, 0],
+  ["Rigel", 7.16, 5.04, 0.1, 2],
+  ["M42", 4.19, 0.07, 3.0, 3],
 ];
 const STAR_N = ORION.length;
-
-/** Giro de la constelación en pantalla (grados, antihorario). */
-const ORION_TILT = 55;
-
-/** Proyección local (grados, este a la izquierda), centrada en el cinturón y girada ORION_TILT. */
-function orionLocal() {
-  const a = (ORION_TILT * Math.PI) / 180;
-  const c = Math.cos(a), s = Math.sin(a);
-  return ORION.map(([, ra, dec]) => {
-    const x = -(ra - 5.6) * 15 * Math.cos((dec * Math.PI) / 180);
-    const y = dec + 1;
-    return [x * c - y * s, x * s + y * c] as const;
-  });
-}
+/** Extensión de la figura a la izquierda del cinturón (Meissa), en grados. */
+const ORION_LEFT = 11.13;
 
 const VERT = `
 attribute vec2 p;
@@ -250,9 +243,8 @@ export function RaveScene() {
       for (const k of UNIFORMS) U[k] = gl.getUniformLocation(prog, k);
 
       // Orión: datos fijos
-      const local = orionLocal();
       const stars = new Float32Array(STAR_N * 4);
-      ORION.forEach(([, , , mag, kind], i) => stars.set([local[i][0], local[i][1], mag, kind], i * 4));
+      ORION.forEach(([, x, y, mag, kind], i) => stars.set([x, y, mag, kind], i * 4));
       gl.uniform4fv(U.uStar, stars);
 
       tex = gl.createTexture();
@@ -272,19 +264,20 @@ export function RaveScene() {
       canvas.height = Math.max(1, Math.floor(window.innerHeight * scale));
       if (gl && prog) {
         gl.viewport(0, 0, canvas.width, canvas.height);
-        // Composición: Orión al centro del cielo, sobre el sol, en el hueco entre título y flyer
         const halfW = (canvas.width / canvas.height) / 2;
         const wide = halfW > 0.6;
         // Encuadre cercano (el de la primera versión): horizonte alto y sol grande.
-        // Sol a la izquierda y Orión a la derecha para que no se pisen.
-        if (wide) {
-          const off = Math.min(0.42, halfW - 0.3);
-          gl.uniform4f(U.uLayout, 0.04, 0.24, 0.2, -off);
-          gl.uniform3f(U.uOrion, off * 0.62, 0.26, 0.019 * 0.9);
-        } else {
-          gl.uniform4f(U.uLayout, 0.0, 0.17, 0.15, -halfW * 0.45);
-          gl.uniform3f(U.uOrion, halfW * 0.38, 0.3, 0.0105 * 0.9);
-        }
+        // Sol a la izquierda y Orión a su derecha, como al amanecer de junio en Pasto.
+        // La forma y la orientación de Orión son las reales; su tamaño y su altura se ajustan
+        // para que se lea junto al sol estilizado (que es mucho más grande que el real).
+        const place = (horizon: number, sunR: number, sunH: number, sunX: number, scale: number, lift: number) => {
+          gl.uniform4f(U.uLayout, horizon, sunR, sunH, sunX);
+          const x = sunX + sunR + 0.03 + ORION_LEFT * scale;              // pegada al borde derecho del sol
+          const y = horizon + lift;                                       // sobre la cordillera, bajo el menú
+          gl.uniform3f(U.uOrion, x, y, scale);
+        };
+        if (wide) place(0.04, 0.24, 0.2, -Math.min(0.42, halfW - 0.3), 0.0171, 0.22);
+        else place(0.0, 0.17, 0.15, -halfW * 0.75, 0.009, 0.2);
       }
     };
     resize();

@@ -13,7 +13,7 @@ del teléfono) y a música generada en vivo en el navegador. Conserva la estéti
   rim en tresillo 3-3-2, toms en ciclo de 7, congas en ciclo de 12, surdo y redoble cada
   8 compases. Suena solo cuando el visitante pulsa el botón (regla de autoplay de los navegadores).
 - **Escena** (`src/components/home/RaveScene.tsx`): piso infinito, sol a la izquierda,
-  constelación de Orión a la derecha, hacia el centro y girada 55° (solo estrellas, con posiciones reales; giro en `ORION_TILT`), cordillera-ecualizador
+  constelación de Orión a su derecha tal como se vio desde Pasto al amanecer del 30 de junio de 1988 (acostada, cabeza al norte; solo estrellas, coordenadas locales calculadas con precesión en la tabla `ORION`), cordillera-ecualizador
   con el espectro de la música. Movimiento a medio tempo (un ciclo cada 2 negras) con elementos
   polirrítmicos: anillos del sol (tresillo), destellos de Orión (pulso 5:16, solo visual),
   crestas de la cordillera (toms).
