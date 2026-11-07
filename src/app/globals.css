@@ -209,3 +209,81 @@ body {
 .post-content em     { color: #a1a1aa; }
 .post-content s      { color: #52525b; }
 
+
+/* ── PORTADA RAVE (estética underground / CRT) ─────────────────────────── */
+.rave-home {
+  --viz-beat: 0;
+  --viz-mid: 0;
+}
+
+.crt-lines {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: repeating-linear-gradient(0deg, #00000026, #00000026 1px, #0000 1px 2px);
+  opacity: calc(.5 + var(--viz-beat) * .5);
+}
+
+.card-underground {
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, calc(.1 + var(--viz-mid) * .5));
+  transition: transform .1s, box-shadow .1s, background .1s, border-color .1s;
+}
+.card-underground:hover {
+  background: #0f0f0f;
+  border-color: #fff;
+  transform: translate(-2px, -2px);
+  box-shadow: 2px 2px 0 #fff;
+}
+
+.glitch-container { position: relative; }
+.glitch-container::before,
+.glitch-container::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.glitch-container:hover::before,
+.group:hover .glitch-container::before {
+  opacity: .8;
+  text-shadow: 2px 0 #fff;
+  animation: glitch-hard .15s steps(3, end) infinite;
+}
+.glitch-container:hover::after,
+.group:hover .glitch-container::after {
+  opacity: .8;
+  text-shadow: -2px 0 #ff2a2a;
+  animation: glitch-hard .15s steps(3, end) infinite reverse;
+}
+
+@keyframes glitch-hard {
+  0%   { clip-path: inset(40% 0 61% 0); transform: translate(-2px, 2px); }
+  20%  { clip-path: inset(92% 0 1% 0);  transform: translate(2px, -2px); }
+  40%  { clip-path: inset(43% 0 1% 0);  transform: translate(-2px, 0); }
+  60%  { clip-path: inset(25% 0 58% 0); transform: translate(0, 2px); }
+  80%  { clip-path: inset(54% 0 7% 0);  transform: translate(2px, -2px); }
+  100% { clip-path: inset(58% 0 43% 0); transform: translate(-2px, 2px); }
+}
+
+.vhs-effect {
+  filter: brightness(calc(1 + var(--viz-beat) * .35)) contrast(calc(1 + var(--viz-beat) * .2));
+}
+.vhs-effect > img {
+  transform: scale(calc(1.01 + var(--viz-beat) * .035));
+  transition: transform 40ms linear;
+}
+
+@media (min-width: 1024px) {
+  .flyer-frame { transform: rotateY(-14deg); transition: transform .4s ease; }
+  .flyer-frame:hover { transform: rotateY(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glitch-container::before,
+  .glitch-container::after { animation: none !important; opacity: 0 !important; }
+  .flyer-frame { transform: none !important; }
+}
