@@ -30,7 +30,7 @@ export const HOME_TEXT_GROUPS: HomeTextGroup[] = [
     fields: [
       { key: 'badgeOnSale', label: 'Etiqueta: boletas en venta', fallback: 'boletas en venta' },
       { key: 'badgeIdle', label: 'Etiqueta: sin venta activa', fallback: 'stand by' },
-      { key: 'badgeTag', label: 'Etiqueta secundaria', fallback: 'tribal techno · private raves' },
+      { key: 'badgeTag', label: 'Etiqueta secundaria', fallback: 'acid · tribal techno · private raves' },
       { key: 'heroEyebrow', label: 'Antetítulo', fallback: '// sound system' },
       { key: 'heroLine1', label: 'Título · línea 1', fallback: 'Kasa' },
       { key: 'heroLine2', label: 'Título · línea 2', fallback: 'del' },
@@ -42,9 +42,9 @@ export const HOME_TEXT_GROUPS: HomeTextGroup[] = [
     fields: [
       { key: 'soundOn', label: 'Botón para encender', fallback: 'prender la rave' },
       { key: 'soundOff', label: 'Botón para apagar', fallback: 'apagar el sonido' },
-      { key: 'soundHintIdle', label: 'Ayuda con el sonido apagado', fallback: '// ritmo tribal generado en vivo · sube el volumen' },
-      { key: 'soundHintPointer', label: 'Ayuda sonando (computador)', fallback: '// mueve el cursor: tocas el bajo y el eco' },
-      { key: 'soundHintTilt', label: 'Ayuda sonando (celular)', fallback: '// inclina el teléfono: tocas el bajo y el eco' },
+      { key: 'soundHintIdle', label: 'Ayuda con el sonido apagado', fallback: '// acid + percusión tribal en vivo · sube el volumen' },
+      { key: 'soundHintPointer', label: 'Ayuda sonando (computador)', fallback: '// mueve el cursor: tocas el acid' },
+      { key: 'soundHintTilt', label: 'Ayuda sonando (celular)', fallback: '// inclina el teléfono: tocas el acid' },
       { key: 'dockIdle', label: 'Botón flotante apagado', fallback: 'sound' },
       { key: 'dockPlaying', label: 'Botón flotante sonando', fallback: 'on air' },
     ],
@@ -72,7 +72,7 @@ export const HOME_TEXT_GROUPS: HomeTextGroup[] = [
       { key: 'feedAccent', label: 'Título del feed · palabra en degradé', fallback: 'Feed' },
       { key: 'feedSeeAll', label: 'Enlace "ver todo"', fallback: 'Ver todo' },
       { key: 'feedMore', label: 'Botón de más publicaciones', fallback: 'Ver más publicaciones' },
-      { key: 'footer', label: 'Pie de página', fallback: 'kasa del sol · 128 bpm · tribal techno all night long' },
+      { key: 'footer', label: 'Pie de página', fallback: 'kasa del sol · 128 bpm · acid & tribal techno all night long' },
     ],
   },
 ];

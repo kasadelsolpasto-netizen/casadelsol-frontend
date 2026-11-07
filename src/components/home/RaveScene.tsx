@@ -10,9 +10,9 @@ import { rave, sample, SPEC_BINS } from "@/lib/rave-engine";
  * de la música dispara su propio elemento:
  *   half → onda de choque del piso y latido del sol
  *   p3   → anillos que emanan del sol (tresillo 3-3-2)
- *   p5   → destellos de Orión y pulso en sus trazos (campana 5:16)
+ *   p5   → destellos de las estrellas de Orión (campana 5:16)
  *   p7   → crestas de la cordillera-ecualizador (toms en ciclo de 7)
- * En el cosmos, al fondo, la constelación de Orión con Betelgeuse, Rigel, el cinturón
+ * En el cosmos, al fondo, las estrellas de Orión (sin trazos): Betelgeuse, Rigel, el cinturón
  * y la nebulosa M42. La cámara sigue el cursor o la inclinación del teléfono.
  */
 
@@ -29,11 +29,7 @@ const ORION: [string, number, number, number, number][] = [
   ["Rigel", 5.242, -8.2, 0.1, 2],
   ["M42", 5.588, -5.39, 3.0, 3],
 ];
-const ORION_LINES: [number, number][] = [
-  [2, 0], [2, 1], [0, 1], [0, 5], [1, 3], [3, 4], [4, 5], [5, 6], [3, 7], [6, 7],
-];
 const STAR_N = ORION.length;
-const LINE_N = ORION_LINES.length;
 
 /** Proyección local (grados, este a la izquierda), centrada en el cinturón. */
 function orionLocal() {
@@ -57,7 +53,6 @@ uniform vec2 uMouse;
 uniform vec3 uOrion;               // centro x, centro y (pantalla), escala por grado
 uniform vec3 uLayout;              // horizonte base, radio del sol, altura del sol sobre el horizonte
 uniform vec4 uStar[${STAR_N}];     // x, y (grados locales), magnitud, tipo
-uniform vec4 uSeg[${LINE_N}];      // a.xy, b.xy (grados locales)
 uniform sampler2D uSpec;
 
 const vec3 G = vec3(0.224, 1.0, 0.078);
@@ -123,15 +118,6 @@ void main(){
     // ── ORIÓN ── al fondo, paralaje menor que el sol (más lejos)
     vec2 op = uv - vec2(uOrion.x - camX * 0.07, uOrion.y - uMouse.y * 0.03);
     float s = uOrion.z;
-    for (int j = 0; j < ${LINE_N}; j++) {
-      vec2 a = uSeg[j].xy * s, b = uSeg[j].zw * s;
-      float sd = segDist(op, a, b);
-      float ln = smoothstep(0.0022, 0.0, sd);
-      // un pulso de luz recorre cada trazo a medio tempo, desfasado por línea
-      float k = fract(halfT + float(j) * 0.137);
-      float pulse = exp(-length(op - mix(a, b, k)) * 160.0);
-      col += mix(C, G, 0.35) * (ln * (0.18 + uP5 * 0.35) + pulse * 0.6);
-    }
     for (int i = 0; i < ${STAR_N}; i++) {
       vec4 st = uStar[i];
       vec2 q = op - st.xy * s;
@@ -141,13 +127,14 @@ void main(){
       vec3 sc2 = st.w < 0.5 ? vec3(0.9, 0.95, 1.0) : st.w < 1.5 ? vec3(1.0, 0.5, 0.25) : st.w < 2.5 ? vec3(0.6, 0.8, 1.0) : vec3(0.9, 0.3, 1.0);
       if (st.w > 2.5) {
         // nebulosa de Orión
-        col += sc2 * exp(-dd / 0.028) * 0.35 * (0.7 + uP5 * 0.5);
+        col += sc2 * exp(-dd / 0.04) * 0.4 * (0.7 + uP5 * 0.5);
       } else {
-        float size = 0.0025 + bright * 0.0035;
+        float size = 0.0035 + bright * 0.0055;
         float core = smoothstep(size, 0.0, dd);
-        float glow = exp(-dd / (size * 2.6)) * 0.6;
-        float spikes = (exp(-abs(q.x) * 900.0) * exp(-abs(q.y) * 55.0) + exp(-abs(q.y) * 900.0) * exp(-abs(q.x) * 55.0)) * bright * uP5;
-        col += sc2 * (core * 1.4 + glow + spikes * 0.8) * bright * tw;
+        float glow = exp(-dd / (size * 3.2)) * 0.7;
+        float spk = 0.35 + uP5 * 0.9;
+        float spikes = (exp(-abs(q.x) * 700.0) * exp(-abs(q.y) * 30.0) + exp(-abs(q.y) * 700.0) * exp(-abs(q.x) * 30.0)) * bright * spk;
+        col += sc2 * (core * 1.5 + glow + spikes * 0.7) * bright * tw;
       }
     }
 
@@ -201,7 +188,7 @@ function compile(gl: WebGLRenderingContext, type: number, src: string) {
   return s;
 }
 
-const UNIFORMS = ["uRes", "uTime", "uBeats", "uBass", "uMid", "uHigh", "uBeat", "uHalf", "uP3", "uP5", "uP7", "uMouse", "uOrion", "uLayout", "uStar", "uSeg", "uSpec"];
+const UNIFORMS = ["uRes", "uTime", "uBeats", "uBass", "uMid", "uHigh", "uBeat", "uHalf", "uP3", "uP5", "uP7", "uMouse", "uOrion", "uLayout", "uStar", "uSpec"];
 const CSS_VARS = ["--viz-beat", "--viz-half", "--viz-bass", "--viz-high", "--viz-p3", "--viz-p5", "--mx", "--my"];
 
 export function RaveScene() {
@@ -259,10 +246,7 @@ export function RaveScene() {
       const local = orionLocal();
       const stars = new Float32Array(STAR_N * 4);
       ORION.forEach(([, , , mag, kind], i) => stars.set([local[i][0], local[i][1], mag, kind], i * 4));
-      const segs = new Float32Array(LINE_N * 4);
-      ORION_LINES.forEach(([a, b], j) => segs.set([local[a][0], local[a][1], local[b][0], local[b][1]], j * 4));
       gl.uniform4fv(U.uStar, stars);
-      gl.uniform4fv(U.uSeg, segs);
 
       tex = gl.createTexture();
       gl.activeTexture(gl.TEXTURE0);
@@ -284,8 +268,8 @@ export function RaveScene() {
         // Composición: Orión al centro del cielo, sobre el sol, en el hueco entre título y flyer
         const halfW = (canvas.width / canvas.height) / 2;
         const wide = halfW > 0.6;
-        gl.uniform3f(U.uLayout, wide ? -0.16 : -0.05, wide ? 0.16 : 0.17, 0.12);
-        gl.uniform3f(U.uOrion, 0.0, wide ? 0.245 : 0.36, wide ? 0.011 : 0.0085);
+        gl.uniform3f(U.uLayout, wide ? -0.16 : -0.08, wide ? 0.15 : 0.16, wide ? 0.08 : 0.1);
+        gl.uniform3f(U.uOrion, 0.0, wide ? 0.215 : 0.3, wide ? 0.0165 : 0.0115);
       }
     };
     resize();

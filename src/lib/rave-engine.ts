@@ -1,6 +1,7 @@
 /**
- * Motor de la portada: techno tribal en vivo (Web Audio) + estado compartido
- * para las visuales.
+ * Motor de la portada: techno con línea acid y percusión tribal en vivo (Web Audio)
+ * + estado compartido para las visuales. El puntero toca el acid (X = corte, Y = resonancia).
+ * La percusión lleva swing en las semicorcheas impares y dinámica humanizada (groove).
  *
  * Ritmo: 128 BPM en 4/4, con capas de polirritmia/polimetría sobre la rejilla de semicorcheas:
  *   - tresillo 3-3-2 (rim/clave)               → pulso `p3`
@@ -24,8 +25,20 @@ const BELL     = [1,0,0,1, 0,0,1,0, 0,1,0,0, 1,0,0,0];          // E(5,16)
 const TOMS7    = [2,0,1,0,3,1,0];                               // 1 grave · 2 medio · 3 agudo
 const CONGA12  = [2,0,1,1, 0,1,2,0, 1,0,1,0];                   // 1 abierta · 2 slap
 const SHAKER   = [0.5,0.2,0.9,0.3, 0.5,0.2,0.9,0.4, 0.5,0.2,0.9,0.3, 0.5,0.3,1,0.4];
-const BASS     = [0,0,1,0, 0,0,1,1, 0,0,1,0, 0,1,1,0];
-const BASS_NOTE= [0,0,0,0, 0,0,0,7, 0,0,0,0, 0,3,0,0];          // semitonos sobre Fa#1
+const SURDO    = [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,0];          // grave en el "y" del 4
+const TOM_VEL  = [1,0.55,0.8,0.6,1,0.7];                        // acentos de los toms (ciclo 6 sobre ciclo 7)
+/** Swing: retraso de las semicorcheas impares (fracción de semicorchea). */
+const SWING = 0.16;
+
+// Línea acid en La menor (Hz); 0 = silencio. acc = acento, sl = ligado.
+const A = 55;
+const n = (semi: number) => A * Math.pow(2, semi / 12);
+const ACID: { f: number; acc?: boolean; sl?: boolean }[] = [
+  { f: n(0), acc: true }, { f: n(0) }, { f: n(12), sl: true }, { f: n(0) },
+  { f: 0 }, { f: n(3), acc: true }, { f: n(0) }, { f: n(15), sl: true },
+  { f: n(0) }, { f: n(10) }, { f: n(0), acc: true }, { f: n(12) },
+  { f: n(7), sl: true }, { f: n(0) }, { f: n(3) }, { f: n(5), acc: true },
+];
 
 type State = {
   playing: boolean;
@@ -64,8 +77,7 @@ let freq: Uint8Array<ArrayBuffer>;
 let noise: AudioBuffer;
 let bus: AudioNode;
 let percBus: GainNode;
-let bassFilter: BiquadFilterNode;
-let delayFb: GainNode;
+let acidBus: GainNode;
 let timer: ReturnType<typeof setInterval> | null = null;
 let nextTime = 0;
 let step = 0;
@@ -95,8 +107,8 @@ function build() {
   percBus.gain.value = 1;
   const delay = c.createDelay(1);
   delay.delayTime.value = STEP * 3;
-  delayFb = c.createGain();
-  delayFb.gain.value = 0.3;
+  const delayFb = c.createGain();
+  delayFb.gain.value = 0.28;
   const dlp = c.createBiquadFilter();
   dlp.type = 'bandpass';
   dlp.frequency.value = 900;
@@ -111,12 +123,25 @@ function build() {
   delayFb.connect(delay);
   dlp.connect(comp);
 
-  // Bajo: filtro controlado por el puntero
-  bassFilter = c.createBiquadFilter();
-  bassFilter.type = 'lowpass';
-  bassFilter.frequency.value = 400;
-  bassFilter.Q.value = 8;
-  bassFilter.connect(comp);
+  // Acid con su propio eco en puntillo
+  const aDelay = c.createDelay(1);
+  aDelay.delayTime.value = STEP * 3;
+  const aFb = c.createGain();
+  aFb.gain.value = 0.38;
+  const aLp = c.createBiquadFilter();
+  aLp.type = 'lowpass';
+  aLp.frequency.value = 2200;
+  const aSend = c.createGain();
+  aSend.gain.value = 0.28;
+  aSend.connect(aDelay);
+  aDelay.connect(aLp);
+  aLp.connect(aFb);
+  aFb.connect(aDelay);
+  aLp.connect(comp);
+  acidBus = c.createGain();
+  acidBus.gain.value = 0.3;
+  acidBus.connect(comp);
+  acidBus.connect(aSend);
 
   noise = c.createBuffer(1, c.sampleRate, c.sampleRate);
   const d = noise.getChannelData(0);
@@ -202,29 +227,32 @@ function bell(t: number, accent: boolean) {
   });
 }
 
-function bassNote(t: number, semi: number) {
+function acid(t: number, s: number) {
+  const note = ACID[s];
+  if (!note.f) return;
   const c = ctx!;
-  // El puntero toca el bajo: X = apertura del filtro, Y = resonancia y eco de la percusión.
-  const cutoff = 140 + Math.pow((rave.tx + 1) / 2, 1.5) * 1800;
-  bassFilter.frequency.setTargetAtTime(cutoff, t, 0.02);
-  bassFilter.Q.setTargetAtTime(4 + ((rave.ty + 1) / 2) * 14, t, 0.05);
-  delayFb.gain.setTargetAtTime(0.2 + ((rave.ty + 1) / 2) * 0.35, t, 0.1);
-  const f = 46.25 * Math.pow(2, semi / 12); // Fa#1
+  const cutoff = 180 + Math.pow((rave.tx + 1) / 2, 1.6) * 3600;
+  const res = 6 + ((rave.ty + 1) / 2) * 18;
   const o = c.createOscillator();
   o.type = 'sawtooth';
-  o.frequency.value = f;
-  const sub = c.createOscillator();
-  sub.frequency.value = f;
+  o.frequency.setValueAtTime(note.f, t);
+  const next = ACID[(s + 1) % 16];
+  const len = note.sl ? STEP * 1.05 : STEP * 0.62;
+  if (note.sl && next.f) o.frequency.exponentialRampToValueAtTime(next.f, t + STEP);
+  const fl = c.createBiquadFilter();
+  fl.type = 'lowpass';
+  fl.Q.value = res;
+  fl.frequency.setValueAtTime(cutoff * (note.acc ? 3.2 : 1.9), t);
+  fl.frequency.exponentialRampToValueAtTime(Math.max(90, cutoff * 0.5), t + len);
   const g = c.createGain();
-  const len = STEP * 0.9;
+  const v = note.acc ? 0.55 : 0.36;
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.4, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(v, t + 0.004);
+  g.gain.setValueAtTime(v, t + len * 0.8);
   g.gain.exponentialRampToValueAtTime(0.0001, t + len);
-  o.connect(g);
-  sub.connect(g);
-  g.connect(bassFilter);
-  o.start(t); sub.start(t);
-  o.stop(t + len + 0.02); sub.stop(t + len + 0.02);
+  o.connect(fl).connect(g).connect(acidBus);
+  o.start(t);
+  o.stop(t + len + 0.02);
 }
 
 const TOM_F = [0, 82, 123, 185];
@@ -237,23 +265,27 @@ function schedule() {
     const bar = Math.floor(step / 16);
     const phrase = bar % 8;
     const t = nextTime;
+    // Groove: la percusión de semicorcheas impares va "atrasada" y con dinámica humanizada
+    const tp = s % 2 ? t + SWING * STEP : t;
+    const hum = () => 0.85 + Math.random() * 0.3;
 
     if (s % 4 === 0) kick(t);
-    noiseHit(t, 'highpass', 6500, 0.04, 0.09 * SHAKER[s]);                 // shaker
-    if (s % 4 === 2 && bar >= 1) noiseHit(t, 'highpass', 8000, 0.08, 0.12); // hat abierto
+    noiseHit(tp, 'highpass', 6500, 0.04, 0.09 * SHAKER[s] * hum());           // shaker
+    if (s % 4 === 2 && bar >= 1) noiseHit(t, 'highpass', 8000, 0.08, 0.12);   // hat abierto
 
-    if (bar >= 1 && TRESILLO[s]) rim(t);
-    if (bar >= 2 && BELL[s]) bell(t, s === 0);
+    if (bar >= 1 && TRESILLO[s]) rim(tp);
+    if (bar >= 2 && BELL[s]) bell(tp, s === 0);
     if (bar >= 2) {
       const tm = TOMS7[step % 7];
-      if (tm) drum(t, TOM_F[tm], 0.32, 0.5);
+      if (tm) drum(tp, TOM_F[tm], 0.3, 0.42 * TOM_VEL[step % 6] * hum());
       const cg = CONGA12[step % 12];
-      if (cg) drum(t, CONGA_F[cg], cg === 2 ? 0.09 : 0.18, cg === 2 ? 0.32 : 0.24, 1.25);
+      if (cg) drum(tp, CONGA_F[cg], cg === 2 ? 0.09 : 0.18, (cg === 2 ? 0.3 : 0.22) * hum(), 1.25);
+      if (SURDO[s]) drum(tp, 58, 0.45, 0.5, 1.3);
     }
     // Redoble de toms al final de cada frase de 8 compases
-    if (phrase === 7 && s >= 8) drum(t, TOM_F[1 + ((s - 8) >> 1) % 3] * (1 + (s - 8) * 0.04), 0.2, 0.42);
+    if (phrase === 7 && s >= 8) drum(tp, TOM_F[1 + ((s - 8) >> 1) % 3] * (1 + (s - 8) * 0.04), 0.2, 0.4 * hum());
 
-    if (bar >= 1 && BASS[s]) bassNote(t, BASS_NOTE[s]);
+    if (bar >= 1) acid(t, s);
 
     nextTime += STEP;
     step++;

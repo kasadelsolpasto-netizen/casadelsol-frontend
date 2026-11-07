@@ -239,21 +239,21 @@ body {
   mix-blend-mode: multiply;
 }
 
-/* Título con extrusión 3D: gira con el cursor y la sombra neón se desplaza en sentido contrario */
+/* Título: gira con el cursor (no con la música). Su contorno es un borde luminoso
+   que sí reacciona: brilla a medio tempo y destella con la campana. */
 .title-stage { perspective: 900px; }
 .title-3d {
   transform-origin: 30% 50%;
-  transform:
-    rotateY(calc(var(--mx) * 14deg))
-    rotateX(calc(var(--my) * 10deg))
-    scale(calc(1 + var(--viz-half) * .025));
+  transform: rotateY(calc(var(--mx) * 14deg)) rotateX(calc(var(--my) * 10deg));
   text-shadow:
     calc(var(--mx) * -3px) calc(var(--my) * 3px) 0 #bf00ff,
     calc(var(--mx) * -6px) calc(var(--my) * 6px) 0 rgba(191,0,255,.6),
-    calc(var(--mx) * -9px) calc(var(--my) * 9px) 0 rgba(191,0,255,.35),
-    calc(var(--mx) * 3px + 2px) calc(var(--my) * -3px) 0 rgba(57,255,20,calc(var(--viz-p3) * .8)),
-    0 0 calc(20px + var(--viz-bass) * 40px) rgba(57,255,20,.25);
-  will-change: transform;
+    calc(var(--mx) * -9px) calc(var(--my) * 9px) 0 rgba(191,0,255,.35);
+  -webkit-text-stroke: 1px rgba(57,255,20,calc(.35 + var(--viz-half) * .6));
+  filter:
+    drop-shadow(0 0 1px rgba(57,255,20,calc(.5 + var(--viz-p5) * .5)))
+    drop-shadow(0 0 calc(4px + var(--viz-half) * 14px) rgba(57,255,20,calc(.25 + var(--viz-half) * .5)));
+  will-change: transform, filter;
 }
 
 /* Flyer 3D */
