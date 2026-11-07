@@ -3,11 +3,45 @@ import { useEffect, useRef } from "react";
 import { rave, sample, SPEC_BINS } from "@/lib/rave-engine";
 
 /**
- * Escena 3D de la portada (WebGL, un solo shader de pantalla completa):
- * piso de rave infinito, sol pulsante en el horizonte, cordillera-ecualizador
- * dibujada con el espectro de la música, anillos ácidos y lluvia de partículas.
- * La cámara sigue el cursor (o la inclinación del teléfono).
+ * Escena 3D de la portada (WebGL, un solo shader de pantalla completa).
+ *
+ * Todo el movimiento va a MEDIO TEMPO (un ciclo cada 2 negras): avance del piso,
+ * franjas del sol, deriva de la cámara. Sobre ese pulso, cada capa polirrítmica
+ * de la música dispara su propio elemento:
+ *   half → onda de choque del piso y latido del sol
+ *   p3   → anillos que emanan del sol (tresillo 3-3-2)
+ *   p5   → destellos de Orión y pulso en sus trazos (campana 5:16)
+ *   p7   → crestas de la cordillera-ecualizador (toms en ciclo de 7)
+ * En el cosmos, al fondo, la constelación de Orión con Betelgeuse, Rigel, el cinturón
+ * y la nebulosa M42. La cámara sigue el cursor o la inclinación del teléfono.
  */
+
+// ── Orión (ascensión recta en horas, declinación en grados, magnitud, tipo de color) ──
+// tipo: 0 blanca · 1 roja (Betelgeuse) · 2 azul (Rigel) · 3 nebulosa
+const ORION: [string, number, number, number, number][] = [
+  ["Betelgeuse", 5.919, 7.41, 0.5, 1],
+  ["Bellatrix", 5.419, 6.35, 1.6, 0],
+  ["Meissa", 5.585, 9.93, 3.4, 0],
+  ["Mintaka", 5.533, -0.3, 2.2, 0],
+  ["Alnilam", 5.604, -1.2, 1.7, 0],
+  ["Alnitak", 5.679, -1.94, 1.8, 0],
+  ["Saiph", 5.796, -9.67, 2.1, 0],
+  ["Rigel", 5.242, -8.2, 0.1, 2],
+  ["M42", 5.588, -5.39, 3.0, 3],
+];
+const ORION_LINES: [number, number][] = [
+  [2, 0], [2, 1], [0, 1], [0, 5], [1, 3], [3, 4], [4, 5], [5, 6], [3, 7], [6, 7],
+];
+const STAR_N = ORION.length;
+const LINE_N = ORION_LINES.length;
+
+/** Proyección local (grados, este a la izquierda), centrada en el cinturón. */
+function orionLocal() {
+  return ORION.map(([, ra, dec]) => {
+    const x = -(ra - 5.6) * 15 * Math.cos((dec * Math.PI) / 180);
+    return [x, dec + 1] as const;
+  });
+}
 
 const VERT = `
 attribute vec2 p;
@@ -18,8 +52,12 @@ const FRAG = `
 #extension GL_OES_standard_derivatives : enable
 precision highp float;
 uniform vec2 uRes;
-uniform float uTime, uTravel, uBass, uMid, uHigh, uBeat;
+uniform float uTime, uBeats, uBass, uMid, uHigh, uBeat, uHalf, uP3, uP5, uP7;
 uniform vec2 uMouse;
+uniform vec3 uOrion;               // centro x, centro y (pantalla), escala por grado
+uniform vec3 uLayout;              // horizonte base, radio del sol, altura del sol sobre el horizonte
+uniform vec4 uStar[${STAR_N}];     // x, y (grados locales), magnitud, tipo
+uniform vec4 uSeg[${LINE_N}];      // a.xy, b.xy (grados locales)
 uniform sampler2D uSpec;
 
 const vec3 G = vec3(0.224, 1.0, 0.078);
@@ -34,50 +72,86 @@ float lineGrid(vec2 p){
   vec2 g = abs(fract(p - 0.5) - 0.5) / max(w, 1e-4);
   return 1.0 - min(min(g.x, g.y), 1.0);
 }
+float segDist(vec2 p, vec2 a, vec2 b){
+  vec2 pa = p - a, ba = b - a;
+  float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+  return length(pa - ba * h);
+}
 
 void main(){
   vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
-  // Cámara: alabeo e inclinación según el puntero
-  uv = rot(-uMouse.x * 0.10) * uv;
-  float horizon = 0.04 - uMouse.y * 0.10;
+  float halfT = uBeats * 0.5;                       // reloj a medio tempo
+  float sway = sin(halfT * 3.14159) * 0.02;         // deriva de cámara: un vaivén cada 2 negras
+  uv = rot(-uMouse.x * 0.10 + sway) * uv;
+  float horizon = uLayout.x - uMouse.y * 0.08;
   float camX = uMouse.x * 0.9;
 
   vec3 col = vec3(0.0);
   float y = uv.y - horizon;
 
   if (y > 0.0) {
-    // ── CIELO ──
-    col = mix(vec3(0.02, 0.0, 0.04), vec3(0.0), clamp(y * 2.5, 0.0, 1.0));
+    // ── COSMOS ──
+    col = mix(vec3(0.02, 0.0, 0.045), vec3(0.0), clamp(y * 2.5, 0.0, 1.0));
     col += P * 0.10 * exp(-y * 6.0);
 
-    // Partículas (lluvia tekno) que titilan con los agudos
-    vec2 cell = floor(vec2(uv.x * 60.0 + camX * 8.0, uv.y * 60.0 + uTime * 2.0));
+    // polvo estelar de fondo
+    vec2 sc = uv * 90.0 + vec2(camX * 4.0, 0.0);
+    vec2 cell = floor(sc);
     float h = hash(cell);
-    if (h > 0.985) {
-      vec2 f = fract(vec2(uv.x * 60.0 + camX * 8.0, uv.y * 60.0 + uTime * 2.0)) - 0.5;
-      float star = smoothstep(0.12, 0.0, length(f));
-      col += mix(G, C, h) * star * (0.25 + uHigh * 1.6) * smoothstep(0.0, 0.15, y);
+    if (h > 0.975) {
+      float tw = 0.5 + 0.5 * sin(h * 50.0 + halfT * 6.2832);
+      col += vec3(0.8, 0.9, 1.0) * smoothstep(0.18, 0.0, length(fract(sc) - 0.5)) * (0.15 + 0.35 * tw + uHigh * 0.6) * smoothstep(0.0, 0.2, y);
     }
 
-    // ── SOL ── (se mueve en sentido opuesto a la cámara = paralaje)
-    vec2 sp = uv - vec2(-camX * 0.18, horizon + 0.20);
-    float r = 0.24 + uBass * 0.04 + uBeat * 0.035;
+    // ── SOL ── late a medio tempo
+    vec2 sp = uv - vec2(-camX * 0.18, horizon + uLayout.z);
+    float r = uLayout.y + uHalf * 0.025 + uBass * 0.015;
     float d = length(sp);
     float disc = smoothstep(r, r - 0.004, d);
-    // franjas horizontales que suben en la mitad inferior
     float band = (sp.y + r) / (2.0 * r);
-    float cut = step(fract(sp.y * 34.0 - uTime * 0.8), 0.25 + 0.75 * clamp(band * 1.7, 0.0, 1.0));
+    float cut = step(fract(sp.y * 34.0 - halfT), 0.25 + 0.75 * clamp(band * 1.7, 0.0, 1.0));
     disc *= mix(cut, 1.0, step(0.55, band));
     vec3 sunCol = mix(P, G, smoothstep(-r, r * 0.9, sp.y));
-    col = mix(col, sunCol * (1.1 + uBeat * 0.6), disc);
-    col += sunCol * 0.45 * exp(-max(d - r, 0.0) * 7.0) * (0.5 + uBass * 0.9);
+    col = mix(col, sunCol * (1.05 + uHalf * 0.5), disc);
+    col += sunCol * 0.45 * exp(-max(d - r, 0.0) * 7.0) * (0.45 + uHalf * 0.8);
 
-    // Anillos ácidos que salen del sol
-    float rings = sin((d - uTime * 0.22) * 34.0);
-    rings = smoothstep(0.92, 1.0, rings) * exp(-d * 2.2) * step(r, d);
-    col += mix(G, P, 0.5 + 0.5 * sin(d * 9.0 - uTime)) * rings * (0.15 + uMid * 1.2);
+    // anillos del tresillo: cada golpe 3-3-2 lanza un anillo
+    float ringR = r + (1.0 - uP3) * 0.55;
+    float ring = exp(-abs(d - ringR) * 140.0) * uP3;
+    col += mix(G, C, 0.4) * ring * 0.9 * step(r, d);
 
-    // ── CORDILLERA-ECUALIZADOR ── simétrica, alturas = espectro
+    // ── ORIÓN ── al fondo, paralaje menor que el sol (más lejos)
+    vec2 op = uv - vec2(uOrion.x - camX * 0.07, uOrion.y - uMouse.y * 0.03);
+    float s = uOrion.z;
+    for (int j = 0; j < ${LINE_N}; j++) {
+      vec2 a = uSeg[j].xy * s, b = uSeg[j].zw * s;
+      float sd = segDist(op, a, b);
+      float ln = smoothstep(0.0022, 0.0, sd);
+      // un pulso de luz recorre cada trazo a medio tempo, desfasado por línea
+      float k = fract(halfT + float(j) * 0.137);
+      float pulse = exp(-length(op - mix(a, b, k)) * 160.0);
+      col += mix(C, G, 0.35) * (ln * (0.18 + uP5 * 0.35) + pulse * 0.6);
+    }
+    for (int i = 0; i < ${STAR_N}; i++) {
+      vec4 st = uStar[i];
+      vec2 q = op - st.xy * s;
+      float dd = length(q);
+      float bright = clamp(1.25 - st.z * 0.25, 0.25, 1.3);
+      float tw = 0.8 + 0.7 * uP5 * (0.5 + 0.5 * sin(float(i) * 2.39 + halfT * 3.14159));
+      vec3 sc2 = st.w < 0.5 ? vec3(0.9, 0.95, 1.0) : st.w < 1.5 ? vec3(1.0, 0.5, 0.25) : st.w < 2.5 ? vec3(0.6, 0.8, 1.0) : vec3(0.9, 0.3, 1.0);
+      if (st.w > 2.5) {
+        // nebulosa de Orión
+        col += sc2 * exp(-dd / 0.028) * 0.35 * (0.7 + uP5 * 0.5);
+      } else {
+        float size = 0.0025 + bright * 0.0035;
+        float core = smoothstep(size, 0.0, dd);
+        float glow = exp(-dd / (size * 2.6)) * 0.6;
+        float spikes = (exp(-abs(q.x) * 900.0) * exp(-abs(q.y) * 55.0) + exp(-abs(q.y) * 900.0) * exp(-abs(q.x) * 55.0)) * bright * uP5;
+        col += sc2 * (core * 1.4 + glow + spikes * 0.8) * bright * tw;
+      }
+    }
+
+    // ── CORDILLERA-ECUALIZADOR ── crestas con los toms (p7)
     float sx = abs(uv.x + camX * 0.06);
     float bin = clamp(sx * 0.9, 0.0, 0.999);
     float jag = 0.012 * sin(uv.x * 90.0) + 0.008 * sin(uv.x * 37.0 + 1.3);
@@ -86,32 +160,28 @@ void main(){
     if (y < ridge) {
       col = mix(vec3(0.0), P * 0.08, y / max(ridge, 1e-3));
       float edge = smoothstep(0.006, 0.0, ridge - y);
-      col += mix(G, P, bin) * edge * (0.6 + m * 1.4);
+      col += mix(G, P, bin) * edge * (0.5 + m * 1.2 + uP7 * 0.8);
     }
   } else {
-    // ── PISO ── proyección en perspectiva
+    // ── PISO ── avanza una línea cada 2 negras
     float z = 0.35 / (-y + 1e-3);
-    vec2 w = vec2((uv.x) * z + camX * z * 0.25 + camX * 2.0, z + uTravel);
-    // curva de la pista hacia donde apunta el cursor
+    vec2 w = vec2(uv.x * z + camX * z * 0.25 + camX * 2.0, z + uBeats);
     w.x += uMouse.x * z * z * 0.015;
     float g = lineGrid(w * vec2(1.0, 0.5));
     float fog = exp(-z * 0.11);
-    // onda de choque del bombo que se aleja
-    float wave = exp(-abs(z - (1.0 - uBeat) * 22.0) * 0.6) * uBeat;
+    // onda de choque a medio tempo
+    float wave = exp(-abs(z - (1.0 - uHalf) * 24.0) * 0.5) * uHalf;
     vec3 lc = mix(P, G, fog);
-    col = lc * g * (0.35 + uBass * 0.9 + wave * 2.5) * fog;
-    col += lc * wave * 0.25 * fog;
-    // reflejo del sol en el piso
+    col = lc * g * (0.35 + uBass * 0.6 + wave * 2.5) * fog;
+    col += lc * wave * 0.22 * fog;
     float refl = exp(-abs(uv.x + camX * 0.18) * 7.0) * exp(y * 6.0);
-    col += mix(G, P, 0.5) * refl * 0.25 * (0.6 + uBass);
-    // resplandor del horizonte
+    col += mix(G, P, 0.5) * refl * 0.25 * (0.5 + uHalf);
     col += P * 0.35 * exp(y * 22.0);
   }
 
-  // línea de horizonte
-  col += G * smoothstep(0.004, 0.0, abs(y)) * (0.4 + uBeat * 0.8);
+  // línea de horizonte: marca el bombo (cada negra)
+  col += G * smoothstep(0.004, 0.0, abs(y)) * (0.35 + uBeat * 0.7);
 
-  // grano + viñeta
   col += (hash(gl_FragCoord.xy + fract(uTime) * 100.0) - 0.5) * 0.06;
   vec2 q = gl_FragCoord.xy / uRes;
   col *= 0.35 + 0.65 * pow(16.0 * q.x * q.y * (1.0 - q.x) * (1.0 - q.y), 0.25);
@@ -131,6 +201,9 @@ function compile(gl: WebGLRenderingContext, type: number, src: string) {
   return s;
 }
 
+const UNIFORMS = ["uRes", "uTime", "uBeats", "uBass", "uMid", "uHigh", "uBeat", "uHalf", "uP3", "uP5", "uP7", "uMouse", "uOrion", "uLayout", "uStar", "uSeg", "uSpec"];
+const CSS_VARS = ["--viz-beat", "--viz-half", "--viz-bass", "--viz-high", "--viz-p3", "--viz-p5", "--mx", "--my"];
+
 export function RaveScene() {
   const ref = useRef<HTMLCanvasElement>(null);
 
@@ -141,7 +214,6 @@ export function RaveScene() {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const coarse = window.matchMedia("(pointer: coarse)").matches;
 
-    // ── Puntero / giroscopio ──
     const onPointer = (e: PointerEvent) => {
       rave.tx = (e.clientX / window.innerWidth) * 2 - 1;
       rave.ty = -((e.clientY / window.innerHeight) * 2 - 1);
@@ -154,7 +226,6 @@ export function RaveScene() {
     window.addEventListener("pointermove", onPointer, { passive: true });
     window.addEventListener("deviceorientation", onTilt, { passive: true });
 
-    // ── WebGL ──
     const gl = canvas.getContext("webgl", { antialias: false, alpha: false, powerPreference: "high-performance" });
     const deriv = gl?.getExtension("OES_standard_derivatives");
     let prog: WebGLProgram | null = null;
@@ -169,13 +240,11 @@ export function RaveScene() {
         if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) prog = null;
       }
     }
-    if (!gl || !prog) {
-      canvas.style.display = "none"; // el fondo CSS de respaldo queda visible
-    }
+    if (!gl || !prog) canvas.style.display = "none"; // queda el fondo CSS de respaldo
 
     const U: Record<string, WebGLUniformLocation | null> = {};
     let tex: WebGLTexture | null = null;
-    const specRGBA = new Uint8Array(SPEC_BINS);
+    const spec = new Uint8Array(SPEC_BINS);
     if (gl && prog) {
       gl.useProgram(prog);
       const buf = gl.createBuffer();
@@ -184,9 +253,17 @@ export function RaveScene() {
       const loc = gl.getAttribLocation(prog, "p");
       gl.enableVertexAttribArray(loc);
       gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-      for (const k of ["uRes", "uTime", "uTravel", "uBass", "uMid", "uHigh", "uBeat", "uMouse", "uSpec"]) {
-        U[k] = gl.getUniformLocation(prog, k);
-      }
+      for (const k of UNIFORMS) U[k] = gl.getUniformLocation(prog, k);
+
+      // Orión: datos fijos
+      const local = orionLocal();
+      const stars = new Float32Array(STAR_N * 4);
+      ORION.forEach(([, , , mag, kind], i) => stars.set([local[i][0], local[i][1], mag, kind], i * 4));
+      const segs = new Float32Array(LINE_N * 4);
+      ORION_LINES.forEach(([a, b], j) => segs.set([local[a][0], local[a][1], local[b][0], local[b][1]], j * 4));
+      gl.uniform4fv(U.uStar, stars);
+      gl.uniform4fv(U.uSeg, segs);
+
       tex = gl.createTexture();
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -198,51 +275,57 @@ export function RaveScene() {
       gl.uniform1i(U.uSpec, 0);
     }
 
-    // Resolución interna reducida: rendimiento estable en móviles
     const scale = coarse ? 0.5 : 0.75;
     const resize = () => {
       canvas.width = Math.max(1, Math.floor(window.innerWidth * scale));
       canvas.height = Math.max(1, Math.floor(window.innerHeight * scale));
-      if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
+      if (gl && prog) {
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        // Composición: Orión al centro del cielo, sobre el sol, en el hueco entre título y flyer
+        const halfW = (canvas.width / canvas.height) / 2;
+        const wide = halfW > 0.6;
+        gl.uniform3f(U.uLayout, wide ? -0.16 : -0.05, wide ? 0.16 : 0.17, 0.12);
+        gl.uniform3f(U.uOrion, 0.0, wide ? 0.245 : 0.36, wide ? 0.011 : 0.0085);
+      }
     };
     resize();
     window.addEventListener("resize", resize);
 
     let raf = 0;
-    let last = 0;
-    let travel = 0;
     const frame = (t: number) => {
       raf = requestAnimationFrame(frame);
       if (document.hidden) return;
-      const dt = Math.min(0.05, (t - last) / 1000 || 0.016);
-      last = t;
       sample(t);
-      // velocidad de avance: más rápido con graves y con la música encendida
-      travel += dt * (rave.playing ? 2.2 + rave.bass * 3.5 : 0.9);
 
       root.style.setProperty("--viz-beat", rave.beat.toFixed(3));
+      root.style.setProperty("--viz-half", rave.half.toFixed(3));
       root.style.setProperty("--viz-bass", rave.bass.toFixed(3));
       root.style.setProperty("--viz-high", rave.high.toFixed(3));
+      root.style.setProperty("--viz-p3", rave.p3.toFixed(3));
+      root.style.setProperty("--viz-p5", rave.p5.toFixed(3));
       root.style.setProperty("--mx", rave.mx.toFixed(3));
       root.style.setProperty("--my", rave.my.toFixed(3));
 
       if (gl && prog) {
-        specRGBA.set(rave.spec);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, SPEC_BINS, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, specRGBA);
+        spec.set(rave.spec);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, SPEC_BINS, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, spec);
         gl.uniform2f(U.uRes, canvas.width, canvas.height);
         gl.uniform1f(U.uTime, t / 1000);
-        gl.uniform1f(U.uTravel, travel);
+        gl.uniform1f(U.uBeats, rave.beats);
         gl.uniform1f(U.uBass, rave.bass);
         gl.uniform1f(U.uMid, rave.mid);
         gl.uniform1f(U.uHigh, rave.high);
         gl.uniform1f(U.uBeat, rave.beat);
+        gl.uniform1f(U.uHalf, rave.half);
+        gl.uniform1f(U.uP3, rave.p3);
+        gl.uniform1f(U.uP5, rave.p5);
+        gl.uniform1f(U.uP7, rave.p7);
         gl.uniform2f(U.uMouse, rave.mx, rave.my);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
       }
     };
 
     if (reduced) {
-      sample(0);
       frame(0);
       cancelAnimationFrame(raf);
     } else {
@@ -254,7 +337,7 @@ export function RaveScene() {
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("deviceorientation", onTilt);
-      for (const k of ["--viz-beat", "--viz-bass", "--viz-high", "--mx", "--my"]) root.style.removeProperty(k);
+      for (const k of CSS_VARS) root.style.removeProperty(k);
       if (tex && gl) gl.deleteTexture(tex);
     };
   }, []);

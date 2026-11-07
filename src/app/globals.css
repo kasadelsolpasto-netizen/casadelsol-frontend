@@ -211,7 +211,7 @@ body {
 
 
 /* ── PORTADA RAVE 3D (reactiva al cursor y a la música) ─────────────────── */
-:root { --viz-beat: 0; --viz-bass: 0; --viz-high: 0; --mx: 0; --my: 0; }
+:root { --viz-beat: 0; --viz-half: 0; --viz-p3: 0; --viz-p5: 0; --viz-bass: 0; --viz-high: 0; --mx: 0; --my: 0; }
 .rave-home { overflow-x: clip; }
 
 /* Velo lateral para legibilidad del texto sobre la escena */
@@ -246,12 +246,12 @@ body {
   transform:
     rotateY(calc(var(--mx) * 14deg))
     rotateX(calc(var(--my) * 10deg))
-    scale(calc(1 + var(--viz-beat) * .025));
+    scale(calc(1 + var(--viz-half) * .025));
   text-shadow:
     calc(var(--mx) * -3px) calc(var(--my) * 3px) 0 #bf00ff,
     calc(var(--mx) * -6px) calc(var(--my) * 6px) 0 rgba(191,0,255,.6),
     calc(var(--mx) * -9px) calc(var(--my) * 9px) 0 rgba(191,0,255,.35),
-    calc(var(--mx) * 3px + 2px) calc(var(--my) * -3px) 0 rgba(57,255,20,calc(var(--viz-beat) * .8)),
+    calc(var(--mx) * 3px + 2px) calc(var(--my) * -3px) 0 rgba(57,255,20,calc(var(--viz-p3) * .8)),
     0 0 calc(20px + var(--viz-bass) * 40px) rgba(57,255,20,.25);
   will-change: transform;
 }
@@ -263,16 +263,16 @@ body {
   transform:
     rotateY(calc(var(--mx) * 22deg))
     rotateX(calc(var(--my) * 16deg))
-    scale(calc(1 + var(--viz-beat) * .03));
+    scale(calc(1 + var(--viz-half) * .03));
   transition: transform 60ms linear;
   will-change: transform;
 }
-.flyer-img { transform: translateZ(0); filter: brightness(calc(.92 + var(--viz-beat) * .3)) saturate(calc(1 + var(--viz-bass) * .4)); }
-.flyer-float { transform: translateZ(50px); }
+.flyer-img { transform: translateZ(0); filter: brightness(calc(.92 + var(--viz-half) * .3)) saturate(calc(1 + var(--viz-bass) * .4)); }
+.flyer-float { transform: translateZ(50px); opacity: calc(.55 + var(--viz-p5) * .45); }
 .flyer-stamp { transform: translateX(-50%) translateZ(80px); }
 .flyer-halo {
-  transform: translateZ(-60px) scale(calc(1 + var(--viz-beat) * .08));
-  background: radial-gradient(closest-side, rgba(57,255,20,calc(.18 + var(--viz-beat) * .45)), rgba(191,0,255,.18) 60%, transparent);
+  transform: translateZ(-60px) scale(calc(1 + var(--viz-half) * .08));
+  background: radial-gradient(closest-side, rgba(57,255,20,calc(.18 + var(--viz-half) * .45)), rgba(191,0,255,.18) 60%, transparent);
   filter: blur(24px);
 }
 .flyer-glare, .tilt-glare {

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-export function Countdown({ target }: { target: string }) {
+export function Countdown({ target, liveLabel = "on air" }: { target: string; liveLabel?: string }) {
   const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
@@ -18,7 +18,7 @@ export function Countdown({ target }: { target: string }) {
     return (
       <span className="inline-flex items-center gap-2">
         <span className="w-1.5 h-1.5 bg-[#ff2a2a] shadow-[0_0_6px_#ff2a2a] animate-pulse" />
-        on air
+        {liveLabel}
       </span>
     );
   }

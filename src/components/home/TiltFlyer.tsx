@@ -13,11 +13,13 @@ export function TiltFlyer({
   src,
   title,
   stamp,
+  emptyLabel = "// no signal",
 }: {
   href: string;
   src?: string | null;
   title: string;
   stamp: string;
+  emptyLabel?: string;
 }) {
   const ref = useRef<HTMLAnchorElement>(null);
 
@@ -60,7 +62,7 @@ export function TiltFlyer({
             />
           ) : (
             <span className="absolute inset-0 flex items-center justify-center font-mono text-xs uppercase tracking-[0.35em] text-neon-green/70 animate-pulse">
-              {'// no signal'}
+              {emptyLabel}
             </span>
           )}
           {/* Brillo especular que sigue al puntero */}
@@ -78,7 +80,7 @@ export function TiltFlyer({
         </span>
         <span className="flyer-stamp absolute -bottom-4 left-1/2 whitespace-nowrap rounded-full border border-neon-green/60 bg-black/85 px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-neon-green shadow-[0_0_20px_rgba(57,255,20,0.35)]">
           <span className="inline-block w-1.5 h-1.5 mr-2 rounded-full bg-[#ff2a2a] shadow-[0_0_6px_#ff2a2a] animate-pulse align-middle" />
-          rec · {stamp}
+          {stamp}
         </span>
       </Link>
     </div>

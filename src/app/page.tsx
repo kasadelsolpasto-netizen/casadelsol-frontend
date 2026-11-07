@@ -9,6 +9,7 @@ import { SoundDeck } from '@/components/home/SoundDeck';
 import { TiltFlyer } from '@/components/home/TiltFlyer';
 import { TiltCard } from '@/components/home/TiltCard';
 import { Countdown } from '@/components/home/Countdown';
+import { resolveHomeTexts } from '@/lib/home-texts';
 
 const tekno = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '700'], variable: '--font-tekno' });
 
@@ -67,6 +68,7 @@ export default async function Home() {
   const featured = (upcoming.length > 0 ? upcoming : sorted)[0];
   const featuredInfo = featured ? ticketInfo(featured) : null;
   const href = (e: any) => `/events/${e.seo_slug || e.id}`;
+  const T = resolveHomeTexts(brandConfig.homeTexts);
 
   const defaultTitle = 'Próximos <span class="text-white drop-shadow-[0_0_15px_rgba(57,255,20,0.8)] [text-shadow:0_0_20px_#39ff14]">Eventos</span>';
   const defaultDesc = 'Navega por la cartelera de música electrónica oficial. Asegura tu entrada y vive la rave antes del Sold Out.';
@@ -83,17 +85,17 @@ export default async function Home() {
           <div className="flex flex-wrap gap-2 font-mono text-[10px] sm:text-xs uppercase tracking-[0.2em]">
             <span className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-black/60 backdrop-blur px-3 py-1.5 text-zinc-300">
               <span className={`w-1.5 h-1.5 rounded-full ${featuredInfo?.onSale ? 'bg-[#ff2a2a] shadow-[0_0_6px_#ff2a2a] animate-pulse' : 'bg-zinc-500'}`} />
-              {featuredInfo?.onSale ? 'boletas en venta' : 'stand by'}
+              {featuredInfo?.onSale ? T.badgeOnSale : T.badgeIdle}
             </span>
             <span className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-black/60 backdrop-blur px-3 py-1.5 text-zinc-400">
-              techno · private raves
+              {T.badgeTag}
             </span>
           </div>
 
           <div className="title-stage">
-            <p className="font-mono text-[10px] sm:text-xs uppercase tracking-[0.4em] text-neon-purple mb-3">{'// sound system'}</p>
+            <p className="font-mono text-[10px] sm:text-xs uppercase tracking-[0.4em] text-neon-purple mb-3">{T.heroEyebrow}</p>
             <h1 className="title-3d text-[15vw] sm:text-7xl xl:text-[7.5rem] font-black uppercase leading-[0.85] tracking-tight text-white">
-              Kasa<br />del <span className="text-neon-green">Sol</span>
+              {T.heroLine1}<br />{T.heroLine2} <span className="text-neon-green">{T.heroAccent}</span>
             </h1>
           </div>
 
@@ -101,13 +103,13 @@ export default async function Home() {
             {brandConfig.homeDescription || defaultDesc}
           </p>
 
-          <SoundDeck variant="hero" />
+          <SoundDeck variant="hero" texts={T} />
 
           {featured && featuredInfo && (
             <div className="glass-panel rounded-2xl overflow-hidden max-w-2xl">
               <div className="flex items-center justify-between gap-3 px-5 py-2.5 border-b border-white/5 font-mono text-[10px] sm:text-xs uppercase tracking-[0.25em] text-zinc-500">
-                <span className="text-neon-purple">{'// próxima rave'}</span>
-                <span className="text-neon-green"><Countdown target={featured.date} /></span>
+                <span className="text-neon-purple">{T.nextLabel}</span>
+                <span className="text-neon-green"><Countdown target={featured.date} liveLabel={T.dockPlaying} /></span>
               </div>
               <div className="p-5 flex flex-col sm:flex-row sm:items-center gap-5">
                 <div className="flex-1 min-w-0">
@@ -115,14 +117,14 @@ export default async function Home() {
                   <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-zinc-400">
                     <span className="inline-flex items-center gap-2"><Calendar className="w-4 h-4 text-neon-purple" />{fmt(featured.date, { weekday: 'short', day: 'numeric', month: 'short' })} · {fmt(featured.date, { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                     {featured.venue && <span className="inline-flex items-center gap-2 min-w-0"><MapPin className="w-4 h-4 text-neon-purple shrink-0" /><span className="truncate">{featured.venue}</span></span>}
-                    <span className="inline-flex items-center gap-2"><Tag className="w-4 h-4 text-neon-green" /><span className="font-semibold text-zinc-200">{featuredInfo.soldOut ? 'Sold out' : `Desde ${cop(featuredInfo.minPrice)}`}</span></span>
+                    <span className="inline-flex items-center gap-2"><Tag className="w-4 h-4 text-neon-green" /><span className="font-semibold text-zinc-200">{featuredInfo.soldOut ? T.soldOutLabel : `${T.priceFrom} ${cop(featuredInfo.minPrice)}`}</span></span>
                   </div>
                 </div>
                 <Link
                   href={href(featured)}
                   className="shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-neon-green px-6 py-3.5 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-[0_0_20px_rgba(57,255,20,0.45)] hover:shadow-[0_0_35px_rgba(57,255,20,0.8)] hover:scale-[1.03] transition-all"
                 >
-                  {featuredInfo.soldOut ? 'Ver evento' : 'Comprar boletas'} <ArrowRight className="w-4 h-4" />
+                  {featuredInfo.soldOut ? T.soldOutButton : T.buyButton} <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
             </div>
@@ -131,9 +133,9 @@ export default async function Home() {
 
         <div className="order-1 lg:order-2 flex justify-center">
           {featured ? (
-            <TiltFlyer href={href(featured)} src={featured.flyer_url} title={featured.title} stamp={shortDate(featured.date)} />
+            <TiltFlyer href={href(featured)} src={featured.flyer_url} title={featured.title} stamp={`${T.flyerStamp} · ${shortDate(featured.date)}`} emptyLabel={T.flyerEmpty} />
           ) : (
-            <TiltFlyer href="/events" src={null} title="Cartelera" stamp="próximamente" />
+            <TiltFlyer href="/events" src={null} title={T.listEyebrow} stamp={T.badgeIdle} emptyLabel={T.flyerEmpty} />
           )}
         </div>
       </section>
@@ -142,7 +144,7 @@ export default async function Home() {
       <section className="relative max-w-7xl mx-auto px-4 sm:px-6 py-16">
         <div className="mb-12 flex items-end justify-between gap-4">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-neon-purple mb-2">{'// cartelera'}</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-neon-purple mb-2">{T.listEyebrow}</p>
             <h2
               className="text-3xl md:text-5xl font-black uppercase tracking-widest text-white"
               dangerouslySetInnerHTML={{ __html: brandConfig.homeTitle || defaultTitle }}
@@ -153,7 +155,7 @@ export default async function Home() {
 
         {events.length === 0 ? (
           <p className="glass-panel rounded-2xl p-8 text-center font-mono text-xs uppercase tracking-[0.3em] text-zinc-500">
-            {'// sin fechas anunciadas — stay tuned'}
+            {T.listEmpty}
           </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 [perspective:1200px]">
@@ -198,11 +200,11 @@ export default async function Home() {
                         </div>
                         <div className="flex items-center text-sm text-zinc-400 gap-3">
                           <Tag className="w-4 h-4 text-neon-green" />
-                          <span className="font-semibold text-zinc-200">{info.soldOut ? 'Sold out' : `Desde ${cop(info.minPrice)}`}</span>
+                          <span className="font-semibold text-zinc-200">{info.soldOut ? T.soldOutLabel : `${T.priceFrom} ${cop(info.minPrice)}`}</span>
                         </div>
                       </div>
                       <div className="w-full text-center py-3 border border-zinc-700 rounded-lg text-[10px] uppercase tracking-[0.2em] font-black text-zinc-300 group-hover:bg-neon-green group-hover:text-black group-hover:border-neon-green group-hover:shadow-[0_0_15px_rgba(57,255,20,0.5)] transition-all flex justify-center items-center gap-2">
-                        Ver Detalles <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        {T.cardButton} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </div>
                   </div>
@@ -217,13 +219,13 @@ export default async function Home() {
           <section className="mt-24 pt-16 border-t border-zinc-900">
             <div className="flex items-end justify-between mb-10 gap-4">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-neon-purple mb-2">{'// transmisión'}</p>
+                <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-neon-purple mb-2">{T.feedEyebrow}</p>
                 <h2 className="text-3xl md:text-4xl font-black uppercase tracking-widest text-white">
-                  Del <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-green">Feed</span>
+                  {T.feedTitle} <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-green">{T.feedAccent}</span>
                 </h2>
               </div>
               <Link href="/posts" className="shrink-0 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-neon-purple transition-colors items-center gap-1 hidden sm:flex">
-                Ver todo <ArrowRight className="w-3 h-3" />
+                {T.feedSeeAll} <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
 
@@ -267,7 +269,7 @@ export default async function Home() {
                 className="group relative overflow-hidden flex items-center gap-3 px-10 py-4 rounded-2xl border border-zinc-800 bg-zinc-950/80 backdrop-blur hover:border-neon-purple/50 transition-all duration-300">
                 <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/0 via-neon-purple/5 to-neon-green/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
                 <span className="relative text-[11px] font-black uppercase tracking-[0.2em] text-zinc-400 group-hover:text-white transition-colors">
-                  Ver más publicaciones
+                  {T.feedMore}
                 </span>
                 <ArrowRight className="relative w-4 h-4 text-zinc-600 group-hover:text-neon-purple group-hover:translate-x-1 transition-all" />
               </Link>
@@ -277,10 +279,10 @@ export default async function Home() {
       </section>
 
       <footer className="relative pb-28 text-center font-mono text-[10px] uppercase tracking-[0.35em] text-zinc-600">
-        kasa del sol · 136 bpm · techno all night long
+        {T.footer}
       </footer>
 
-      <SoundDeck variant="dock" />
+      <SoundDeck variant="dock" texts={T} />
       <WhatsAppButton className="bottom-6 right-4 md:right-6" />
     </div>
   );

@@ -1,11 +1,14 @@
 "use client";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { BPM, rave, subscribe, toggle } from "@/lib/rave-engine";
+import { HOME_TEXT_DEFAULTS, type HomeTexts } from "@/lib/home-texts";
+
+type DeckTexts = Pick<HomeTexts, "soundOn" | "soundOff" | "soundHintIdle" | "soundHintPointer" | "soundHintTilt" | "dockIdle" | "dockPlaying">;
 
 const usePlaying = () => useSyncExternalStore(subscribe, () => rave.playing, () => false);
 
 /** Botón para prender la rave. Variante `hero` (grande) o `dock` (fija, esquina). */
-export function SoundDeck({ variant = "dock" }: { variant?: "hero" | "dock" }) {
+export function SoundDeck({ variant = "dock", texts = HOME_TEXT_DEFAULTS }: { variant?: "hero" | "dock"; texts?: DeckTexts }) {
   const playing = usePlaying();
   const [coarse, setCoarse] = useState(false);
 
@@ -20,7 +23,7 @@ export function SoundDeck({ variant = "dock" }: { variant?: "hero" | "dock" }) {
     await toggle();
   };
 
-  const hint = coarse ? "inclina el teléfono: tocas el acid" : "mueve el cursor: tocas el acid";
+  const hint = coarse ? texts.soundHintTilt : texts.soundHintPointer;
 
   const bars = (
     <span className="flex items-end gap-[2px] h-4" aria-hidden="true">
@@ -48,11 +51,11 @@ export function SoundDeck({ variant = "dock" }: { variant?: "hero" | "dock" }) {
           }`}
         >
           {playing ? bars : <span aria-hidden="true">▶</span>}
-          {playing ? "apagar el sonido" : "prender la rave"}
+          {playing ? texts.soundOff : texts.soundOn}
           <span className="font-normal opacity-60">{BPM} bpm</span>
         </button>
         <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-zinc-500">
-          {playing ? `// ${hint}` : "// sonido generado en vivo · sube el volumen"}
+          {playing ? hint : texts.soundHintIdle}
         </span>
       </div>
     );
@@ -63,7 +66,8 @@ export function SoundDeck({ variant = "dock" }: { variant?: "hero" | "dock" }) {
       type="button"
       onClick={onClick}
       aria-pressed={playing}
-      aria-label={playing ? "Apagar el sonido" : "Prender el sonido"}
+      aria-label={playing ? texts.soundOff : texts.soundOn}
+      data-deck="dock"
       className={`fixed z-[80] bottom-6 left-4 md:left-6 inline-flex items-center justify-center gap-2 rounded-full w-12 sm:w-auto sm:px-4 h-12 font-mono text-[10px] font-bold uppercase tracking-[0.2em] backdrop-blur transition-all ${
         playing
           ? "bg-neon-green text-black shadow-[0_0_20px_rgba(57,255,20,0.5)]"
@@ -71,7 +75,7 @@ export function SoundDeck({ variant = "dock" }: { variant?: "hero" | "dock" }) {
       }`}
     >
       {playing ? bars : <span aria-hidden="true">▶</span>}
-      <span className="hidden sm:inline">{playing ? "on air" : "sound"}</span>
+      <span className="hidden sm:inline">{playing ? texts.dockPlaying : texts.dockIdle}</span>
     </button>
   );
 }
