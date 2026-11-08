@@ -1,13 +1,13 @@
 /**
  * Capa vectorial de la portada (Canvas 2D a la resolución nativa de la pantalla):
  *   1. el volcán Galeras al fondo,
- *   2. la malla del valle: al centro una calle de ciudad "trash" (pavimento roto, construcciones
- *      bajas, tanques, antenas, cables), en contraste con el relieve natural de los lados:
- *      montañas exageradas recorridas por caminos,
+ *   2. la malla del valle: el viaje va de un barrio "trash" (pavimento roto, construcciones bajas,
+ *      tanques, antenas, cables) por un camino que cruza el monte hasta otro barrio; predomina
+ *      el relieve natural,
  *   3. el ecualizador: un rayo / haz de luz que atraviesa toda la página con la forma de onda real.
  *
- * Quien mira no recorre una vía recta: la cámara serpentea, cruza el barrio, sale al monte y sube
- * por el terreno, y su mirada gira hacia donde avanza (ver `valleyCamera`).
+ * Quien mira no recorre una vía recta: cruza el barrio por su calle, sale por el camino, sube y
+ * serpentea por el monte y baja al siguiente barrio; su mirada gira hacia donde avanza.
  *
  * Las líneas son trazos vectoriales con antialiasing del navegador, así que no se pixelan.
  * Se dibuja de atrás hacia adelante; cada franja se rellena de negro para tapar lo que queda detrás.
@@ -56,8 +56,33 @@ const EYE = 2.2;       // altura de los ojos sobre el terreno
 
 export type Cam = { x: number; y: number; yaw: number; travel: number };
 
-/** Trayecto del caminante: serpentea entre el barrio (|x| < CITY) y el monte. */
-const pathX = (z: number) => Math.sin(z * 0.011) * 21 + Math.sin(z * 0.029 + 1.3) * 9;
+// ── Geografía del viaje ──────────────────────────────────────────────
+// Ciclo: un barrio corto en el fondo del valle → camino que sube y cruza el monte → otro barrio.
+const LEG = 260;          // longitud de un ciclo barrio + monte
+const TOWN = 56;          // longitud del barrio (el resto es monte)
+const EDGE = 14;          // transición barrio ↔ monte
+
+const sstep = (a: number, b: number, v: number) => {
+  const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+const legPos = (z: number) => ((z % LEG) + LEG) % LEG;
+
+/** 1 dentro de un barrio, 0 en el monte. */
+function townAmount(z: number) {
+  const u = legPos(z);
+  return sstep(0, EDGE, u) * (1 - sstep(TOWN - EDGE, TOWN, u));
+}
+
+/** Trayecto del caminante: recto por la calle del barrio y serpenteando por el monte. */
+function pathX(z: number) {
+  const u = legPos(z);
+  const leg = Math.floor(z / LEG);
+  const m = Math.max(0, Math.min(1, (u - TOWN) / (LEG - TOWN)));   // avance dentro del monte
+  const dir = hash(leg, 4.2) > 0.5 ? 1 : -1;                       // cada tramo rodea por un lado distinto
+  const wander = Math.sin(Math.PI * m) * 16 * dir + Math.sin(Math.PI * 3 * m) * 5;
+  return (1 - townAmount(z)) * wander;
+}
 
 let smoothY = EYE;
 /**
@@ -65,22 +90,42 @@ let smoothY = EYE;
  * puntero), su altura sigue el terreno (sube al monte) y su mirada gira hacia donde va.
  */
 export function valleyCamera(beats: number, mx: number): Cam {
-  const travel = (beats / 4) * DZ;
+  // El viaje empieza bajando del monte hacia un barrio (la vista de llegada)
+  const travel = (beats / 4) * DZ + LEG - 48;
   const x = pathX(travel) + mx * 3;
-  const target = ground(x, travel) * 0.85 + EYE;
-  smoothY += (target - smoothY) * 0.04;
+  // siempre sobre el suelo, anticipando la pendiente que viene
+  const target = Math.max(ground(x, travel), ground(x, travel + 3), ground(x, travel + 6)) + EYE;
+  smoothY = Math.max(target - EYE * 0.6, smoothY + (target - smoothY) * 0.05);
   const slope = (pathX(travel + 2) - pathX(travel - 2)) / 4;
   const yaw = Math.atan(slope) * 0.7 + mx * 0.08;
   return { x, y: smoothY, yaw, travel };
 }
 
-/** Altura del terreno: barrio plano y laderas que se levantan con fuerza (cañón andino). */
+/** Monte: colinas y cerros, más altos lejos del camino. */
+function hills(x: number, z: number) {
+  const away = Math.abs(x - pathX(z));
+  return 1.2 + 3.6 * noise(x * 0.05, z * 0.04) + 1.4 * noise(x * 0.13 + 5, z * 0.11)
+    + Math.pow(Math.min(1, away / 45), 1.5) * 11;
+}
+
+/**
+ * Altura del terreno. En el barrio: plano en el fondo del valle, con laderas a los lados.
+ * En el monte: relieve en todas partes; el camino es una franja suave que sube y baja con él.
+ */
 function ground(x: number, z: number) {
+  const t = townAmount(z);
+  let townH = 0;
   const d = Math.abs(x) - CITY;
-  if (d <= 0) return 0;
-  const rise = Math.min(1, d / 34);
-  const peaks = 0.6 + 0.75 * noise(x * 0.06, z * 0.05) + 0.25 * noise(x * 0.17 + 9, z * 0.15);
-  return Math.pow(rise, 1.5) * 17 * peaks + d * 0.06;
+  if (d > 0) {
+    const rise = Math.min(1, d / 34);
+    const peaks = 0.6 + 0.75 * noise(x * 0.06, z * 0.05) + 0.25 * noise(x * 0.17 + 9, z * 0.15);
+    townH = Math.pow(rise, 1.5) * 17 * peaks + d * 0.06;
+  }
+  if (t >= 0.999) return townH;
+  const px = pathX(z);
+  const trail = hills(px, z);
+  const monteH = trail + (hills(x, z) - trail) * sstep(1.5, 7, Math.abs(x - px));
+  return monteH * (1 - t) + townH * t;
 }
 
 // ── Galeras ──────────────────────────────────────────────────────────
@@ -123,6 +168,7 @@ const LOT = 7;
 type Building = { x0: number; x1: number; z0: number; z1: number; h: number; tilt: number; tank: boolean; antenna: number; seed: number };
 function lot(n: number, side: number): Building | null {
   const r = (k: number) => hash(n * 13.1 + k, side * 7.7 + k * 3.3);
+  if (townAmount(n * LOT + 2) < 0.6) return null;        // solo hay construcciones dentro de los barrios
   if (((n % 5) + 5) % 5 === 0) return null;             // calle transversal: el barrio se cruza
   if (r(1) < 0.22) return null;                         // lote vacío
   const inner = STREET + 1.2 + r(2) * 2;
@@ -264,7 +310,8 @@ export function drawValley(ctx: CanvasRenderingContext2D, f: ValleyFrame) {
   for (let x = x0; x <= f.cam.x + X_MAX + 1e-6; x += COL) xs.push(x);
   const zFar = ROWS * DZ;
   // pavimento gastado: los vértices del barrio se desplazan un poco (estables al avanzar)
-  const jitter = (x: number, zw: number) => (Math.abs(x) <= CITY ? (hash(x * 1.7, Math.round(zw / DZ) * 2.3) - 0.5) * 1.1 : 0);
+  const inTown = (x: number, zw: number) => Math.abs(x) <= CITY && townAmount(zw) > 0.5;
+  const jitter = (x: number, zw: number) => (inTown(x, zw) ? (hash(x * 1.7, Math.round(zw / DZ) * 2.3) - 0.5) * 1.1 : 0);
   const cityAlpha = (zr: number) => 0.1 + 0.55 * Math.pow(1 - zr / zFar, 0.9);
   let prev: Pt[] | null = null;
   let prevTrail: (Pt | null)[] = [null, null];
@@ -279,17 +326,18 @@ export function drawValley(ctx: CanvasRenderingContext2D, f: ValleyFrame) {
       const rowKey = Math.round(zw / DZ);
       // grietas: algunos tramos del pavimento faltan
       band(ctx, prev, row, `rgba(${c[0]},${c[1]},${c[2]},${a.toFixed(3)})`, true,
-        (k) => Math.abs(xs[k]) <= CITY && hash(xs[k] * 2.9, rowKey * 1.3) < 0.28);
+        (k) => inTown(xs[k], zw) && hash(xs[k] * 2.9, rowKey * 1.3) < 0.28);
 
-      // caminos que suben por las laderas (uno a cada lado)
-      [-1, 1].forEach((side, si) => {
-        const xt = side * (CITY + 9 + 6 * Math.sin(zw * 0.07 + si * 2.1));
+      // el camino del monte: dos bordes punteados que unen un barrio con el siguiente
+      const monte = 1 - townAmount(zw);
+      [-1.6, 1.6].forEach((off, si) => {
+        const xt = pathX(zw) + off;
         const pt = project(f, xt, ground(xt, zw) + 0.05, zr);
         const pv = prevTrail[si];
-        if (pv) {
+        if (pv && monte > 0.05) {
           ctx.save();
           ctx.setLineDash([3 * dpr, 4 * dpr]);
-          ctx.strokeStyle = `rgba(255,214,150,${(a * 0.9).toFixed(3)})`;
+          ctx.strokeStyle = `rgba(255,214,150,${(a * 0.95 * monte).toFixed(3)})`;
           ctx.beginPath(); ctx.moveTo(pv[0], pv[1]); ctx.lineTo(pt[0], pt[1]); ctx.stroke();
           ctx.restore();
         }
@@ -308,8 +356,8 @@ export function drawValley(ctx: CanvasRenderingContext2D, f: ValleyFrame) {
         if (L && Rb && hash(n * 5.7, 1.9) > 0.55 && L.z0 >= zLo && L.z0 < zHi) drawCable(ctx, f, L, Rb, travel, ca);
       }
     } else {
-      prevTrail = [-1, 1].map((side, si) => {
-        const xt = side * (CITY + 9 + 6 * Math.sin(zw * 0.07 + si * 2.1));
+      prevTrail = [-1.6, 1.6].map((off) => {
+        const xt = pathX(zw) + off;
         return project(f, xt, ground(xt, zw) + 0.05, zr);
       });
     }

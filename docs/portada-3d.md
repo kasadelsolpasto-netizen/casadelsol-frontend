@@ -17,21 +17,18 @@ del teléfono) y a música generada en vivo en el navegador. Conserva la estéti
      30 de junio de 1988 (acostada, cabeza al norte; solo estrellas, tabla `ORION`) y el **sol por
      delante** de ella, a la izquierda.
   2. **Valle vectorial** (`scene/valley.ts`, Canvas 2D a resolución nativa: trazos nítidos, sin
-     pixelado): al centro una **calle de ciudad "trash"** (pavimento roto e irregular, construcciones
-     bajas y torcidas con tanques, antenas, cables y ventanas de neón, que se desvanecen al acercarse),
-     en contraste con el **relieve natural**: montañas exageradas a los lados recorridas por
-     **caminos**, el horizonte y el **volcán Galeras** al fondo, con cumbre truncada y cráter. No
-     representa una carretera.
-     Encima, el **ecualizador como rayo y haz de luz** que cruza toda la página con la forma de onda
-     real del sonido.
-  3. **Fuego** (`scene/fire.ts`, WebGL con transparencia): llamas en el borde inferior, de lado a
-     lado, como si brotaran de quien mira (cámara subjetiva). Contraste deliberado de calidades: el
-     cuerpo de las llamas es liso y "perfecto" (plástico líquido con volumen, brillo especular e
-     iridiscencia psicodélica, a alta resolución) y el pixelado es recurso expresivo (halo de píxeles
-     nítidos alrededor y brasas en píxeles que suben). Liviano: solo ondas, sin ruido costoso.
-- **Recorrido**: quien mira no avanza por una vía recta. La cámara (`valleyCamera`) serpentea,
-  cruza el barrio y sus calles transversales, sale al monte subiendo con el terreno y vuelve a bajar;
-  la mirada gira hacia donde avanza y el cielo y el volcán giran con ella.
+     pixelado). Predomina el **monte**: el viaje va de un **barrio "trash"** corto en el fondo del valle
+     (pavimento roto, construcciones bajas y torcidas con tanques, antenas, cables y ventanas de neón,
+     calles transversales) por un **camino** (bordes punteados) que sube y serpentea por el monte hasta
+     **otro barrio**, en ciclo. Al fondo, el **volcán Galeras** con cumbre truncada y cráter. Encima,
+     el **ecualizador como rayo y haz de luz** que cruza toda la página con la forma de onda real.
+  3. **Fuego** (`scene/fire.ts`, WebGL con transparencia): llamas naturales en el borde inferior, de
+     lado a lado, como si brotaran de quien mira (cámara subjetiva); del morado al rojo, naranja y
+     amarillo. Es la primera versión del fuego, la elegida.
+- **Recorrido** (`valleyCamera`): quien mira no avanza por una vía recta. Cruza el barrio por su
+  calle, sale por el camino, sube y serpentea por el monte (la altura sigue el terreno) y baja al
+  siguiente barrio; la mirada gira hacia donde avanza y el cielo y el volcán giran con ella. La
+  portada abre con la llegada a un barrio desde el monte.
 - **Ritmo visual**: delicado, nunca más rápido que la mitad del tempo (la cámara avanza una fila de la
   calle por compás, el sol respira cada 2 negras, un anillo por compás, titileo cada 2 compases,
   las llamas suben despacio). **Excepción**: el ecualizador dibuja fielmente la forma de onda en

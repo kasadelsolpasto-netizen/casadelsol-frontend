@@ -9,7 +9,7 @@ import { createFire, type Fire } from "./scene/fire";
  *   1. Cielo (WebGL): cosmos, constelación de Orión y el sol por delante de ella.
  *   2. Valle (Canvas 2D vectorial, sin pixelado): barrio "trash" al centro, montañas exageradas con
  *      caminos a los lados, el volcán Galeras al fondo y el ecualizador como rayo / haz de luz que cruza toda la página.
- *   3. Fuego (WebGL): llamas plásticas lisas + halo y brasas en píxeles, en cámara subjetiva.
+ *   3. Fuego (WebGL): llamas en el borde inferior, de lado a lado, en cámara subjetiva.
  *
  * Ritmo visual delicado: nada se mueve a más de la mitad del tempo. La excepción es el ecualizador,
  * que dibuja fielmente la forma de onda del sonido. La cámara sigue el cursor o el giroscopio.
@@ -209,8 +209,7 @@ export function RaveScene() {
     const vctx = vCanvas.getContext("2d");
 
     // ── Capa 3: fuego ──
-    // Llamas lisas en alta resolución + píxeles expresivos de 9 px (7 px en móvil)
-    const fire: Fire | null = createFire(fCanvas, coarse ? 0.6 : 0.8, coarse ? 7 : 9);
+    const fire: Fire | null = createFire(fCanvas, coarse ? 0.35 : 0.5);
     if (!fire) fCanvas.style.display = "none";
 
     // El cielo es suave: resolución interna reducida y adaptativa. El valle va a resolución nativa.
