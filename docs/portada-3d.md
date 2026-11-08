@@ -22,9 +22,11 @@ del teléfono) y a música generada en vivo en el navegador. Conserva la estéti
      calles transversales) por un **camino** (bordes punteados) que sube y serpentea por el monte hasta
      **otro barrio**, en ciclo. Al fondo, el **volcán Galeras** con cumbre truncada y cráter. Encima,
      el **ecualizador como rayo y haz de luz** que cruza toda la página con la forma de onda real.
-  3. **Fuego** (`scene/fire.ts`, WebGL con transparencia): llamas naturales en el borde inferior, de
-     lado a lado, como si brotaran de quien mira (cámara subjetiva); del morado al rojo, naranja y
-     amarillo. Es la primera versión del fuego, la elegida.
+  3. **Fuego**: dos tipos de llama salen juntos en el borde inferior, de lado a lado, como si
+     brotaran de quien mira (cámara subjetiva), compuestos con `mix-blend-mode: screen`:
+     - llamas **naturales** (`scene/fire.ts`): del morado al rojo, naranja y amarillo;
+     - llamas **psicodélicas y plásticas** (`scene/fire-psy.ts`): lenguas en punta, bandas que suben,
+       color por profundidad (magenta → naranja → amarillo), pixeladas a propósito.
 - **Recorrido** (`valleyCamera`): quien mira no avanza por una vía recta. Cruza el barrio por su
   calle, sale por el camino, sube y serpentea por el monte (la altura sigue el terreno) y baja al
   siguiente barrio; la mirada gira hacia donde avanza y el cielo y el volcán giran con ella. La
