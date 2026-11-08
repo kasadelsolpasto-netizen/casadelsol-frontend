@@ -7,9 +7,9 @@ import { createFire, type Fire } from "./scene/fire";
 /**
  * Escena de la portada, en la línea de chauss.cz, en tres capas:
  *   1. Cielo (WebGL): cosmos, constelación de Orión y el sol por delante de ella.
- *   2. Valle (Canvas 2D vectorial, sin pixelado): calle al centro, montañas exageradas a los lados,
- *      el volcán Galeras al fondo y el ecualizador como rayo / haz de luz que cruza toda la página.
- *   3. Fuego (WebGL): llamas en el borde inferior, de lado a lado, en cámara subjetiva.
+ *   2. Valle (Canvas 2D vectorial, sin pixelado): barrio "trash" al centro, montañas exageradas con
+ *      caminos a los lados, el volcán Galeras al fondo y el ecualizador como rayo / haz de luz que cruza toda la página.
+ *   3. Fuego (WebGL, pixelado a propósito): llamas psicodélicas en el borde inferior, en cámara subjetiva.
  *
  * Ritmo visual delicado: nada se mueve a más de la mitad del tempo. La excepción es el ecualizador,
  * que dibuja fielmente la forma de onda del sonido. La cámara sigue el cursor o el giroscopio.
@@ -209,7 +209,8 @@ export function RaveScene() {
     const vctx = vCanvas.getContext("2d");
 
     // ── Capa 3: fuego ──
-    const fire: Fire | null = createFire(fCanvas, coarse ? 0.35 : 0.5);
+    // Pocos píxeles grandes: aspecto pixelado intencional y costo mínimo
+    const fire: Fire | null = createFire(fCanvas, coarse ? 0.2 : 0.14);
     if (!fire) fCanvas.style.display = "none";
 
     // El cielo es suave: resolución interna reducida y adaptativa. El valle va a resolución nativa.
@@ -302,7 +303,7 @@ export function RaveScene() {
     <>
       <canvas ref={skyRef} aria-hidden="true" className="fixed inset-0 w-screen h-screen pointer-events-none -z-10" />
       <canvas ref={valleyRef} aria-hidden="true" className="fixed inset-0 w-screen h-screen pointer-events-none" style={{ zIndex: -9 }} />
-      <canvas ref={fireRef} aria-hidden="true" className="fixed inset-x-0 bottom-0 w-screen h-[38vh] pointer-events-none mix-blend-screen" style={{ zIndex: -8 }} />
+      <canvas ref={fireRef} aria-hidden="true" className="fixed inset-x-0 bottom-0 w-screen h-[38vh] pointer-events-none mix-blend-screen [image-rendering:pixelated]" style={{ zIndex: -8 }} />
     </>
   );
 }

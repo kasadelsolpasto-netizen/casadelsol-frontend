@@ -17,17 +17,24 @@ del teléfono) y a música generada en vivo en el navegador. Conserva la estéti
      30 de junio de 1988 (acostada, cabeza al norte; solo estrellas, tabla `ORION`) y el **sol por
      delante** de ella, a la izquierda.
   2. **Valle vectorial** (`scene/valley.ts`, Canvas 2D a resolución nativa: trazos nítidos, sin
-     pixelado): la **calle** al centro (bordes resaltados y línea central discontinua), **montañas
-     exageradas** a los lados y el **volcán Galeras** al fondo, con cumbre truncada y cráter.
+     pixelado): al centro una **calle de ciudad "trash"** (pavimento roto e irregular, construcciones
+     bajas y torcidas con tanques, antenas, cables y ventanas de neón, que se desvanecen al acercarse),
+     en contraste con el **relieve natural**: montañas exageradas a los lados recorridas por
+     **caminos**, el horizonte y el **volcán Galeras** al fondo, con cumbre truncada y cráter. No
+     representa una carretera.
      Encima, el **ecualizador como rayo y haz de luz** que cruza toda la página con la forma de onda
      real del sonido.
   3. **Fuego** (`scene/fire.ts`, WebGL con transparencia): llamas en el borde inferior, de lado a
-     lado, como si brotaran de quien mira (cámara subjetiva).
+     lado, como si brotaran de quien mira (cámara subjetiva). Psicodélico y plástico: lenguas en punta,
+     bandas de color que suben, color por profundidad (puntas magenta → naranja → núcleo amarillo).
+     Pixelado a propósito (resolución mínima ampliada con `image-rendering: pixelated`), muy liviano.
 - **Ritmo visual**: delicado, nunca más rápido que la mitad del tempo (la cámara avanza una fila de la
   calle por compás, el sol respira cada 2 negras, un anillo por compás, titileo cada 2 compases,
   las llamas suben despacio). **Excepción**: el ecualizador dibuja fielmente la forma de onda en
   tiempo real; en silencio es una línea quieta.
 - **Rendimiento**: el cielo usa resolución interna adaptativa; el valle es vectorial y ligero.
+- **Flyer**: esquinas **cúbicas en 3D** (escuadras con volumen hechas de capas en profundidad) que
+  se levantan un poco fuera del recuadro, como una tapa, y respiran a medio tempo.
 - **Título**: gira con el cursor, no con la música; borde luminoso suave a medio tempo.
 - **Flyer y tarjetas**: inclinación 3D con el cursor (`TiltFlyer.tsx`, `TiltCard.tsx`).
 - Sin WebGL se muestra un fondo neón estático; con "reducir movimiento" la animación se detiene.

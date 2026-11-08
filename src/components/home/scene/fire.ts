@@ -1,8 +1,9 @@
 /**
- * Fuego en cámara subjetiva: llamas que suben desde el borde inferior de la pantalla,
- * de lado a lado, como si brotaran de quien mira. WebGL con fondo transparente;
- * se compone sobre la escena con `mix-blend-mode: screen`.
- * Movimiento lento (las lenguas suben despacio) y respiración a medio tempo.
+ * Fuego en cámara subjetiva: llamas que suben desde el borde inferior de la pantalla, de lado a
+ * lado, como si brotaran de quien mira. Estética psicodélica y "plástica": lenguas líquidas hechas
+ * con ondas (sin ruido costoso) y bandas de color que suben y rotan despacio entre los neones de la
+ * marca. Se dibuja a muy baja resolución y se amplía con `image-rendering: pixelated`, así que los
+ * píxeles son grandes y nítidos a propósito, y el costo es mínimo.
  */
 
 const VERT = `
@@ -15,43 +16,50 @@ precision mediump float;
 uniform vec2 uRes;
 uniform float uTime, uHalf;
 
-float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-float vnoise(vec2 p){
-  vec2 i = floor(p), f = fract(p);
-  vec2 u = f * f * (3.0 - 2.0 * f);
-  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
-}
-float fbm(vec2 p){
-  float v = 0.0, a = 0.5;
-  for (int k = 0; k < 5; k++) { v += a * vnoise(p); p = p * 2.02 + 3.7; a *= 0.5; }
-  return v;
+// Paleta psicodélica en bandas: verde neón → cian → morado → magenta → naranja → amarillo
+vec3 palette(float t){
+  t = fract(t) * 6.0;
+  vec3 c0 = vec3(0.22, 1.0, 0.08), c1 = vec3(0.0, 0.95, 1.0), c2 = vec3(0.75, 0.0, 1.0);
+  vec3 c3 = vec3(1.0, 0.1, 0.65), c4 = vec3(1.0, 0.45, 0.05), c5 = vec3(1.0, 0.92, 0.2);
+  if (t < 1.0) return mix(c0, c1, t);
+  if (t < 2.0) return mix(c1, c2, t - 1.0);
+  if (t < 3.0) return mix(c2, c3, t - 2.0);
+  if (t < 4.0) return mix(c3, c4, t - 3.0);
+  if (t < 5.0) return mix(c4, c5, t - 4.0);
+  return mix(c5, c0, t - 5.0);
 }
 
 void main(){
   vec2 uv = gl_FragCoord.xy / uRes;           // 0 abajo · 1 arriba de esta franja
   float aspect = uRes.x / uRes.y;
-  float t = uTime * 0.55;
-
-  // Las llamas se abren hacia los costados como si salieran de quien mira
+  float t = uTime * 0.3;                       // lento: muy por debajo de la mitad del tempo
   float side = (uv.x - 0.5) * 2.0;
-  vec2 q = vec2(side * aspect * 1.6, uv.y * 2.4);
-  q.x += side * uv.y * 0.6;
+  float x = uv.x * aspect * 2.2;
 
-  float n = fbm(q * vec2(1.2, 1.0) - vec2(0.0, t * 1.6));
-  n = n * 0.75 + fbm(q * 2.3 + vec2(n * 1.3, -t * 2.4)) * 0.45;
+  // Lenguas líquidas: ondas superpuestas con deformación (domain warp barato)
+  float warp = sin(uv.y * 6.0 - t * 2.0 + x * 0.8) * 0.35;
+  // Lenguas en punta: crestas agudas de |sen| invertido, en tres tamaños
+  float w = pow(1.0 - abs(sin(x * 1.3 + t * 1.1 + warp)), 3.0) * 0.6
+          + pow(1.0 - abs(sin(x * 2.9 - t * 0.8 + warp * 1.4)), 4.0) * 0.3
+          + pow(1.0 - abs(sin(x * 6.1 + t * 1.6)), 5.0) * 0.15;
+  // Más altas en los costados (enmarcan la visión), bajas al centro
+  float height = 0.1 + 0.4 * pow(abs(side), 2.4) + 0.32 * w + 0.03 * uHalf;
+  float f = height - uv.y;
+  if (f <= 0.0) { gl_FragColor = vec4(0.0); return; }
 
-  // Altura de las lenguas: más altas en los costados (marco de la visión) y en el centro, más bajas entre ambos
-  float frame = 0.42 + 0.28 * pow(abs(side), 2.0) + 0.06 * uHalf;
-  float body = n * 1.25 - uv.y / frame;
-  float heat = smoothstep(0.0, 0.9, body + 0.25);
+  // Bandas de contorno que suben (plástico fundido)
+  float bands = f * 7.0 - t * 1.2 + w * 0.6;
+  float k = fract(bands);
+  // bandas vecinas con tonos cercanos; la gama completa rota muy despacio
+  // Color por profundidad dentro de la llama (como un fuego real), en escalones:
+  // puntas moradas/magenta → cuerpo naranja → núcleo amarillo; deriva psicodélica muy lenta
+  float depth = floor(clamp(f * 2.8, 0.0, 0.999) * 6.0) / 6.0;
+  vec3 col = palette(0.36 + depth * 0.5 + 0.05 * sin(t * 0.3));
+  // relieve plástico: brillo en el borde de cada banda y sombra en su base
+  col *= 0.7 + 0.45 * smoothstep(0.0, 0.18, k) * smoothstep(1.0, 0.55, k);
+  col += 0.25 * smoothstep(0.82, 1.0, k);
 
-  vec3 col = mix(vec3(0.35, 0.0, 0.45), vec3(0.95, 0.12, 0.18), smoothstep(0.05, 0.35, heat));
-  col = mix(col, vec3(1.0, 0.45, 0.05), smoothstep(0.3, 0.6, heat));
-  col = mix(col, vec3(1.0, 0.85, 0.35), smoothstep(0.55, 0.85, heat));
-  col = mix(col, vec3(1.0, 0.97, 0.85), smoothstep(0.82, 1.0, heat));
-
-  float alpha = smoothstep(0.02, 0.4, heat) * (0.85 + 0.15 * uHalf);
-  alpha *= smoothstep(1.0, 0.55, uv.y);            // se disuelve hacia arriba
+  float alpha = smoothstep(0.0, 0.04, f) * (0.85 + 0.1 * uHalf) * smoothstep(0.75, 0.25, uv.y);
   gl_FragColor = vec4(col * alpha, alpha);
 }
 `;

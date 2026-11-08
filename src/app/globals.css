@@ -267,7 +267,41 @@ body {
   will-change: transform;
 }
 .flyer-img { transform: translateZ(0); filter: brightness(calc(.92 + var(--viz-half) * .3)) saturate(calc(1 + var(--viz-bass) * .4)); }
-.flyer-float { transform: translateZ(50px); opacity: calc(.7 + var(--viz-half) * .3); }
+/* Esquinas cúbicas del flyer: escuadras con volumen que se levantan como una tapa.
+   Cada escuadra son capas apiladas en Z (frente neón, fondo más oscuro) → se ve sólida al girar. */
+.corner-cube {
+  --lift: calc(10px + var(--viz-half) * 5px);
+  --depth: calc(34px + var(--viz-half) * 8px);
+  position: absolute; width: 46px; height: 46px;
+  transform-style: preserve-3d; pointer-events: none;
+}
+.corner-cube.tl { top: 0; left: 0; transform-origin: 0 0;
+  transform: translate3d(calc(var(--lift) * -1), calc(var(--lift) * -1), var(--depth)) rotateX(10deg) rotateY(-10deg); }
+.corner-cube.tr { top: 0; right: 0; transform-origin: 100% 0;
+  transform: translate3d(var(--lift), calc(var(--lift) * -1), var(--depth)) rotateX(10deg) rotateY(10deg); }
+.corner-cube.bl { bottom: 0; left: 0; transform-origin: 0 100%;
+  transform: translate3d(calc(var(--lift) * -1), var(--lift), var(--depth)) rotateX(-10deg) rotateY(-10deg); }
+.corner-cube.br { bottom: 0; right: 0; transform-origin: 100% 100%;
+  transform: translate3d(var(--lift), var(--lift), var(--depth)) rotateX(-10deg) rotateY(10deg); }
+.corner-cube i {
+  position: absolute; inset: 0; border: 0 solid;
+  --t: calc(var(--i) / (var(--n) - 1));
+  border-color: rgb(calc(57 - var(--t) * 45), calc(255 - var(--t) * 200), calc(20 + var(--t) * 40));
+  transform: translateZ(calc(var(--i) * -1.6px));
+}
+.corner-cube i:first-child { filter: drop-shadow(0 0 6px rgba(57,255,20,.8)); }
+.corner-cube.tl i { border-top-width: 10px; border-left-width: 10px; }
+.corner-cube.tr i { border-top-width: 10px; border-right-width: 10px; }
+.corner-cube.bl i { border-bottom-width: 10px; border-left-width: 10px; }
+.corner-cube.br i { border-bottom-width: 10px; border-right-width: 10px; }
+@media (max-width: 640px) {
+  .corner-cube { width: 34px; height: 34px; --lift: calc(7px + var(--viz-half) * 3px); }
+  .corner-cube.tl i, .corner-cube.tr i, .corner-cube.bl i, .corner-cube.br i { border-width: 0; }
+  .corner-cube.tl i { border-top-width: 8px; border-left-width: 8px; }
+  .corner-cube.tr i { border-top-width: 8px; border-right-width: 8px; }
+  .corner-cube.bl i { border-bottom-width: 8px; border-left-width: 8px; }
+  .corner-cube.br i { border-bottom-width: 8px; border-right-width: 8px; }
+}
 .flyer-stamp { transform: translateX(-50%) translateZ(80px); }
 .flyer-halo {
   transform: translateZ(-60px) scale(calc(1 + var(--viz-half) * .04));

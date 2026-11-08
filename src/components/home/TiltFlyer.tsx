@@ -31,7 +31,15 @@ export function TiltFlyer({
     el.style.setProperty("--gy", `${((e.clientY - r.top) / r.height) * 100}%`);
   };
 
-  const corner = "absolute w-6 h-6 sm:w-8 sm:h-8 border-neon-green/80 pointer-events-none";
+  // Escuadras cúbicas: capas apiladas en profundidad (extrusión real en 3D)
+  const LAYERS = 9;
+  const cube = (pos: "tl" | "tr" | "bl" | "br") => (
+    <span className={`corner-cube ${pos}`} aria-hidden="true">
+      {Array.from({ length: LAYERS }, (_, i) => (
+        <i key={i} style={{ ["--i" as string]: i, ["--n" as string]: LAYERS } as React.CSSProperties} />
+      ))}
+    </span>
+  );
 
   return (
     <div className="flyer-stage w-[min(72vw,300px)] sm:w-full sm:max-w-[420px] lg:w-[min(38vw,500px)] lg:max-w-none">
@@ -71,13 +79,11 @@ export function TiltFlyer({
           <span className="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.18),rgba(0,0,0,0.18)_1px,transparent_1px,transparent_3px)]" aria-hidden="true" />
         </span>
 
-        {/* Capas flotantes */}
-        <span className="flyer-float absolute inset-0 pointer-events-none" aria-hidden="true">
-          <span className={`${corner} top-3 left-3 border-l-2 border-t-2`} />
-          <span className={`${corner} top-3 right-3 border-r-2 border-t-2`} />
-          <span className={`${corner} bottom-3 left-3 border-l-2 border-b-2`} />
-          <span className={`${corner} bottom-3 right-3 border-r-2 border-b-2`} />
-        </span>
+        {/* Esquinas cúbicas: se levantan un poco fuera del recuadro, como una tapa */}
+        {cube("tl")}
+        {cube("tr")}
+        {cube("bl")}
+        {cube("br")}
         <span className="flyer-stamp absolute -bottom-4 left-1/2 whitespace-nowrap rounded-full border border-neon-green/60 bg-black/85 px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-neon-green shadow-[0_0_20px_rgba(57,255,20,0.35)]">
           <span className="inline-block w-1.5 h-1.5 mr-2 rounded-full bg-[#ff2a2a] shadow-[0_0_6px_#ff2a2a] animate-pulse align-middle" />
           {stamp}
