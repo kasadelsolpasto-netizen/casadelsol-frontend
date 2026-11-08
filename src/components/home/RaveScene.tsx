@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { rave, sample } from "@/lib/rave-engine";
-import { drawValley } from "./scene/valley";
+import { drawValley, valleyCamera } from "./scene/valley";
 import { createFire, type Fire } from "./scene/fire";
 
 /**
@@ -9,7 +9,7 @@ import { createFire, type Fire } from "./scene/fire";
  *   1. Cielo (WebGL): cosmos, constelación de Orión y el sol por delante de ella.
  *   2. Valle (Canvas 2D vectorial, sin pixelado): barrio "trash" al centro, montañas exageradas con
  *      caminos a los lados, el volcán Galeras al fondo y el ecualizador como rayo / haz de luz que cruza toda la página.
- *   3. Fuego (WebGL, pixelado a propósito): llamas psicodélicas en el borde inferior, en cámara subjetiva.
+ *   3. Fuego (WebGL): llamas plásticas lisas + halo y brasas en píxeles, en cámara subjetiva.
  *
  * Ritmo visual delicado: nada se mueve a más de la mitad del tempo. La excepción es el ecualizador,
  * que dibuja fielmente la forma de onda del sonido. La cámara sigue el cursor o el giroscopio.
@@ -45,7 +45,7 @@ void main(){ gl_Position = vec4(p, 0.0, 1.0); }
 const FRAG = `
 precision highp float;
 uniform vec2 uRes;
-uniform float uTime, uBeats, uHalf;
+uniform float uTime, uBeats, uHalf, uYaw;   // uYaw: corrimiento del cielo por el giro de la cámara
 uniform vec2 uMouse;
 uniform vec3 uOrion;               // centro x, centro y (pantalla), escala por grado
 uniform vec4 uLayout;              // horizonte base, radio del sol, altura del sol sobre el horizonte, x del sol
@@ -69,7 +69,7 @@ void main(){
   vec3 col = mix(vec3(0.02, 0.0, 0.045), vec3(0.0), clamp(y * 2.5, 0.0, 1.0));
   col += P * 0.12 * exp(-abs(y) * 6.0);
 
-  vec2 sc = uv * 90.0 + vec2(camX * 4.0, 0.0);
+  vec2 sc = uv * 90.0 + vec2(camX * 4.0 + uYaw * 90.0, 0.0);
   float h0 = hash(floor(sc));
   if (h0 > 0.975) {
     float tw = 0.5 + 0.5 * sin(h0 * 50.0 + barT * TAU * 0.5);   // titileo: un ciclo cada 2 compases
@@ -77,7 +77,7 @@ void main(){
   }
 
   // ── ORIÓN ── (detrás del sol)
-  vec2 op = uv - vec2(uOrion.x - camX * 0.07, uOrion.y - uMouse.y * 0.03);
+  vec2 op = uv - vec2(uOrion.x - camX * 0.07 - uYaw, uOrion.y - uMouse.y * 0.03);
   float s = uOrion.z;
   for (int i = 0; i < ${STAR_N}; i++) {
     vec4 st = uStar[i];
@@ -98,7 +98,7 @@ void main(){
   }
 
   // ── SOL ── por delante de la constelación; respira a medio tempo
-  float sunX = uLayout.w - camX * 0.18;
+  float sunX = uLayout.w - camX * 0.18 - uYaw;
   vec2 sp = uv - vec2(sunX, horizon + uLayout.z);
   float r = uLayout.y + uHalf * 0.012;
   float d = length(sp);
@@ -138,7 +138,7 @@ function compile(gl: WebGLRenderingContext, type: number, src: string) {
   return s;
 }
 
-const UNIFORMS = ["uRes", "uTime", "uBeats", "uHalf", "uMouse", "uOrion", "uLayout", "uStar"];
+const UNIFORMS = ["uRes", "uTime", "uBeats", "uHalf", "uYaw", "uMouse", "uOrion", "uLayout", "uStar"];
 const CSS_VARS = ["--viz-beat", "--viz-half", "--viz-bass", "--viz-high", "--viz-p3", "--viz-p5", "--mx", "--my"];
 
 /** Composición común a las tres capas (unidades: alto de pantalla = 1, origen al centro). */
@@ -209,8 +209,8 @@ export function RaveScene() {
     const vctx = vCanvas.getContext("2d");
 
     // ── Capa 3: fuego ──
-    // Pocos píxeles grandes: aspecto pixelado intencional y costo mínimo
-    const fire: Fire | null = createFire(fCanvas, coarse ? 0.2 : 0.14);
+    // Llamas lisas en alta resolución + píxeles expresivos de 9 px (7 px en móvil)
+    const fire: Fire | null = createFire(fCanvas, coarse ? 0.6 : 0.8, coarse ? 7 : 9);
     if (!fire) fCanvas.style.display = "none";
 
     // El cielo es suave: resolución interna reducida y adaptativa. El valle va a resolución nativa.
@@ -260,7 +260,9 @@ export function RaveScene() {
       root.style.setProperty("--mx", rave.mx.toFixed(3));
       root.style.setProperty("--my", rave.my.toFixed(3));
 
+      const cam = valleyCamera(rave.beats, rave.mx);
       if (gl && prog) {
+        gl.uniform1f(U.uYaw, Math.tan(cam.yaw) * L.focal);
         gl.uniform2f(U.uRes, canvas.width, canvas.height);
         gl.uniform1f(U.uTime, t / 1000);
         gl.uniform1f(U.uBeats, rave.beats);
@@ -275,7 +277,7 @@ export function RaveScene() {
           W: vCanvas.width, H, dpr,
           horizonY: H * (0.5 - horizon),
           focal: H * L.focal,
-          mx: rave.mx, beats: rave.beats, half: rave.half,
+          cam, beats: rave.beats, half: rave.half,
           wave: rave.wave, level: rave.level,
         });
       }
@@ -303,7 +305,7 @@ export function RaveScene() {
     <>
       <canvas ref={skyRef} aria-hidden="true" className="fixed inset-0 w-screen h-screen pointer-events-none -z-10" />
       <canvas ref={valleyRef} aria-hidden="true" className="fixed inset-0 w-screen h-screen pointer-events-none" style={{ zIndex: -9 }} />
-      <canvas ref={fireRef} aria-hidden="true" className="fixed inset-x-0 bottom-0 w-screen h-[38vh] pointer-events-none mix-blend-screen [image-rendering:pixelated]" style={{ zIndex: -8 }} />
+      <canvas ref={fireRef} aria-hidden="true" className="fixed inset-x-0 bottom-0 w-screen h-[38vh] pointer-events-none mix-blend-screen" style={{ zIndex: -8 }} />
     </>
   );
 }

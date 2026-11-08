@@ -25,9 +25,13 @@ del teléfono) y a música generada en vivo en el navegador. Conserva la estéti
      Encima, el **ecualizador como rayo y haz de luz** que cruza toda la página con la forma de onda
      real del sonido.
   3. **Fuego** (`scene/fire.ts`, WebGL con transparencia): llamas en el borde inferior, de lado a
-     lado, como si brotaran de quien mira (cámara subjetiva). Psicodélico y plástico: lenguas en punta,
-     bandas de color que suben, color por profundidad (puntas magenta → naranja → núcleo amarillo).
-     Pixelado a propósito (resolución mínima ampliada con `image-rendering: pixelated`), muy liviano.
+     lado, como si brotaran de quien mira (cámara subjetiva). Contraste deliberado de calidades: el
+     cuerpo de las llamas es liso y "perfecto" (plástico líquido con volumen, brillo especular e
+     iridiscencia psicodélica, a alta resolución) y el pixelado es recurso expresivo (halo de píxeles
+     nítidos alrededor y brasas en píxeles que suben). Liviano: solo ondas, sin ruido costoso.
+- **Recorrido**: quien mira no avanza por una vía recta. La cámara (`valleyCamera`) serpentea,
+  cruza el barrio y sus calles transversales, sale al monte subiendo con el terreno y vuelve a bajar;
+  la mirada gira hacia donde avanza y el cielo y el volcán giran con ella.
 - **Ritmo visual**: delicado, nunca más rápido que la mitad del tempo (la cámara avanza una fila de la
   calle por compás, el sol respira cada 2 negras, un anillo por compás, titileo cada 2 compases,
   las llamas suben despacio). **Excepción**: el ecualizador dibuja fielmente la forma de onda en
