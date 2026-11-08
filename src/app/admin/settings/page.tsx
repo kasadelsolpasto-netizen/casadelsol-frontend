@@ -1,14 +1,15 @@
 "use client";
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Save, Lock, Link as LinkIcon, AlertTriangle, Key, Image as ImageIcon, FileText, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CreditCard, Save, Lock, Link as LinkIcon, AlertTriangle, Key, Image as ImageIcon, FileText, CheckCircle, Type, RotateCcw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AdminGuard } from '@/components/AdminGuard';
 import PaymentRecipientsSettings from '@/components/admin/PaymentRecipientsSettings';
+import { HOME_TEXT_DEFAULTS, HOME_TEXT_GROUPS, diffHomeTexts, resolveHomeTexts, type HomeTextKey, type HomeTexts } from '@/lib/home-texts';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'pagos' | 'brand' | 'seguridad' | 'dian'>('pagos');
+  const [activeTab, setActiveTab] = useState<'pagos' | 'brand' | 'portada' | 'seguridad' | 'dian'>('pagos');
   
   // Admin credentials state
   const [adminEmail, setAdminEmail] = useState('');
@@ -25,6 +26,12 @@ export default function SettingsPage() {
   const [homeDescription, setHomeDescription] = useState('');
   const [isSavingBrand, setIsSavingBrand] = useState(false);
   const [saveBrandMessage, setSaveBrandMessage] = useState('');
+
+  // Textos de la portada
+  const [homeTexts, setHomeTexts] = useState<HomeTexts>(HOME_TEXT_DEFAULTS);
+  const [backendKeepsHomeTexts, setBackendKeepsHomeTexts] = useState(false);
+  const [isSavingHome, setIsSavingHome] = useState(false);
+  const [saveHomeMessage, setSaveHomeMessage] = useState('');
 
   // DIAN state
   const [dianIsConfigured, setDianIsConfigured] = useState(false);
@@ -62,6 +69,8 @@ export default function SettingsPage() {
           }
           if (brandData && brandData.homeTitle) setHomeTitle(brandData.homeTitle);
           if (brandData && brandData.homeDescription) setHomeDescription(brandData.homeDescription);
+          if (brandData && brandData.homeTexts && typeof brandData.homeTexts === 'object') setBackendKeepsHomeTexts(true);
+          setHomeTexts(resolveHomeTexts(brandData?.homeTexts));
         }
 
         // Cargar config DIAN
@@ -125,7 +134,8 @@ export default function SettingsPage() {
           logoBase64,
           whatsappNumber: whatsappNumber ? `57${whatsappNumber}` : '',
           homeTitle,
-          homeDescription
+          homeDescription,
+          ...(backendKeepsHomeTexts ? { homeTexts: diffHomeTexts(homeTexts) } : {})
         })
       });
 
@@ -139,6 +149,55 @@ export default function SettingsPage() {
     } finally {
       setIsSavingBrand(false);
       setTimeout(() => setSaveBrandMessage(''), 4000);
+    }
+  };
+
+  const handleSaveHome = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingHome(true);
+    setSaveHomeMessage('');
+    const api = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const sent = diffHomeTexts(homeTexts);
+
+    try {
+      const token = document.cookie.split('kasa_auth_token=')[1]?.split(';')[0];
+      const res = await fetch(`${api}/admin/settings/brand`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          logoBase64,
+          whatsappNumber: whatsappNumber ? `57${whatsappNumber}` : '',
+          homeTitle,
+          homeDescription,
+          homeTexts: sent
+        })
+      });
+
+      if (!res.ok) {
+        setSaveHomeMessage(`Error: el servidor rechazó los textos de portada (HTTP ${res.status}).`);
+        return;
+      }
+
+      // Verificación: el servidor debe devolver los textos tal como se enviaron
+      const check = await fetch(`${api}/settings/brand`, { cache: 'no-store' });
+      const saved = check.ok ? await check.json() : null;
+      const keys = Object.keys(sent) as HomeTextKey[];
+      const persisted = saved?.homeTexts && typeof saved.homeTexts === 'object'
+        && keys.every((k) => saved.homeTexts[k] === sent[k]);
+
+      if (persisted || (keys.length === 0 && saved?.homeTexts)) {
+        setBackendKeepsHomeTexts(true);
+        setSaveHomeMessage('Textos de la portada actualizados.');
+      } else if (keys.length === 0) {
+        setSaveHomeMessage('Título y descripción guardados. Los demás textos usan sus valores por defecto.');
+      } else {
+        setSaveHomeMessage('Error: el servidor guardó la marca pero no conservó los textos de portada. Hay que habilitar el campo homeTexts en el backend.');
+      }
+    } catch (err) {
+      setSaveHomeMessage('Error de conexión.');
+    } finally {
+      setIsSavingHome(false);
+      setTimeout(() => setSaveHomeMessage(''), 8000);
     }
   };
 
@@ -271,6 +330,12 @@ export default function SettingsPage() {
                <ImageIcon className="w-4 h-4" /> Identidad
              </button>
              <button 
+               onClick={() => setActiveTab('portada')} 
+               className={`w-full text-left px-5 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-3 border ${activeTab === 'portada' ? 'bg-neon-green/10 border-neon-green text-neon-green shadow-[0_0_15px_rgba(57,255,20,0.2)]' : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'}`}
+             >
+               <Type className="w-4 h-4" /> Portada
+             </button>
+             <button 
                onClick={() => setActiveTab('dian')} 
                className={`w-full text-left px-5 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-3 border ${activeTab === 'dian' ? 'bg-blue-900/20 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'}`}
              >
@@ -364,33 +429,6 @@ export default function SettingsPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-4 mt-6 bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-white mb-2 border-b border-zinc-800 pb-2">Textos del Inicio (Home)</h3>
-                        
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Título Principal</label>
-                          <input 
-                            type="text" 
-                            value={homeTitle} 
-                            onChange={e => setHomeTitle(e.target.value)}
-                            className="w-full bg-black border border-zinc-700 rounded-xl py-3 px-4 text-white focus:border-neon-green focus:ring-1 focus:ring-neon-green outline-none text-sm transition-all"
-                            placeholder='Próximos <span class="text-neon-green">Eventos</span>'
-                          />
-                          <p className="text-[10px] text-zinc-500">Puedes usar código HTML como &lt;span class="text-neon-green"&gt; para dar color verde a una palabra específica.</p>
-                        </div>
-
-                        <div className="space-y-2 mt-4">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Descripción Corta</label>
-                          <textarea 
-                            value={homeDescription} 
-                            onChange={e => setHomeDescription(e.target.value)}
-                            className="w-full bg-black border border-zinc-700 rounded-xl py-3 px-4 text-white focus:border-neon-green focus:ring-1 focus:ring-neon-green outline-none text-sm transition-all resize-none"
-                            placeholder="Navega por la cartelera de música electrónica oficial..."
-                            rows={3}
-                          />
-                        </div>
-                      </div>
-
                       <div className="pt-6 border-t border-zinc-800 flex items-center justify-between">
                         <p className={`text-xs font-bold uppercase tracking-widest ${saveBrandMessage.includes('Error') || saveBrandMessage.includes('Fallo') ? 'text-red-500' : 'text-neon-green'}`}>
                           {saveBrandMessage}
@@ -402,6 +440,91 @@ export default function SettingsPage() {
                         >
                           <Save className="w-4 h-4" /> {isSavingBrand ? 'Guardando...' : 'Guardar Identidad'}
                         </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                {activeTab === 'portada' && (
+                  <div className="glass-panel p-8 rounded-2xl border-t-2 border-t-neon-green animate-in fade-in slide-in-from-bottom-4 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-neon-green/10 blur-3xl rounded-full"></div>
+
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className="w-12 h-12 rounded-xl bg-neon-green/20 flex items-center justify-center border border-neon-green/50">
+                        <Type className="w-6 h-6 text-neon-green" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-black uppercase tracking-widest text-white">Textos de la Portada</h2>
+                        <p className="text-xs text-zinc-400 mt-1 uppercase tracking-widest font-bold">Todo lo que se lee en la página de inicio</p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleSaveHome} className="space-y-6 relative z-10">
+                      <div className="space-y-4 bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-white mb-2 border-b border-zinc-800 pb-2">Portada · Textos principales</h3>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Descripción bajo el título</label>
+                          <textarea
+                            value={homeDescription}
+                            onChange={e => setHomeDescription(e.target.value)}
+                            className="w-full bg-black border border-zinc-700 rounded-xl py-3 px-4 text-white focus:border-neon-green focus:ring-1 focus:ring-neon-green outline-none text-sm transition-all resize-none"
+                            placeholder="Navega por la cartelera de música electrónica oficial..."
+                            rows={3}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Título de la cartelera</label>
+                          <input
+                            type="text"
+                            value={homeTitle}
+                            onChange={e => setHomeTitle(e.target.value)}
+                            className="w-full bg-black border border-zinc-700 rounded-xl py-3 px-4 text-white focus:border-neon-green focus:ring-1 focus:ring-neon-green outline-none text-sm transition-all"
+                            placeholder='Próximos <span class="text-neon-green">Eventos</span>'
+                          />
+                          <p className="text-[10px] text-zinc-500">Puedes usar código HTML como &lt;span class="text-neon-green"&gt; para dar color verde a una palabra específica.</p>
+                        </div>
+                      </div>
+
+                      {HOME_TEXT_GROUPS.map((group) => (
+                        <div key={group.title} className="space-y-4 bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800">
+                          <h3 className="text-xs font-black uppercase tracking-widest text-white mb-2 border-b border-zinc-800 pb-2">{group.title}</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {group.fields.map((f) => (
+                              <div key={f.key} className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{f.label}</label>
+                                <input
+                                  type="text"
+                                  value={homeTexts[f.key]}
+                                  onChange={e => setHomeTexts(prev => ({ ...prev, [f.key]: e.target.value }))}
+                                  className="w-full bg-black border border-zinc-700 rounded-xl py-3 px-4 text-white focus:border-neon-green focus:ring-1 focus:ring-neon-green outline-none text-sm transition-all"
+                                  placeholder={f.fallback}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+
+                      <div className="pt-6 border-t border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <p className={`text-xs font-bold uppercase tracking-widest ${saveHomeMessage.includes('Error') ? 'text-red-500' : 'text-neon-green'}`}>
+                          {saveHomeMessage}
+                        </p>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setHomeTexts(HOME_TEXT_DEFAULTS)}
+                            className="flex items-center gap-2 border border-zinc-700 text-zinc-300 px-5 py-3 rounded text-xs font-black uppercase tracking-widest hover:border-zinc-400 transition-all"
+                          >
+                            <RotateCcw className="w-4 h-4" /> Valores por defecto
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={isSavingHome}
+                            className="flex items-center gap-2 bg-neon-green text-black px-8 py-3 rounded text-sm font-black uppercase tracking-widest hover:shadow-[0_0_20px_rgba(57,255,20,0.5)] transition-all disabled:opacity-50 hover:bg-white"
+                          >
+                            <Save className="w-4 h-4" /> {isSavingHome ? 'Guardando...' : 'Guardar Portada'}
+                          </button>
+                        </div>
                       </div>
                     </form>
                   </div>

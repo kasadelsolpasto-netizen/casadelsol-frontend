@@ -209,3 +209,126 @@ body {
 .post-content em     { color: #a1a1aa; }
 .post-content s      { color: #52525b; }
 
+
+/* ── PORTADA RAVE 3D (reactiva al cursor y a la música) ─────────────────── */
+:root { --viz-beat: 0; --viz-half: 0; --viz-p3: 0; --viz-p5: 0; --viz-bass: 0; --viz-high: 0; --mx: 0; --my: 0; }
+.rave-home { overflow-x: clip; }
+
+/* Velo lateral para legibilidad del texto sobre la escena */
+.hero-scrim {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse 55% 70% at 22% 55%, rgba(0,0,0,.72), rgba(0,0,0,.35) 60%, transparent 85%);
+}
+@media (max-width: 1023px) {
+  .hero-scrim { background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,.55) 40%, rgba(0,0,0,.7) 100%); }
+}
+.rave-home .font-mono { font-family: var(--font-tekno), ui-monospace, SFMono-Regular, monospace; }
+
+/* Fondo de respaldo si no hay WebGL */
+.rave-home::before {
+  content: ""; position: fixed; inset: 0; z-index: -20; pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 38%, rgba(191,0,255,.18), transparent 70%),
+    radial-gradient(circle at 50% 30%, rgba(57,255,20,.10), transparent 40%), #000;
+}
+
+.crt-lines {
+  pointer-events: none; position: fixed; inset: 0; z-index: 60;
+  background: repeating-linear-gradient(0deg, #00000030, #00000030 1px, #0000 1px 3px);
+  opacity: .5;
+  mix-blend-mode: multiply;
+}
+
+/* Título: gira con el cursor (no con la música). Su contorno es un borde luminoso
+   que reacciona con suavidad: brilla a medio tempo. */
+.title-stage { perspective: 900px; }
+.title-3d {
+  transform-origin: 30% 50%;
+  transform: rotateY(calc(var(--mx) * 14deg)) rotateX(calc(var(--my) * 10deg));
+  text-shadow:
+    calc(var(--mx) * -3px) calc(var(--my) * 3px) 0 #bf00ff,
+    calc(var(--mx) * -6px) calc(var(--my) * 6px) 0 rgba(191,0,255,.6),
+    calc(var(--mx) * -9px) calc(var(--my) * 9px) 0 rgba(191,0,255,.35);
+  filter:
+    drop-shadow(0 0 1px rgba(57,255,20,calc(.55 + var(--viz-half) * .2)))
+    drop-shadow(0 0 calc(4px + var(--viz-half) * 5px) rgba(57,255,20,calc(.2 + var(--viz-half) * .18)));
+  will-change: transform, filter;
+}
+
+/* Flyer 3D */
+.flyer-stage { perspective: 1100px; }
+.flyer-3d {
+  transform-style: preserve-3d;
+  transform:
+    rotateY(calc(var(--mx) * 22deg))
+    rotateX(calc(var(--my) * 16deg))
+    scale(calc(1 + var(--viz-half) * .012));
+  transition: transform 120ms linear;
+  will-change: transform;
+}
+.flyer-img { transform: translateZ(0); filter: brightness(calc(.92 + var(--viz-half) * .3)) saturate(calc(1 + var(--viz-bass) * .4)); }
+/* Esquinas cúbicas del flyer: escuadras con volumen que se levantan como una tapa.
+   Cada escuadra son capas apiladas en Z (frente neón, fondo más oscuro) → se ve sólida al girar. */
+.corner-cube {
+  --lift: calc(10px + var(--viz-half) * 5px);
+  --depth: calc(34px + var(--viz-half) * 8px);
+  position: absolute; width: 46px; height: 46px;
+  transform-style: preserve-3d; pointer-events: none;
+}
+.corner-cube.tl { top: 0; left: 0; transform-origin: 0 0;
+  transform: translate3d(calc(var(--lift) * -1), calc(var(--lift) * -1), var(--depth)) rotateX(10deg) rotateY(-10deg); }
+.corner-cube.tr { top: 0; right: 0; transform-origin: 100% 0;
+  transform: translate3d(var(--lift), calc(var(--lift) * -1), var(--depth)) rotateX(10deg) rotateY(10deg); }
+.corner-cube.bl { bottom: 0; left: 0; transform-origin: 0 100%;
+  transform: translate3d(calc(var(--lift) * -1), var(--lift), var(--depth)) rotateX(-10deg) rotateY(-10deg); }
+.corner-cube.br { bottom: 0; right: 0; transform-origin: 100% 100%;
+  transform: translate3d(var(--lift), var(--lift), var(--depth)) rotateX(-10deg) rotateY(10deg); }
+.corner-cube i {
+  position: absolute; inset: 0; border: 0 solid;
+  --t: calc(var(--i) / (var(--n) - 1));
+  border-color: rgb(calc(57 - var(--t) * 45), calc(255 - var(--t) * 200), calc(20 + var(--t) * 40));
+  transform: translateZ(calc(var(--i) * -1.6px));
+}
+.corner-cube i:first-child { filter: drop-shadow(0 0 6px rgba(57,255,20,.8)); }
+.corner-cube.tl i { border-top-width: 10px; border-left-width: 10px; }
+.corner-cube.tr i { border-top-width: 10px; border-right-width: 10px; }
+.corner-cube.bl i { border-bottom-width: 10px; border-left-width: 10px; }
+.corner-cube.br i { border-bottom-width: 10px; border-right-width: 10px; }
+@media (max-width: 640px) {
+  .corner-cube { width: 34px; height: 34px; --lift: calc(7px + var(--viz-half) * 3px); }
+  .corner-cube.tl i, .corner-cube.tr i, .corner-cube.bl i, .corner-cube.br i { border-width: 0; }
+  .corner-cube.tl i { border-top-width: 8px; border-left-width: 8px; }
+  .corner-cube.tr i { border-top-width: 8px; border-right-width: 8px; }
+  .corner-cube.bl i { border-bottom-width: 8px; border-left-width: 8px; }
+  .corner-cube.br i { border-bottom-width: 8px; border-right-width: 8px; }
+}
+.flyer-stamp { transform: translateX(-50%) translateZ(80px); }
+.flyer-halo {
+  transform: translateZ(-60px) scale(calc(1 + var(--viz-half) * .04));
+  background: radial-gradient(closest-side, rgba(57,255,20,calc(.18 + var(--viz-half) * .45)), rgba(191,0,255,.18) 60%, transparent);
+  filter: blur(24px);
+}
+.flyer-glare, .tilt-glare {
+  background: radial-gradient(circle at var(--gx, 50%) var(--gy, 30%), rgba(255,255,255,.28), transparent 45%);
+  mix-blend-mode: overlay; opacity: 0; transition: opacity .3s;
+}
+.flyer-3d:hover .flyer-glare, .tilt-card:hover .tilt-glare { opacity: 1; }
+
+/* Tarjetas inclinables */
+.tilt-card {
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateZ(0);
+  transform-style: preserve-3d;
+  transition: transform .25s ease-out, box-shadow .3s, border-color .3s;
+}
+.tilt-card:hover { transition: transform .06s linear, box-shadow .3s, border-color .3s; }
+
+/* Ecualizador del botón de sonido */
+.eq-bar {
+  height: calc(20% + var(--viz-bass) * 80% * var(--k, 1));
+  min-height: 3px; max-height: 100%;
+  transition: height 50ms linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-3d, .flyer-3d, .tilt-card { transform: none !important; }
+}
