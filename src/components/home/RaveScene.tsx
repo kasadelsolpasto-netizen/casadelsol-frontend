@@ -2,16 +2,15 @@
 import { useEffect, useRef } from "react";
 import { rave, sample } from "@/lib/rave-engine";
 import { drawValley, valleyCamera } from "./scene/valley";
-import { createFire, type Fire } from "./scene/fire";
-import { createPsyFire } from "./scene/fire-psy";
+import { createPsyFire, type Fire } from "./scene/fire-psy";
 
 /**
  * Escena de la portada, en la línea de chauss.cz, en tres capas:
  *   1. Cielo (WebGL): cosmos, constelación de Orión y el sol por delante de ella.
  *   2. Valle (Canvas 2D vectorial, sin pixelado): barrio "trash" al centro, montañas exageradas con
  *      caminos a los lados, el volcán Galeras al fondo y el ecualizador como rayo / haz de luz que cruza toda la página.
- *   3. Fuego (WebGL): dos tipos de llama salen juntos en el borde inferior, de lado a lado, en cámara
- *      subjetiva: llamas naturales y llamas psicodélicas pixeladas (`scene/fire-psy.ts`).
+ *   3. Fuego (WebGL, `scene/fire-psy.ts`): llamas psicodélicas pixeladas en el borde inferior,
+ *      de lado a lado, en cámara subjetiva.
  *
  * Ritmo visual delicado: nada se mueve a más de la mitad del tempo. La excepción es el ecualizador,
  * que dibuja fielmente la forma de onda del sonido. La cámara sigue el cursor o el giroscopio.
@@ -153,15 +152,13 @@ function layout(wide: boolean, halfW: number) {
 export function RaveScene() {
   const skyRef = useRef<HTMLCanvasElement>(null);
   const valleyRef = useRef<HTMLCanvasElement>(null);
-  const fireRef = useRef<HTMLCanvasElement>(null);
   const psyRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = skyRef.current;
     const vCanvas = valleyRef.current;
-    const fCanvas = fireRef.current;
     const pCanvas = psyRef.current;
-    if (!canvas || !vCanvas || !fCanvas || !pCanvas) return;
+    if (!canvas || !vCanvas || !pCanvas) return;
     const root = document.documentElement;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const coarse = window.matchMedia("(pointer: coarse)").matches;
@@ -213,8 +210,6 @@ export function RaveScene() {
     const vctx = vCanvas.getContext("2d");
 
     // ── Capa 3: fuego ──
-    const fire: Fire | null = createFire(fCanvas, coarse ? 0.35 : 0.5);
-    if (!fire) fCanvas.style.display = "none";
     // Llamas psicodélicas: pocos píxeles grandes, pixelado intencional
     const psy: Fire | null = createPsyFire(pCanvas, coarse ? 0.2 : 0.14);
     if (!psy) pCanvas.style.display = "none";
@@ -240,7 +235,6 @@ export function RaveScene() {
       dpr = Math.min(window.devicePixelRatio || 1, 2);
       vCanvas.width = Math.floor(w * dpr);
       vCanvas.height = Math.floor(h * dpr);
-      fire?.resize();
       psy?.resize();
     };
     resize();
@@ -289,7 +283,6 @@ export function RaveScene() {
         });
       }
       psy?.draw(t, rave.half);
-      fire?.draw(t, rave.half);
     };
 
     if (reduced) {
@@ -305,7 +298,6 @@ export function RaveScene() {
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("deviceorientation", onTilt);
       for (const k of CSS_VARS) root.style.removeProperty(k);
-      fire?.dispose();
       psy?.dispose();
     };
   }, []);
@@ -315,7 +307,6 @@ export function RaveScene() {
       <canvas ref={skyRef} aria-hidden="true" className="fixed inset-0 w-screen h-screen pointer-events-none -z-10" />
       <canvas ref={valleyRef} aria-hidden="true" className="fixed inset-0 w-screen h-screen pointer-events-none" style={{ zIndex: -9 }} />
       <canvas ref={psyRef} aria-hidden="true" className="fixed inset-x-0 bottom-0 w-screen h-[38vh] pointer-events-none mix-blend-screen [image-rendering:pixelated]" style={{ zIndex: -8 }} />
-      <canvas ref={fireRef} aria-hidden="true" className="fixed inset-x-0 bottom-0 w-screen h-[38vh] pointer-events-none mix-blend-screen" style={{ zIndex: -7 }} />
     </>
   );
 }

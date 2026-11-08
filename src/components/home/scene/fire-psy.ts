@@ -1,8 +1,8 @@
 /**
- * Segundo tipo de llama: psicodélica y "plástica". Lenguas en punta hechas con ondas, bandas de
+ * Fuego en cámara subjetiva, psicodélico y "plástico", en el borde inferior de lado a lado. Lenguas en punta hechas con ondas, bandas de
  * color que suben (plástico fundido) y color por profundidad (puntas magenta → naranja → núcleo
  * amarillo). Se dibuja a muy baja resolución y se amplía con `image-rendering: pixelated`: píxeles
- * grandes y nítidos a propósito. Sale junto con las llamas naturales de `fire.ts`.
+ * grandes y nítidos a propósito.
  */
 
 const VERT = `
@@ -63,7 +63,7 @@ void main(){
 }
 `;
 
-import type { Fire } from "./fire";
+export type Fire = { draw: (t: number, half: number) => void; resize: () => void; dispose: () => void };
 
 export function createPsyFire(canvas: HTMLCanvasElement, scale: number): Fire | null {
   const gl = canvas.getContext("webgl", { antialias: false, alpha: true, premultipliedAlpha: true });
