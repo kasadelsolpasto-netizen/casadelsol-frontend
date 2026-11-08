@@ -18,6 +18,7 @@ export const BPM = 128;
 const BEAT = 60 / BPM;
 const STEP = BEAT / 4; // semicorchea
 export const SPEC_BINS = 32;
+export const WAVE_N = 512;
 
 // ── Patrones (1 = golpe) ─────────────────────────────────────────────
 const TRESILLO = [1,0,0,1, 0,0,1,0, 1,0,0,1, 0,0,1,0];          // 3-3-2 ×2
@@ -53,6 +54,9 @@ type State = {
   /** Posición del reloj en negras (continua). */
   beats: number;
   spec: Uint8Array;
+  /** Forma de onda en tiempo real (128 = silencio) y su nivel RMS [0,1]. */
+  wave: Uint8Array;
+  level: number;
   mx: number; my: number; tx: number; ty: number;
 };
 
@@ -61,6 +65,8 @@ export const rave: State = {
   bass: 0, mid: 0, high: 0, beat: 0,
   half: 0, halfPhase: 0, p3: 0, p5: 0, p7: 0, beats: 0,
   spec: new Uint8Array(SPEC_BINS),
+  wave: new Uint8Array(WAVE_N).fill(128),
+  level: 0,
   mx: 0, my: 0, tx: 0, ty: 0,
 };
 
@@ -337,6 +343,10 @@ export function sample(t: number) {
 
   if (live) {
     analyser.getByteFrequencyData(freq);
+    analyser.getByteTimeDomainData(rave.wave as Uint8Array<ArrayBuffer>);
+    let acc = 0;
+    for (let i = 0; i < WAVE_N; i++) { const v = (rave.wave[i] - 128) / 128; acc += v * v; }
+    rave.level = Math.sqrt(acc / WAVE_N);
     const avg = (a: number, b: number) => {
       let s = 0;
       for (let i = a; i < b; i++) s += freq[i];
@@ -355,6 +365,8 @@ export function sample(t: number) {
   } else {
     // En silencio el ecualizador es fiel: casi plano, con un perfil quieto y bajo
     rave.beat = 0;
+    rave.wave.fill(128);
+    rave.level = 0;
     rave.bass = rave.mid = rave.high = 0;
     for (let i = 0; i < SPEC_BINS; i++) {
       rave.spec[i] = Math.floor((0.05 + 0.04 * (0.5 + 0.5 * Math.sin(i * 0.9))) * 255);

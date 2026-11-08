@@ -12,16 +12,22 @@ del teléfono) y a música generada en vivo en el navegador. Conserva la estéti
   X = corte, Y = resonancia) sobre percusión tribal con groove: bombo 4/4, shaker con swing,
   rim en tresillo 3-3-2, toms en ciclo de 7, congas en ciclo de 12, surdo y redoble cada
   8 compases. Suena solo cuando el visitante pulsa el botón (regla de autoplay de los navegadores).
-- **Escena** (`src/components/home/RaveScene.tsx`): en la línea del cañón de líneas de chauss.cz,
-  la cuadrícula es un **valle andino tipo Pasto** (relieve 3D por raymarching: fondo de valle que
-  serpentea, laderas y cerros a ambos lados, malla que sigue el terreno). Sol a la izquierda y
-  constelación de Orión a su derecha tal como se vio desde Pasto al amanecer del 30 de junio de 1988
-  (acostada, cabeza al norte; solo estrellas, tabla `ORION`). Al fondo del valle, la
-  cordillera-ecualizador.
-- **Ritmo visual**: delicado, nunca más rápido que la mitad del tempo (la cámara avanza una celda
-  por compás, el sol respira cada 2 negras, un anillo por compás, titileo cada 2 compases).
-  **Excepción**: el ecualizador sigue fielmente el espectro en tiempo real; en silencio queda bajo y quieto.
-- **Rendimiento**: resolución interna adaptativa (baja sola si el equipo no sostiene ~40 fps).
+- **Escena** (`src/components/home/RaveScene.tsx`), en la línea de chauss.cz, en tres capas:
+  1. **Cielo** (WebGL): cosmos, constelación de Orión tal como se vio desde Pasto al amanecer del
+     30 de junio de 1988 (acostada, cabeza al norte; solo estrellas, tabla `ORION`) y el **sol por
+     delante** de ella, a la izquierda.
+  2. **Valle vectorial** (`scene/valley.ts`, Canvas 2D a resolución nativa: trazos nítidos, sin
+     pixelado): la **calle** al centro (bordes resaltados y línea central discontinua), **montañas
+     exageradas** a los lados y el **volcán Galeras** al fondo, con cumbre truncada y cráter.
+     Encima, el **ecualizador como rayo y haz de luz** que cruza toda la página con la forma de onda
+     real del sonido.
+  3. **Fuego** (`scene/fire.ts`, WebGL con transparencia): llamas en el borde inferior, de lado a
+     lado, como si brotaran de quien mira (cámara subjetiva).
+- **Ritmo visual**: delicado, nunca más rápido que la mitad del tempo (la cámara avanza una fila de la
+  calle por compás, el sol respira cada 2 negras, un anillo por compás, titileo cada 2 compases,
+  las llamas suben despacio). **Excepción**: el ecualizador dibuja fielmente la forma de onda en
+  tiempo real; en silencio es una línea quieta.
+- **Rendimiento**: el cielo usa resolución interna adaptativa; el valle es vectorial y ligero.
 - **Título**: gira con el cursor, no con la música; borde luminoso suave a medio tempo.
 - **Flyer y tarjetas**: inclinación 3D con el cursor (`TiltFlyer.tsx`, `TiltCard.tsx`).
 - Sin WebGL se muestra un fondo neón estático; con "reducir movimiento" la animación se detiene.
