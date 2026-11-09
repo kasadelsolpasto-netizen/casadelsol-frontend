@@ -6,9 +6,10 @@
  * en el territorio, y el regreso a la superficie para la gobernanza y la
  * vinculación.
  *
- * El contenido se edita en /admin/ong; el concepto gráfico vive en ./ong.css.
+ * El contenido se edita en /admin/ong y se guarda en el backend; el concepto
+ * gráfico vive en ./ong.css.
  */
-import { obtener } from "@/lib/ong-almacen";
+import { leerContenido } from "@/lib/ong-backend";
 import { componer } from "@/lib/ong-contenido";
 import { Hero } from "./_components/Hero";
 import { Barra } from "./_components/Barra";
@@ -25,7 +26,7 @@ import { Revelar } from "./_components/Fluido";
 export const dynamic = "force-dynamic";
 
 export default async function OngPage() {
-  const guardado = await obtener();
+  const guardado = await leerContenido();
   const c = componer(guardado?.documento);
 
   return (

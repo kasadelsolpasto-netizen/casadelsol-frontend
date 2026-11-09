@@ -38,25 +38,18 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Fundación Kasa del Sol (`/ong`)
 
 Página institucional de la Fundación, editable desde el panel en
-`/admin/ong`. El contenido de fábrica vive en `src/app/ong/contenido.ts` y lo
-que se publica desde el panel se guarda en Supabase y se compone sobre esa
-base, de modo que los campos nuevos que se agreguen en código aparecen aunque
-el documento guardado sea anterior.
+`/admin/ong`. No comparte el esquema del sitio de eventos: no lleva la barra
+de cuentas, ni el rastreador de promotores, ni el aviso de pedidos, ni
+reCAPTCHA. Ese filtro vive en `src/components/ChromeSitio.tsx`.
 
-Para habilitar la publicación desde el panel:
+El contenido de fábrica está en `src/app/ong/contenido.ts`. Lo que se publica
+desde el panel se guarda en el backend, en la tabla de ajustes del sistema
+bajo la clave `ong_contenido`, junto a la marca y las llaves de pago:
 
-1. Ejecutar `supabase/ong_contenido.sql` en el SQL Editor del proyecto de
-   Supabase. Crea la tabla `ong_contenido` con RLS activo y sin políticas: solo
-   se accede desde el servidor con la llave de servicio.
-2. Definir la variable de entorno `SUPABASE_SERVICE_ROLE_KEY` (Supabase →
-   Project Settings → API → `service_role`). **Sin** el prefijo
-   `NEXT_PUBLIC_`: con él quedaría expuesta en el navegador.
+- `GET /settings/ong` — público, es lo mismo que ya muestra la página.
+- `PUT /admin/settings/ong` — solo OWNER, por el guard de rol del backend.
 
-Mientras eso no esté, la página publica el contenido de fábrica y el panel
-avisa que el almacén no está configurado.
-
-La escritura (`PUT /api/ong/contenido`) autoriza reenviando el token de sesión
-al backend, a un endpoint que este solo responde a un administrador
-(`ONG_ENDPOINT_VERIFICACION`, por defecto `/admin/settings/wompi`). El
-`middleware.ts` que protege `/admin` solo lee el payload del JWT y no verifica
-la firma: sirve de puerta para la interfaz, no de control de acceso.
+Lo guardado se fusiona sobre el contenido de fábrica (`src/lib/ong-contenido.ts`),
+de modo que los campos nuevos que se agreguen en código aparecen aunque el
+documento almacenado sea anterior. Si el backend no responde, la página
+publica el contenido de fábrica en vez de caerse.

@@ -19,6 +19,8 @@ import {
   Sun,
 } from "lucide-react";
 import { AdminGuard } from "@/components/AdminGuard";
+import { API_ONG } from "@/lib/ong-backend";
+import { componer } from "@/lib/ong-contenido";
 import {
   Texto,
   Area,
@@ -70,20 +72,19 @@ export default function EditorOng() {
   const [guardando, setGuardando] = useState(false);
   const [aviso, setAviso] = useState("");
   const [error, setError] = useState("");
-  const [almacenListo, setAlmacenListo] = useState(true);
   const [actualizado, setActualizado] = useState<string | null>(null);
   const [sucio, setSucio] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/ong/contenido", { cache: "no-store" });
+        const res = await fetch(`${API_ONG}/settings/ong`, { cache: "no-store" });
+        if (!res.ok) throw new Error("respuesta no válida");
         const data = await res.json();
-        setDoc(data.contenido);
-        setAlmacenListo(Boolean(data.almacenConfigurado));
-        setActualizado(data.actualizadoEn);
+        setDoc(componer(data?.documento));
+        setActualizado(data?.actualizadoEn ?? null);
       } catch {
-        setError("No se pudo cargar el contenido.");
+        setError("No se pudo cargar el contenido desde el servidor.");
       } finally {
         setCargando(false);
       }
@@ -117,23 +118,25 @@ export default function EditorOng() {
         .split("; ")
         .find((c) => c.startsWith("kasa_auth_token="))
         ?.split("=")[1];
-      const usuario = JSON.parse(localStorage.getItem("kasa_user") || "{}");
 
-      const res = await fetch("/api/ong/contenido", {
+      const res = await fetch(`${API_ONG}/admin/settings/ong`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ contenido: doc, autor: usuario?.name || "admin" }),
+        body: JSON.stringify({ contenido: doc }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setError(data?.mensaje || "No se pudo guardar.");
+        setError(
+          res.status === 401 || res.status === 403
+            ? "No tienes permiso para publicar. Vuelve a iniciar sesión en el panel."
+            : data?.message || "No se pudo guardar.",
+        );
       } else {
-        setDoc(data.contenido);
         setSucio(false);
-        setActualizado(new Date().toISOString());
+        setActualizado(data?.actualizadoEn ?? new Date().toISOString());
         setAviso("Contenido publicado en kasadelsol.co/ong");
         setTimeout(() => setAviso(""), 5000);
       }
@@ -223,21 +226,6 @@ export default function EditorOng() {
           </div>
 
           {/* Avisos */}
-          {!almacenListo && (
-            <div className="mb-6 flex items-start gap-4 rounded-xl border border-amber-900/50 bg-amber-950/20 p-5">
-              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
-              <div className="text-xs leading-relaxed text-amber-200/80">
-                <p className="mb-1 font-black uppercase tracking-widest text-amber-400">
-                  El almacén no está configurado
-                </p>
-                Puedes editar y previsualizar, pero al publicar fallará. Falta
-                ejecutar <code className="text-amber-300">supabase/ong_contenido.sql</code> en
-                Supabase y definir la variable{" "}
-                <code className="text-amber-300">SUPABASE_SERVICE_ROLE_KEY</code> en el
-                entorno. Mientras tanto, la página publica el contenido de fábrica.
-              </div>
-            </div>
-          )}
           {aviso && (
             <div className="mb-6 flex items-center gap-3 rounded-xl border border-green-900/50 bg-green-950/20 p-4 text-xs font-bold uppercase tracking-widest text-neon-green">
               <CheckCircle className="h-4 w-4" /> {aviso}
