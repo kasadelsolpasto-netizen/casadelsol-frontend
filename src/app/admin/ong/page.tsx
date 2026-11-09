@@ -345,7 +345,7 @@ export default function EditorOng() {
               <div className="space-y-6">
                 <Texto etiqueta="Antetítulo" valor={doc.tesis.antetitulo}
                   cambiar={(v) => poner("tesis", { ...doc.tesis, antetitulo: v })} />
-                <Texto etiqueta="Título" valor={doc.tesis.titulo}
+                <Texto etiqueta="Título" ayuda="Lo que vaya entre *asteriscos* lleva el acento de color." valor={doc.tesis.titulo}
                   cambiar={(v) => poner("tesis", { ...doc.tesis, titulo: v })} />
                 <ListaTextos etiqueta="Párrafos" nombreElemento="párrafo" filas={5}
                   valores={doc.tesis.parrafos}
@@ -359,7 +359,7 @@ export default function EditorOng() {
               <div className="space-y-6">
                 <Texto etiqueta="Antetítulo" valor={doc.lineas.antetitulo}
                   cambiar={(v) => poner("lineas", { ...doc.lineas, antetitulo: v })} />
-                <Texto etiqueta="Título" valor={doc.lineas.titulo}
+                <Texto etiqueta="Título" ayuda="Lo que vaya entre *asteriscos* lleva el acento de color." valor={doc.lineas.titulo}
                   cambiar={(v) => poner("lineas", { ...doc.lineas, titulo: v })} />
                 <Area etiqueta="Bajada" valor={doc.lineas.lead} filas={3}
                   cambiar={(v) => poner("lineas", { ...doc.lineas, lead: v })} />
@@ -401,7 +401,7 @@ export default function EditorOng() {
               <div className="space-y-6">
                 <Texto etiqueta="Antetítulo" valor={doc.territorio.antetitulo}
                   cambiar={(v) => poner("territorio", { ...doc.territorio, antetitulo: v })} />
-                <Texto etiqueta="Título" valor={doc.territorio.titulo}
+                <Texto etiqueta="Título" ayuda="Lo que vaya entre *asteriscos* lleva el acento de color." valor={doc.territorio.titulo}
                   cambiar={(v) => poner("territorio", { ...doc.territorio, titulo: v })} />
                 <ListaTextos etiqueta="Párrafos" nombreElemento="párrafo" filas={5}
                   valores={doc.territorio.parrafos}
@@ -450,7 +450,7 @@ export default function EditorOng() {
               <div className="space-y-6">
                 <Texto etiqueta="Antetítulo" valor={doc.programas.antetitulo}
                   cambiar={(v) => poner("programas", { ...doc.programas, antetitulo: v })} />
-                <Texto etiqueta="Título" valor={doc.programas.titulo}
+                <Texto etiqueta="Título" ayuda="Lo que vaya entre *asteriscos* lleva el acento de color." valor={doc.programas.titulo}
                   cambiar={(v) => poner("programas", { ...doc.programas, titulo: v })} />
                 <Area etiqueta="Bajada" valor={doc.programas.lead} filas={3}
                   cambiar={(v) => poner("programas", { ...doc.programas, lead: v })} />
@@ -494,7 +494,7 @@ export default function EditorOng() {
               <div className="space-y-6">
                 <Texto etiqueta="Antetítulo" valor={doc.gobernanza.antetitulo}
                   cambiar={(v) => poner("gobernanza", { ...doc.gobernanza, antetitulo: v })} />
-                <Texto etiqueta="Título" valor={doc.gobernanza.titulo}
+                <Texto etiqueta="Título" ayuda="Lo que vaya entre *asteriscos* lleva el acento de color." valor={doc.gobernanza.titulo}
                   cambiar={(v) => poner("gobernanza", { ...doc.gobernanza, titulo: v })} />
                 <Area etiqueta="Bajada" valor={doc.gobernanza.lead} filas={3}
                   cambiar={(v) => poner("gobernanza", { ...doc.gobernanza, lead: v })} />
@@ -538,7 +538,7 @@ export default function EditorOng() {
               <div className="space-y-6">
                 <Texto etiqueta="Antetítulo" valor={doc.vinculacion.antetitulo}
                   cambiar={(v) => poner("vinculacion", { ...doc.vinculacion, antetitulo: v })} />
-                <Texto etiqueta="Título" valor={doc.vinculacion.titulo}
+                <Texto etiqueta="Título" ayuda="Lo que vaya entre *asteriscos* lleva el acento de color." valor={doc.vinculacion.titulo}
                   cambiar={(v) => poner("vinculacion", { ...doc.vinculacion, titulo: v })} />
                 <Area etiqueta="Bajada" valor={doc.vinculacion.lead} filas={3}
                   cambiar={(v) => poner("vinculacion", { ...doc.vinculacion, lead: v })} />
@@ -602,7 +602,7 @@ export default function EditorOng() {
               <div className="space-y-6">
                 <Texto etiqueta="Antetítulo" valor={doc.contacto.antetitulo}
                   cambiar={(v) => poner("contacto", { ...doc.contacto, antetitulo: v })} />
-                <Texto etiqueta="Título" valor={doc.contacto.titulo}
+                <Texto etiqueta="Título" ayuda="Lo que vaya entre *asteriscos* lleva el acento de color." valor={doc.contacto.titulo}
                   cambiar={(v) => poner("contacto", { ...doc.contacto, titulo: v })} />
                 <Area etiqueta="Bajada" valor={doc.contacto.lead} filas={3}
                   cambiar={(v) => poner("contacto", { ...doc.contacto, lead: v })} />

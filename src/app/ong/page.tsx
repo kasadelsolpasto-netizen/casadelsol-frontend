@@ -10,7 +10,8 @@
  * gráfico vive en ./ong.css.
  */
 import { leerContenido } from "@/lib/ong-backend";
-import { componer } from "@/lib/ong-contenido";
+import { publicar } from "@/lib/ong-contenido";
+import type { ContenidoOng } from "./contenido";
 import { Hero } from "./_components/Hero";
 import { Barra } from "./_components/Barra";
 import { Tesis } from "./_components/Tesis";
@@ -25,12 +26,53 @@ import { Revelar } from "./_components/Fluido";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Ficha de la entidad para buscadores: quién es, dónde está y cómo se le
+ * contacta, en el vocabulario que ellos leen (schema.org). Sale de los mismos
+ * datos de identidad que muestra la página.
+ */
+function fichaEstructurada(c: ContenidoOng) {
+  const [ciudad, resto] = c.identidad.domicilio.split(",").map((s) => s.trim());
+  return {
+    "@context": "https://schema.org",
+    "@type": "NGO",
+    name: c.identidad.nombre,
+    legalName: c.identidad.nombre,
+    alternateName: c.identidad.nombreCorto,
+    url: "https://kasadelsol.co/ong",
+    logo: "https://kasadelsol.co/ong/marca.webp",
+    description: c.hero.entrada,
+    taxID: c.identidad.nit,
+    nonprofitStatus: "NonprofitType",
+    email: c.contacto.correo || c.identidad.correo,
+    ...(c.contacto.telefono ? { telephone: c.contacto.telefono } : {}),
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: ciudad,
+      addressRegion: resto?.split("—")[0]?.trim() || undefined,
+      addressCountry: "CO",
+      ...(c.contacto.direccion ? { streetAddress: c.contacto.direccion } : {}),
+    },
+    knowsAbout: c.lineas.items.map((l) => l.titulo),
+    ...(c.contacto.redes.length
+      ? { sameAs: c.contacto.redes.map((r) => r.href) }
+      : {}),
+  };
+}
+
 export default async function OngPage() {
   const guardado = await leerContenido();
-  const c = componer(guardado?.documento);
+  const c = publicar(guardado?.documento);
 
   return (
     <div className="min-h-screen">
+      <script
+        type="application/ld+json"
+        // «<» escapado: el contenido es editable y no debe poder cerrar la etiqueta
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(fichaEstructurada(c)).replace(/</g, "\\u003c"),
+        }}
+      />
       <Hero identidad={c.identidad} hero={c.hero} />
       <Barra secciones={c.secciones} identidad={c.identidad} />
 

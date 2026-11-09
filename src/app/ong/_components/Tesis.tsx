@@ -1,10 +1,10 @@
-import { Section, SectionHead } from "./Section";
+import { Section, SectionHead, Titulo } from "./Section";
 import type { Tesis as DatosTesis } from "../contenido";
 
 export function Tesis({ datos: tesis }: { datos: DatosTesis }) {
   return (
     <Section id="tesis">
-      <SectionHead eyebrow={tesis.antetitulo} title={tesis.titulo} />
+      <SectionHead eyebrow={tesis.antetitulo} title={<Titulo texto={tesis.titulo} />} />
 
       <div className="mt-12 grid gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-20">
         <div className="space-y-6">

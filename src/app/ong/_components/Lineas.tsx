@@ -1,20 +1,17 @@
-import { Section, SectionHead } from "./Section";
+import { Section, SectionHead, Titulo } from "./Section";
 import { OngIcon } from "./icons";
 import { Revelar } from "./Fluido";
 import type { BloqueLineas } from "../contenido";
 
 export function Lineas({ datos: lineas }: { datos: BloqueLineas }) {
+  if (lineas.items.length === 0) return null;
+
   return (
     <Section id="lineas">
       <Revelar>
       <SectionHead
         eyebrow={lineas.antetitulo}
-        title={
-          <>
-            Siete líneas,{" "}
-            <span className="ong-gradient-text">un objeto</span>
-          </>
-        }
+        title={<Titulo texto={lineas.titulo} />}
         lead={lineas.lead}
       />
       </Revelar>

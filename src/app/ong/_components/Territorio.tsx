@@ -1,4 +1,4 @@
-import { Section, SectionHead } from "./Section";
+import { Section, SectionHead, Titulo } from "./Section";
 import { Ondas } from "./Ondas";
 import { Revelar } from "./Fluido";
 import type { Territorio as DatosTerritorio } from "../contenido";
@@ -12,6 +12,8 @@ import type { Territorio as DatosTerritorio } from "../contenido";
  * el centro del relato: bajo la superficie está el territorio.
  */
 export function Territorio({ datos: territorio }: { datos: DatosTerritorio }) {
+  // Los indicadores solo ocupan su columna cuando hay cifras verificadas.
+  const hayCifras = territorio.marcadores.length > 0;
 
   return (
     <div className="ong-profundo relative">
@@ -28,19 +30,24 @@ export function Territorio({ datos: territorio }: { datos: DatosTerritorio }) {
         <Revelar>
           <SectionHead
             eyebrow={territorio.antetitulo}
-            title={
-              <>
-                Donde nace el{" "}
-                <span className="ong-gradient-water">Amazonas</span>
-              </>
-            }
+            title={<Titulo texto={territorio.titulo} tono="water" />}
             tone="water"
           />
         </Revelar>
 
-        <div className="mt-14 grid gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-20">
+        <div
+          className={`mt-14 grid gap-14 lg:gap-20 ${
+            hayCifras ? "lg:grid-cols-[1.1fr_0.9fr]" : ""
+          }`}
+        >
           <Revelar retraso={120}>
-            <div className="space-y-6">
+            <div
+              className={
+                hayCifras
+                  ? "space-y-6"
+                  : "max-w-none gap-x-16 space-y-6 lg:columns-2 lg:[&>p]:break-inside-avoid"
+              }
+            >
               {territorio.parrafos.map((p, i) => (
                 <p
                   key={i}
@@ -53,6 +60,7 @@ export function Territorio({ datos: territorio }: { datos: DatosTerritorio }) {
             </div>
           </Revelar>
 
+          {hayCifras && (
           <Revelar retraso={240}>
             <dl className="divide-y divide-[var(--ong-hair)] overflow-hidden rounded-2xl border ong-hair">
               {territorio.marcadores.map((m) => (
@@ -73,6 +81,7 @@ export function Territorio({ datos: territorio }: { datos: DatosTerritorio }) {
               {territorio.nota}
             </p>
           </Revelar>
+          )}
         </div>
 
         {/* Zonas de trabajo */}

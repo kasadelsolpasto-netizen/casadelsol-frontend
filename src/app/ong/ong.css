@@ -268,14 +268,16 @@
       rgba(220, 154, 148, 0.07) 56%,
       transparent 76%
     ),
+    /* El rubor culmina en el horizonte —que <Agua> mide y publica en
+       --ong-horizonte— y desde allí el agua lo devuelve hasta el papel. */
     linear-gradient(
       to bottom,
-      #ffffff 0%,
-      #ffffff 30%,
-      #fff6f5 50%,
-      #fde9e6 70%,
-      #f8d7d2 88%,
-      #f4cac4 100%
+      #ffffff 0,
+      #fff8f7 calc(var(--ong-horizonte, 42%) * 0.45),
+      #fef1ef calc(var(--ong-horizonte, 42%) * 0.82),
+      #fce6e2 var(--ong-horizonte, 42%),
+      #fef4f2 calc(var(--ong-horizonte, 42%) + 26%),
+      #ffffff 100%
     );
 }
 
@@ -543,4 +545,31 @@
     animation: none;
     opacity: 0;
   }
+}
+
+
+/* ── Agua viva ──────────────────────────────────────────────────────────── */
+
+/* El lienzo de <Agua>. Su posición vertical la fija el propio componente,
+   bajo la línea de agua del sol. Entra con un fundido y, al entrar, releva al
+   agua vectorial de respaldo. */
+.ong-agua-viva {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  top: var(--ong-horizonte, 42%);
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+
+[data-agua="viva"] .ong-agua-viva {
+  opacity: 1;
+}
+
+.ong-agua-svg {
+  transition: opacity 1.2s ease;
+}
+
+[data-agua="viva"] .ong-agua-svg {
+  opacity: 0;
 }

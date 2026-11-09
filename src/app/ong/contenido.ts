@@ -9,6 +9,11 @@
  *  inversor, un cooperante o una entidad de control. Los datos tomados de los
  *  estatutos están verificados. Lo que aún no consta se marca «PENDIENTE» y no
  *  se publica: ninguna cifra, fecha ni resultado se presenta sin respaldo.
+ *  Esa regla la ejecuta `publicar()` en @/lib/ong-contenido: todo texto que
+ *  empiece por «PENDIENTE» se retira antes de llegar a la página.
+ *
+ *  En los títulos de sección, lo que va entre *asteriscos* lleva el acento
+ *  de color.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
@@ -244,7 +249,7 @@ export type Linea = {
 
 const lineas: BloqueLineas = {
   antetitulo: "Objeto social",
-  titulo: "Siete líneas, un objeto",
+  titulo: "Siete líneas, *un objeto*",
   lead: "El objeto de la Fundación es exclusivamente el desarrollo de actividades meritorias de interés general y de libre acceso a la comunidad. Cada línea responde a un numeral del artículo 359 del Estatuto Tributario.",
   items: [
     {
@@ -354,7 +359,7 @@ const lineas: BloqueLineas = {
 
 const territorio: Territorio = {
   antetitulo: "Territorio",
-  titulo: "Donde nace el Amazonas",
+  titulo: "Donde nace el *Amazonas*",
   parrafos: [
     "De la laguna de La Cocha nace el río Guamués, que baja al Putumayo y por él al Amazonas. El agua que alimenta el sistema fluvial más extenso del planeta empieza su recorrido aquí, en el corregimiento de El Encano, en Pasto: cerca de 39.000 hectáreas declaradas humedal de importancia internacional, en el complejo de páramos de La Cocha y el Patascoy.",
     "La Fundación trabaja en dos zonas de Nariño que se complementan. Arriba, la alta cuenca: fría, húmeda, donde se protege el nacimiento del agua. Abajo, la tierra templada: donde las alternativas productivas pueden escalar y donde la cultura encuentra su escenario.",
@@ -415,7 +420,7 @@ export type Programa = {
 
 const programas: BloqueProgramas = {
   antetitulo: "Portafolio",
-  titulo: "Proyectos abiertos a inversión y cooperación",
+  titulo: "Proyectos abiertos a *inversión y cooperación*",
   lead: "Cada proyecto indica su estado real de avance y lo que requiere para ejecutarse. No presentamos como ejecutado lo que está en formulación.",
   /**
    * Vacío a propósito: mientras no haya proyectos reales que presentar, la
@@ -437,7 +442,7 @@ export type Garantia = {
 
 const gobernanza: Gobernanza = {
   antetitulo: "Gobernanza",
-  titulo: "Cómo respondemos por los recursos",
+  titulo: "Cómo respondemos por los *recursos*",
   lead: "La Fundación opera bajo reglas estatutarias de destinación, control y transparencia que pueden verificarse en su texto inscrito.",
   garantias: [
     {
@@ -522,7 +527,7 @@ export type Via = {
 
 const vinculacion: Vinculacion = {
   antetitulo: "Vinculación",
-  titulo: "Formas de trabajar con nosotros",
+  titulo: "Formas de *trabajar con nosotros*",
   lead: "La Fundación está facultada para suscribir convenios, contratos y acuerdos de cooperación con entidades públicas, privadas, nacionales y extranjeras.",
   vias: [
     {

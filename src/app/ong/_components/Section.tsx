@@ -1,5 +1,35 @@
 import type { ReactNode } from "react";
 
+/**
+ * Título de sección tomado del contenido.
+ *
+ * Lo que vaya entre asteriscos lleva el acento de color: «Siete líneas,
+ * *un objeto*». Sin asteriscos, el título sale liso. Así el título que se
+ * escribe en el panel es el que se publica, con su énfasis incluido.
+ */
+export function Titulo({
+  texto,
+  tono = "sun",
+}: {
+  texto: string;
+  tono?: "sun" | "water";
+}) {
+  const clase = tono === "water" ? "ong-gradient-water" : "ong-gradient-text";
+  return (
+    <>
+      {texto.split("*").map((trozo, i) =>
+        i % 2 === 1 ? (
+          <span key={i} className={clase}>
+            {trozo}
+          </span>
+        ) : (
+          trozo
+        ),
+      )}
+    </>
+  );
+}
+
 export function SectionHead({
   eyebrow,
   title,

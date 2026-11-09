@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
-import { Section, SectionHead } from "./Section";
+import { Section, SectionHead, Titulo } from "./Section";
 import type { BloqueProgramas, BloqueLineas, Programa } from "../contenido";
 
 function Tarjeta({
@@ -98,12 +98,7 @@ export function Programas({
     <Section id="programas">
       <SectionHead
         eyebrow={programas.antetitulo}
-        title={
-          <>
-            Proyectos abiertos a{" "}
-            <span className="ong-gradient-text">inversión</span>
-          </>
-        }
+        title={<Titulo texto={programas.titulo} />}
         lead={programas.lead}
       />
       <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">

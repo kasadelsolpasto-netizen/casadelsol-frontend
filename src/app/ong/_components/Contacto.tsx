@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Mail, Phone, MapPin, ArrowUpRight } from "lucide-react";
-import { Section, SectionHead } from "./Section";
+import { Section, SectionHead, Titulo } from "./Section";
 import { Revelar } from "./Fluido";
 import { Ondas } from "./Ondas";
 import { SolEntero } from "./Sol";
@@ -22,7 +22,7 @@ export function Contacto({
         <div className="grid gap-14 lg:grid-cols-2 lg:gap-20">
           <SectionHead
             eyebrow={contacto.antetitulo}
-            title={contacto.titulo}
+            title={<Titulo texto={contacto.titulo} />}
             lead={contacto.lead}
           />
 

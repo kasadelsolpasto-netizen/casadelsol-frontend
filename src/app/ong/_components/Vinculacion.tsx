@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { Section, SectionHead } from "./Section";
+import { Section, SectionHead, Titulo } from "./Section";
 import { OngIcon } from "./icons";
 import type { Vinculacion as DatosVinculacion } from "../contenido";
 
@@ -11,16 +11,13 @@ export function Vinculacion({
   datos: DatosVinculacion;
   rteCalificado: boolean;
 }) {
+  if (vinculacion.vias.length === 0) return null;
+
   return (
     <Section id="vinculacion">
       <SectionHead
         eyebrow={vinculacion.antetitulo}
-        title={
-          <>
-            Formas de{" "}
-            <span className="ong-gradient-water">trabajar juntos</span>
-          </>
-        }
+        title={<Titulo texto={vinculacion.titulo} tono="water" />}
         lead={vinculacion.lead}
         tone="water"
       />
@@ -62,7 +59,7 @@ export function Vinculacion({
       </div>
 
       {/* Solo se publica con la calificación del RTE en firme */}
-      {rteCalificado && (
+      {rteCalificado && vinculacion.beneficioTributario && (
         <p className="mt-10 max-w-3xl text-sm leading-relaxed ong-faint">
           {vinculacion.beneficioTributario}
         </p>

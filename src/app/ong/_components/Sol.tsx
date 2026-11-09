@@ -212,6 +212,7 @@ export function SolDeAgua({
     <svg
       viewBox={`0 0 ${LIENZO} ${ALTURA_SVG}`}
       className={className}
+      data-sol=""
       aria-hidden="true"
       focusable="false"
     >
@@ -253,7 +254,9 @@ export function SolDeAgua({
         <use href={`#${id}-disco`} fill={ROJO} />
       </g>
 
-      {/* Lo que ya es agua */}
+      {/* Lo que ya es agua. Es el agua de respaldo: cuando <Agua> consigue
+          encender la suya, esta capa se retira (ver .ong-agua-svg). */}
+      <g className="ong-agua-svg">
       <g clipPath={`url(#${id}-hondo)`}>
         <g mask={`url(#${id}-m-suave)`}>
           <g filter={`url(#${id}-f-suave)`}>
@@ -292,6 +295,7 @@ export function SolDeAgua({
           opacity={o.op}
         />
       ))}
+      </g>
     </svg>
   );
 }

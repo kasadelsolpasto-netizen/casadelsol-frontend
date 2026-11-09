@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FileText, Download } from "lucide-react";
-import { Section, SectionHead } from "./Section";
+import { Section, SectionHead, Titulo } from "./Section";
 import { Revelar } from "./Fluido";
 import type { Gobernanza as DatosGobernanza, Identidad } from "../contenido";
 
@@ -21,12 +21,7 @@ export function Gobernanza({
         <Revelar>
         <SectionHead
           eyebrow={gobernanza.antetitulo}
-          title={
-            <>
-              Cómo respondemos por los{" "}
-              <span className="ong-gradient-text">recursos</span>
-            </>
-          }
+          title={<Titulo texto={gobernanza.titulo} />}
           lead={gobernanza.lead}
         />
 
@@ -61,7 +56,7 @@ export function Gobernanza({
                 k: identidad.representante.cargo,
                 v: identidad.representante.nombre,
               },
-            ].map((fila) => (
+            ].filter((fila) => fila.k && fila.v).map((fila) => (
               <div
                 key={fila.k}
                 className="grid gap-1 px-7 py-5 sm:grid-cols-[0.8fr_1.2fr] sm:gap-6"
