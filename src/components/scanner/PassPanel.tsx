@@ -23,6 +23,9 @@ export interface PassTicket {
   used_at: string | null;
   used_by: string | null;
   is_courtesy: boolean;
+  /** PERSONAL: en la puerta se pide la cédula del titular. LIBRE: transferible. */
+  courtesy_kind?: 'PERSONAL' | 'LIBRE' | null;
+  attendee_dni?: string | null;
   is_own_purchase: boolean;
 }
 
@@ -171,7 +174,9 @@ export default function PassPanel({
       (d) => ({
         kind: 'ok',
         title: `ADELANTE, ${String(d.attendee_name || data.user.name).toUpperCase()}`,
-        detail: `${d.ticket_type?.name || 'Entrada'}${d.remaining_tickets > 0 ? ` · le quedan ${d.remaining_tickets}` : ''}`,
+        detail:
+          `${d.ticket_type?.name || 'Entrada'}${d.remaining_tickets > 0 ? ` · le quedan ${d.remaining_tickets}` : ''}` +
+          (d.courtesy_kind === 'PERSONAL' ? ` · Cortesía personal: pide la cédula${d.attendee_dni ? ` ${d.attendee_dni}` : ''}` : ''),
       }),
     );
 
@@ -320,6 +325,11 @@ export default function PassPanel({
                       {t.is_courtesy && ' · cortesía'}
                       {!t.is_own_purchase && ' · a su nombre'}
                     </p>
+                    {t.courtesy_kind === 'PERSONAL' && !t.used_at && (
+                      <p className="text-yellow-400 text-[10px] font-black uppercase tracking-widest mt-1">
+                        Cortesía personal · pide la cédula{t.attendee_dni ? ` ${t.attendee_dni}` : ''}
+                      </p>
+                    )}
                     {t.used_at && (
                       <p className="text-zinc-600 text-[10px] font-bold mt-1">
                         Usada {new Date(t.used_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
