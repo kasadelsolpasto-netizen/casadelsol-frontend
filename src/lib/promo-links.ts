@@ -1,5 +1,5 @@
 /**
- * Enlace de venta ONLINE del promotor: https://<sitio>/events/<evento>?promo=<CODIGO>.
+ * Enlace de venta ONLINE del promotor: https://<sitio>/raves/events/<evento>?promo=<CODIGO>.
  * Quien lo abre compra en línea y la venta queda a nombre del código del promotor (con su descuento ya aplicado).
  *
  * Sin dependencias de React ni del navegador (se puede probar en Node):  npm run test:scan
@@ -41,7 +41,7 @@ export function linkState(c: LinkCode): LinkState {
 
 /** Enlace de compra de un evento con el código del promotor. */
 export function promoLinkUrl(origin: string, eventId: string, code: string): string {
-  return `${origin.replace(/\/+$/, '')}/events/${encodeURIComponent(eventId)}?promo=${encodeURIComponent(code)}`;
+  return `${origin.replace(/\/+$/, '')}/raves/events/${encodeURIComponent(eventId)}?promo=${encodeURIComponent(code)}`;
 }
 
 export interface PromoMessageInput {

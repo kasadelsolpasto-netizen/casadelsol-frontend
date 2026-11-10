@@ -7,7 +7,7 @@
  * que ya muestra la página, y se escribe por el de administración, que el
  * backend reserva al OWNER.
  */
-import type { ContenidoOng } from "@/app/ong/contenido";
+import type { ContenidoOng } from "@/app/(fundacion)/contenido";
 
 export const API_ONG = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 

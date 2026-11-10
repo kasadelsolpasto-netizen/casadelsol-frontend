@@ -26,7 +26,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
       const user = JSON.parse(rawUser);
       if (user.role !== 'OWNER') {
         // Usuario normal/staff que llegó aquí por error → home
-        window.location.href = '/';
+        window.location.href = '/raves';
         return;
       }
       
@@ -127,7 +127,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
               {loading ? 'Validando...' : 'Desbloquear'}
             </button>
             <div className="flex justify-center pt-6">
-               <Link href="/" className="text-[10px] font-bold text-zinc-600 hover:text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+               <Link href="/raves" className="text-[10px] font-bold text-zinc-600 hover:text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                  <ArrowRight className="w-3 h-3 rotate-180" /> Evacuar al Sitio Público
                </Link>
             </div>

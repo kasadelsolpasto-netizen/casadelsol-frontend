@@ -10,10 +10,17 @@
 }
 
 body {
+  min-height: 100vh;
+}
+
+/* El negro es del sitio de raves, no del dominio: la Fundación, en la raíz,
+   es blanca. El selector :has pinta también el cuerpo, para que el rebote
+   del desplazamiento en móvil no asome otro color. */
+.raves-scope,
+body:has(.raves-scope) {
   color: var(--foreground);
   background: var(--background);
   background-image: radial-gradient(circle at center, #0a0a0a 0%, #000 100%);
-  min-height: 100vh;
 }
 
 @layer utilities {

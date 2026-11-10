@@ -31,8 +31,8 @@ test('vacío o inválido → null (WhatsApp deja elegir el contacto)', () => {
 });
 
 test('el enlace de la entrada es /ticket/<token> sin dobles barras', () => {
-  assert.equal(ticketUrl('https://kasadelsol.co', 'abc'), 'https://kasadelsol.co/ticket/abc');
-  assert.equal(ticketUrl('https://kasadelsol.co/', 'abc'), 'https://kasadelsol.co/ticket/abc');
+  assert.equal(ticketUrl('https://kasadelsol.co', 'abc'), 'https://kasadelsol.co/raves/ticket/abc');
+  assert.equal(ticketUrl('https://kasadelsol.co/', 'abc'), 'https://kasadelsol.co/raves/ticket/abc');
 });
 
 test('mensaje: una entrada vs varias, con nombre y evento', () => {

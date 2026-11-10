@@ -6,9 +6,7 @@ import { Navbar } from './Navbar';
 // - /admin/* → tiene su propio sidebar
 // - /login, /register → páginas fullscreen de auth
 // - /scanner → interfaz de escáner fullscreen
-// - /ong → la Fundación tiene su propia cabecera y no comparte el esquema
-//          de inscripción, perfiles y eventos
-const EXCLUDED_PREFIXES = ['/admin', '/login', '/register', '/scanner', '/ong'];
+const EXCLUDED_PREFIXES = ['/raves/admin', '/raves/login', '/raves/register', '/raves/scanner'];
 
 export function NavbarWrapper() {
   const pathname = usePathname();

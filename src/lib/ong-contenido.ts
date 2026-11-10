@@ -13,7 +13,7 @@
  *
  * Módulo sin dependencias: lo usan tanto el servidor como el panel.
  */
-import { CONTENIDO_BASE, type ContenidoOng } from "@/app/ong/contenido";
+import { CONTENIDO_BASE, type ContenidoOng } from "@/app/(fundacion)/contenido";
 
 function esObjetoPlano(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);

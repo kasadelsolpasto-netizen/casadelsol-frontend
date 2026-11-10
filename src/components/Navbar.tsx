@@ -93,7 +93,7 @@ export function Navbar() {
     sessionStorage.removeItem('supremo_unlocked');
     document.cookie = 'kasa_auth_token=; path=/; max-age=0;';
     setUser(null);
-    router.push('/login');
+    router.push('/raves/login');
   };
 
   const isActive = (path: string) => pathname === path;
@@ -104,7 +104,7 @@ export function Navbar() {
     <header className="w-full relative z-[100] border-b border-zinc-900 bg-[#050505]/80 backdrop-blur-xl">
       {/* NIVEL 1: BRANDING & PROFILE */}
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between border-b border-zinc-900/50">
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link href="/raves" className="flex items-center gap-3 group">
            {brandLogo ? (
              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(255,255,255,0.1)] group-hover:shadow-neon-green/30 transition-all duration-500">
                 <Image src={brandLogo} alt="Logo" width={40} height={40} className="w-full h-full object-cover" />
@@ -120,7 +120,7 @@ export function Navbar() {
         <div className="flex items-center gap-4">
           {/* Fundación — página pública de la ONG */}
           <Link
-            href="/ong"
+            href="/"
             className={`hidden sm:inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors ${pathname?.startsWith('/ong') ? 'text-amber-400' : 'text-zinc-500 hover:text-amber-400'}`}
           >
             <Sun className="w-3.5 h-3.5" />
@@ -129,10 +129,10 @@ export function Navbar() {
 
           {!user ? (
             <div className="flex items-center gap-6">
-               <Link href="/login" className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-all">
+               <Link href="/raves/login" className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-all">
                   Login
                </Link>
-               <Link href="/register" className="bg-white text-black px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-neon-green transition-all shadow-xl">
+               <Link href="/raves/register" className="bg-white text-black px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-neon-green transition-all shadow-xl">
                   Unirse
                </Link>
             </div>
@@ -152,11 +152,11 @@ export function Navbar() {
                   
                   {user.role === 'OWNER' && (
                     <>
-                      <Link href="/admin" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item">
+                      <Link href="/raves/admin" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item">
                          <LayoutDashboard className="w-4 h-4 text-neon-purple group-hover/item:scale-110 transition-transform" />
                          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Dashboard Supremo</span>
                       </Link>
-                      <Link href="/admin/shop" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item border-t border-zinc-900">
+                      <Link href="/raves/admin/shop" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item border-t border-zinc-900">
                          <ShoppingBag className="w-4 h-4 text-orange-500 group-hover/item:scale-110 transition-transform" />
                          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Inventario Barra</span>
                       </Link>
@@ -164,7 +164,7 @@ export function Navbar() {
                   )}
 
                    {user.role === 'STAFF' && (
-                     <Link href="/scanner" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item">
+                     <Link href="/raves/scanner" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item">
                         <Settings className="w-4 h-4 text-orange-500 group-hover/item:scale-110 transition-transform" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Modo Trabajador</span>
                      </Link>
@@ -172,7 +172,7 @@ export function Navbar() {
 
                    {/* Opción Promotor */}
                    {userProfile?.promoter_codes?.length > 0 && (
-                     <Link href="/profile/promoter" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item border-t border-zinc-900">
+                     <Link href="/raves/profile/promoter" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item border-t border-zinc-900">
                         <DollarSign className="w-4 h-4 text-neon-green group-hover/item:scale-110 transition-transform" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Panel de Promotor</span>
                      </Link>
@@ -180,7 +180,7 @@ export function Navbar() {
 
                    {/* Opción Artista */}
                    {userProfile?.artist_profile?.is_active && (
-                     <Link href="/profile/artist" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item border-t border-zinc-900">
+                     <Link href="/raves/profile/artist" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item border-t border-zinc-900">
                         <Music className="w-4 h-4 text-neon-purple group-hover/item:scale-110 transition-transform" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Perfil de Artista</span>
                      </Link>
@@ -198,35 +198,35 @@ export function Navbar() {
 
       {/* NIVEL 2: ICONIC NAVIGATION (ACCIONES TÁCTICAS) */}
       <nav className="h-16 max-w-2xl mx-auto flex items-center justify-around px-4">
-         <Link href="/" className={`flex flex-col items-center gap-1 group relative ${isActive('/') ? 'text-neon-green' : 'text-zinc-600 hover:text-zinc-300'}`}>
-            <Home className={`w-6 h-6 transition-all ${isActive('/') ? 'drop-shadow-[0_0_8px_rgba(57,255,20,0.5)]' : 'group-hover:scale-110'}`} />
+         <Link href="/raves" className={`flex flex-col items-center gap-1 group relative ${isActive('/raves') ? 'text-neon-green' : 'text-zinc-600 hover:text-zinc-300'}`}>
+            <Home className={`w-6 h-6 transition-all ${isActive('/raves') ? 'drop-shadow-[0_0_8px_rgba(57,255,20,0.5)]' : 'group-hover:scale-110'}`} />
             <span className="text-[8px] font-black uppercase tracking-wider">Inicio</span>
-            {isActive('/') && <div className="absolute -bottom-2 w-1 h-1 rounded-full bg-neon-green shadow-[0_0_10px_#39FF14]" />}
+            {isActive('/raves') && <div className="absolute -bottom-2 w-1 h-1 rounded-full bg-neon-green shadow-[0_0_10px_#39FF14]" />}
          </Link>
 
-         <Link href="/#eventos" className={`flex flex-col items-center gap-1 group relative ${pathname === '/events' ? 'text-white' : 'text-zinc-600 hover:text-zinc-300'}`}>
+         <Link href="/raves#eventos" className={`flex flex-col items-center gap-1 group relative ${pathname === '/raves/events' ? 'text-white' : 'text-zinc-600 hover:text-zinc-300'}`}>
             <Ticket className="w-6 h-6 transition-all group-hover:scale-110" />
             <span className="text-[8px] font-black uppercase tracking-wider">Eventos</span>
          </Link>
 
-         <Link href="/shop" className={`flex flex-col items-center gap-1 group relative ${isActive('/shop') ? 'text-orange-500' : 'text-zinc-600 hover:text-zinc-300'}`}>
-            <ShoppingBag className={`w-6 h-6 transition-all ${isActive('/shop') ? 'drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'group-hover:scale-110'}`} />
+         <Link href="/raves/shop" className={`flex flex-col items-center gap-1 group relative ${isActive('/raves/shop') ? 'text-orange-500' : 'text-zinc-600 hover:text-zinc-300'}`}>
+            <ShoppingBag className={`w-6 h-6 transition-all ${isActive('/raves/shop') ? 'drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'group-hover:scale-110'}`} />
             <span className="text-[8px] font-black uppercase tracking-wider">Tienda</span>
-            {isActive('/shop') && <div className="absolute -bottom-2 w-1 h-1 rounded-full bg-orange-500 shadow-[0_0_10px_#f97316]" />}
+            {isActive('/raves/shop') && <div className="absolute -bottom-2 w-1 h-1 rounded-full bg-orange-500 shadow-[0_0_10px_#f97316]" />}
          </Link>
 
          {user && (
            <>
-              <Link href={`/promos`} className={`flex flex-col items-center gap-1 group relative ${pathname?.includes('promos') ? 'text-orange-500' : 'text-zinc-600 hover:text-zinc-300'}`}>
+              <Link href={`/raves/promos`} className={`flex flex-col items-center gap-1 group relative ${pathname?.includes('promos') ? 'text-orange-500' : 'text-zinc-600 hover:text-zinc-300'}`}>
                  <Tag className={`w-6 h-6 transition-all ${pathname?.includes('promos') ? 'drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'group-hover:scale-110'}`} />
                  <span className="text-[8px] font-black uppercase tracking-wider">Promos</span>
                  {pathname?.includes('promos') && <div className="absolute -bottom-2 w-1 h-1 rounded-full bg-orange-500 shadow-[0_0_10px_#f97316]" />}
               </Link>
 
-              <Link href={`/profile/${user.id}`} className={`flex flex-col items-center gap-1 group relative ${pathname?.includes(user.id) && !pathname?.includes('promos') ? 'text-neon-purple' : 'text-zinc-600 hover:text-zinc-300'}`}>
-                 <Shield className={`w-6 h-6 transition-all ${isActive(`/profile/${user.id}`) ? 'drop-shadow-[0_0_8px_rgba(191,0,255,0.5)]' : 'group-hover:scale-110'}`} />
+              <Link href={`/raves/profile/${user.id}`} className={`flex flex-col items-center gap-1 group relative ${pathname?.includes(user.id) && !pathname?.includes('promos') ? 'text-neon-purple' : 'text-zinc-600 hover:text-zinc-300'}`}>
+                 <Shield className={`w-6 h-6 transition-all ${isActive(`/raves/profile/${user.id}`) ? 'drop-shadow-[0_0_8px_rgba(191,0,255,0.5)]' : 'group-hover:scale-110'}`} />
                  <span className="text-[8px] font-black uppercase tracking-wider">Bóveda</span>
-                 {isActive(`/profile/${user.id}`) && <div className="absolute -bottom-2 w-1 h-1 rounded-full bg-neon-purple shadow-[0_0_10px_#bf00ff]" />}
+                 {isActive(`/raves/profile/${user.id}`) && <div className="absolute -bottom-2 w-1 h-1 rounded-full bg-neon-purple shadow-[0_0_10px_#bf00ff]" />}
               </Link>
            </>
          )}

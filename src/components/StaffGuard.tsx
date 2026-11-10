@@ -7,18 +7,18 @@ export function StaffGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const rawUser = localStorage.getItem('kasa_user');
     if (!rawUser) {
-      window.location.href = '/login';
+      window.location.href = '/raves/login';
       return;
     }
     try {
       const user = JSON.parse(rawUser);
       if (user.role !== 'OWNER' && user.role !== 'STAFF') {
-        window.location.href = '/';
+        window.location.href = '/raves';
         return;
       }
       setLocked(false);
     } catch {
-      window.location.href = '/login';
+      window.location.href = '/raves/login';
     }
   }, []);
 

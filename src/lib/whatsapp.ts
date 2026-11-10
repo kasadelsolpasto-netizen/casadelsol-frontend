@@ -22,9 +22,9 @@ export function normalizeWhatsAppPhone(raw: string): string | null {
   return null;
 }
 
-/** Enlace público de una entrada: es lo mismo que contiene su QR y lo que abre la página /ticket/<token>. */
+/** Enlace público de una entrada: es lo mismo que contiene su QR y lo que abre la página /raves/ticket/<token>. */
 export function ticketUrl(origin: string, token: string): string {
-  return `${origin.replace(/\/+$/, '')}/ticket/${token}`;
+  return `${origin.replace(/\/+$/, '')}/raves/ticket/${token}`;
 }
 
 export interface TicketsMessageInput {
