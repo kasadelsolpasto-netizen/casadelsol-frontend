@@ -76,7 +76,7 @@ export default function SeoPanel({ title, content, value, onChange, baseUrl = 'k
   const displayDesc  = value.seo_description || stripHtml(content, 160) || 'Sin descripción.';
   const displaySlug  = value.seo_slug || slugify(title);
   const prefix       = type === 'event' ? 'events' : 'posts';
-  const displayUrl   = `https://${baseUrl}/raves/${prefix}/${displaySlug || '...'}`;
+  const displayUrl   = `https://${baseUrl}/${prefix}/${displaySlug || '...'}`;
 
   const titleScore = displayTitle.length >= 40 && displayTitle.length <= 70;
   const descScore  = displayDesc.length  >= 100 && displayDesc.length  <= 160;

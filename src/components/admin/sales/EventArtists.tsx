@@ -101,7 +101,7 @@ export default function EventArtists({ eventId }: { eventId: string }) {
           <Music className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
           <p className="text-xs text-zinc-500">Todavía no hay artistas en este evento.</p>
           {all.length === 0 && (
-            <p className="text-xs text-zinc-600 mt-2">Primero crea el perfil del artista en <Link href="/raves/admin/artists" className="text-neon-purple underline">Artistas</Link>.</p>
+            <p className="text-xs text-zinc-600 mt-2">Primero crea el perfil del artista en <Link href="/admin/artists" className="text-neon-purple underline">Artistas</Link>.</p>
           )}
         </div>
       ) : (
@@ -127,7 +127,7 @@ export default function EventArtists({ eventId }: { eventId: string }) {
                   <div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Cachet</p><p className="text-[13px] sm:text-sm font-black text-white whitespace-nowrap">{formatCOP(a.fee)}</p></div>
                   <div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Pagado</p><p className="text-[13px] sm:text-sm font-black text-neon-green whitespace-nowrap">{formatCOP(a.paid)}</p></div>
                 </div>
-                <Link href={`/raves/admin/artists/${a.artist_id}`} className="mt-3 h-10 w-full rounded-lg border border-zinc-700 text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 hover:border-neon-purple">
+                <Link href={`/admin/artists/${a.artist_id}`} className="mt-3 h-10 w-full rounded-lg border border-zinc-700 text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 hover:border-neon-purple">
                   Abrir artista <ChevronRight className="w-4 h-4" />
                 </Link>
               </AccordionRow>

@@ -4,12 +4,12 @@ import assert from 'node:assert/strict';
 import { linkState, promoLinkUrl, buildPromoLinkMessage } from './promo-links.ts';
 
 test('promoLinkUrl: arma /events/<id>?promo=<CODIGO> y quita barras sobrantes del sitio', () => {
-  assert.equal(promoLinkUrl('https://kasadelsol.co', 'abc-123', 'DANIEL2601'), 'https://kasadelsol.co/raves/events/abc-123?promo=DANIEL2601');
-  assert.equal(promoLinkUrl('https://kasadelsol.co///', 'abc-123', 'X'), 'https://kasadelsol.co/raves/events/abc-123?promo=X');
+  assert.equal(promoLinkUrl('https://kasadelsol.co', 'abc-123', 'DANIEL2601'), 'https://kasadelsol.co/events/abc-123?promo=DANIEL2601');
+  assert.equal(promoLinkUrl('https://kasadelsol.co///', 'abc-123', 'X'), 'https://kasadelsol.co/events/abc-123?promo=X');
 });
 
 test('promoLinkUrl: un codigo con caracteres raros viaja codificado', () => {
-  assert.equal(promoLinkUrl('https://s.co', 'e1', 'A B&C'), 'https://s.co/raves/events/e1?promo=A%20B%26C');
+  assert.equal(promoLinkUrl('https://s.co', 'e1', 'A B&C'), 'https://s.co/events/e1?promo=A%20B%26C');
 });
 
 test('linkState: sin escalones usa el descuento del codigo (0 si no tiene)', () => {
@@ -43,7 +43,7 @@ test('linkState: con limite pero todavia con cupo, sigue vigente; sin limite (nu
 test('mensaje con descuento: precio tachado, precio nuevo y enlace', () => {
   const m = buildPromoLinkMessage({
     eventTitle: 'Noche Solar',
-    url: 'https://kasadelsol.co/raves/events/e1?promo=ABC',
+    url: 'https://kasadelsol.co/events/e1?promo=ABC',
     stageName: 'Etapa 2 - Preventa',
     basePrice: '$ 50.000',
     finalPrice: '$ 40.000',
@@ -52,7 +52,7 @@ test('mensaje con descuento: precio tachado, precio nuevo y enlace', () => {
   assert.match(m, /\*Noche Solar\*/);
   assert.match(m, /~\$ 50\.000~ \*\$ 40\.000\* con mi código \(20% de descuento\)/);
   assert.match(m, /\(Etapa 2 - Preventa\)/);
-  assert.ok(m.includes('https://kasadelsol.co/raves/events/e1?promo=ABC'));
+  assert.ok(m.includes('https://kasadelsol.co/events/e1?promo=ABC'));
 });
 
 test('mensaje sin descuento: solo el precio, sin tachar', () => {

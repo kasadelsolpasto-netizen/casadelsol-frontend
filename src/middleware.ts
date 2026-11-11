@@ -2,16 +2,16 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith('/raves/admin')) {
+  if (request.nextUrl.pathname.startsWith('/admin')) {
     // Permitir acceso a la ruta de login de admin sin token
-    if (request.nextUrl.pathname === '/raves/admin/login') {
+    if (request.nextUrl.pathname === '/admin/login') {
       return NextResponse.next();
     }
 
     const token = request.cookies.get('kasa_auth_token')?.value;
     
     if (!token) {
-      return NextResponse.redirect(new URL('/raves/admin/login', request.url));
+      return NextResponse.redirect(new URL('/admin/login', request.url));
     }
 
     try {
@@ -29,25 +29,25 @@ export function middleware(request: NextRequest) {
       
       // Solo OWNER puede entrar a las rutas /admin en general
       if (payload.role !== 'OWNER') {
-         return NextResponse.redirect(new URL('/raves', request.url));
+         return NextResponse.redirect(new URL('/', request.url));
       }
 
       // Validar acceso exclusivo al /scanner para el STAFF o OWNER
-      if (request.nextUrl.pathname.startsWith('/raves/scanner')) {
+      if (request.nextUrl.pathname.startsWith('/scanner')) {
          if (payload.role !== 'STAFF' && payload.role !== 'OWNER') {
-            return NextResponse.redirect(new URL('/raves', request.url));
+            return NextResponse.redirect(new URL('/', request.url));
          }
       }
       
     } catch (error) {
-      return NextResponse.redirect(new URL('/raves/admin/login', request.url));
+      return NextResponse.redirect(new URL('/admin/login', request.url));
     }
   }
 
   // Comprobar la protección de scanner ahora que esta separado
-  if (request.nextUrl.pathname.startsWith('/raves/scanner')) {
+  if (request.nextUrl.pathname.startsWith('/scanner')) {
     const token = request.cookies.get('kasa_auth_token')?.value;
-    if (!token) return NextResponse.redirect(new URL('/raves/login', request.url));
+    if (!token) return NextResponse.redirect(new URL('/login', request.url));
     try {
       const pBase64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
       const payloadString = atob(pBase64 + '='.repeat((4 - pBase64.length % 4) % 4));
@@ -56,7 +56,7 @@ export function middleware(request: NextRequest) {
       // ascendido a STAFF) y esto sacaba al staff del scanner sin explicación. El layout de /scanner consulta el
       // rol REAL al backend (/auth/refresh) y el backend rechaza con 403 a quien no sea STAFF/OWNER.
     } catch {
-      return NextResponse.redirect(new URL('/raves/login', request.url));
+      return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 
@@ -64,5 +64,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/raves/admin', '/raves/admin/:path*', '/raves/scanner', '/raves/scanner/:path*'],
+  matcher: ['/admin', '/admin/:path*', '/scanner', '/scanner/:path*'],
 };

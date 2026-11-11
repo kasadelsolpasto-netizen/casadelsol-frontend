@@ -1,39 +1,5 @@
-/**
- * Rutas de la plataforma de raves antes de mudarse a /raves.
- *
- * Siguen circulando en correos ya enviados, códigos QR de entradas impresas,
- * enlaces de promotores y en lo que tengan registrado Google y la pasarela de
- * pagos. Se redirigen a su nueva dirección —conservando parámetros— para que
- * nada de eso se rompa. No son enlaces de la Fundación hacia raves: la página
- * de la raíz no menciona ninguna.
- */
-const RUTAS_RAVES = [
-  'admin', 'artist-invite', 'auth', 'checkout', 'claim-courtesy', 'events',
-  'forgot-password', 'login', 'posts', 'profile', 'promos', 'register',
-  'reset-password', 'scanner', 'shop', 'ticket',
-];
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  async redirects() {
-    return [
-      ...RUTAS_RAVES.flatMap((r) => [
-        { source: `/${r}`, destination: `/raves/${r}`, permanent: false },
-        { source: `/${r}/:resto*`, destination: `/raves/${r}/:resto*`, permanent: false },
-      ]),
-      // Enlaces de promotor a la portada antigua: kasadelsol.co/?promo=CODIGO
-      ...['promo', 'ref'].map((key) => ({
-        source: '/',
-        has: [{ type: 'query', key }],
-        destination: '/raves',
-        permanent: false,
-      })),
-      // La Fundación pasó de /ong a la raíz
-      { source: '/ong', destination: '/', permanent: true },
-      // Apps ya instaladas buscan el manifiesto en su dirección anterior
-      { source: '/manifest.webmanifest', destination: '/raves/manifest.webmanifest', permanent: false },
-    ];
-  },
   eslint: {
     ignoreDuringBuilds: true,
   },

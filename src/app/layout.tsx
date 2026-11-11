@@ -1,30 +1,43 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
+import { NavbarWrapper } from "@/components/NavbarWrapper";
+import { ProveedorSitio, AparatoSitio } from "@/components/ChromeSitio";
 
-/**
- * Layout raíz del dominio.
- *
- * kasadelsol.co aloja dos sitios que no comparten nada salvo la tipografía:
- *   · la Fundación, en la raíz        → src/app/(fundacion)
- *   · la plataforma de raves, en /raves → src/app/raves
- *
- * Por eso este layout es neutro: no pinta fondo, no monta barra ni proveedores.
- * Cada sitio trae lo suyo en su propio layout.
- */
 const outfit = Outfit({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://kasadelsol.co"),
+  title: "Kasa del Sol | Private Raves",
+  description: "Ticketing platform for exclusive techno and electronic raves.",
+  icons: {
+    icon: "/api/brand/icon?v=1",
+    apple: "/api/brand/icon?v=1",
+  },
 };
+
+export const viewport: Viewport = {
+  themeColor: "#030303",
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="es">
-      <body className={`${outfit.className} antialiased overflow-x-hidden w-full relative`}>
-        {children}
+    <html lang="es" className="dark">
+      <body className={`${outfit.className} antialiased bg-black text-zinc-200 selection:bg-neon-purple selection:text-white overflow-x-hidden w-full relative`}>
+        <ProveedorSitio>
+
+          {/* Global navbar — se auto-oculta en /admin, /login, /register, /scanner */}
+          <NavbarWrapper />
+
+          <AparatoSitio />
+
+          <main className="min-h-screen z-10 relative">
+            {children}
+          </main>
+        </ProveedorSitio>
       </body>
     </html>
   );

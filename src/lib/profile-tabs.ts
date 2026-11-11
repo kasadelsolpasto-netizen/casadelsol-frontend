@@ -23,8 +23,8 @@ export function profileAreas(profile: { artist_profile?: { is_active?: boolean }
  */
 export function profileTabs(userId: string | null | undefined, areas: { artist: boolean; promoter: boolean }): ProfileTabItem[] {
   if (!areas.artist && !areas.promoter) return [];
-  const tabs: ProfileTabItem[] = [{ key: 'cuenta', label: 'Mi cuenta', href: userId ? `/raves/profile/${userId}` : '/raves' }];
-  if (areas.artist) tabs.push({ key: 'artista', label: 'Artista', href: '/raves/profile/artist' });
-  if (areas.promoter) tabs.push({ key: 'promotor', label: 'Promotor', href: '/raves/profile/promoter' });
+  const tabs: ProfileTabItem[] = [{ key: 'cuenta', label: 'Mi cuenta', href: userId ? `/profile/${userId}` : '/' }];
+  if (areas.artist) tabs.push({ key: 'artista', label: 'Artista', href: '/profile/artist' });
+  if (areas.promoter) tabs.push({ key: 'promotor', label: 'Promotor', href: '/profile/promoter' });
   return tabs;
 }

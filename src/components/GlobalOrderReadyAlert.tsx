@@ -108,7 +108,7 @@ export function GlobalOrderReadyAlert() {
     const storedUser = localStorage.getItem('kasa_user');
     if (storedUser) {
       const user = JSON.parse(storedUser);
-      router.push(`/raves/profile/${user.id}`);
+      router.push(`/profile/${user.id}`);
     }
   };
 

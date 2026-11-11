@@ -28,7 +28,7 @@ self.addEventListener('push', (event) => {
       : [200, 100, 200],                        // patrón normal
     // Datos para el click handler
     data: {
-      url: payload.url || '/raves',
+      url: payload.url || '/',
     },
     // Acciones del botón (solo Android / algunos navegadores)
     actions: payload.url
@@ -46,7 +46,7 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const targetUrl = event.notification.data?.url || '/raves';
+  const targetUrl = event.notification.data?.url || '/';
   const fullUrl = self.location.origin + targetUrl;
 
   event.waitUntil(
