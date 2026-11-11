@@ -34,3 +34,22 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Fundación Kasa del Sol (`/ong`)
+
+Página institucional de la Fundación, editable desde el panel en
+`/admin/ong`. No comparte el esquema del sitio de eventos: no lleva la barra
+de cuentas, ni el rastreador de promotores, ni el aviso de pedidos, ni
+reCAPTCHA. Ese filtro vive en `src/components/ChromeSitio.tsx`.
+
+El contenido de fábrica está en `src/app/ong/contenido.ts`. Lo que se publica
+desde el panel se guarda en el backend, en la tabla de ajustes del sistema
+bajo la clave `ong_contenido`, junto a la marca y las llaves de pago:
+
+- `GET /settings/ong` — público, es lo mismo que ya muestra la página.
+- `PUT /admin/settings/ong` — solo OWNER, por el guard de rol del backend.
+
+Lo guardado se fusiona sobre el contenido de fábrica (`src/lib/ong-contenido.ts`),
+de modo que los campos nuevos que se agreguen en código aparecen aunque el
+documento almacenado sea anterior. Si el backend no responde, la página
+publica el contenido de fábrica en vez de caerse.

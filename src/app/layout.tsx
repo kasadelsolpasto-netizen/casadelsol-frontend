@@ -2,9 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import { NavbarWrapper } from "@/components/NavbarWrapper";
-import RecaptchaProvider from "@/components/RecaptchaProvider";
-import { GlobalOrderReadyAlert } from "@/components/GlobalOrderReadyAlert";
-import { PromoTracker } from "@/components/PromoTracker";
+import { ProveedorSitio, AparatoSitio } from "@/components/ChromeSitio";
 
 const outfit = Outfit({ subsets: ["latin"] });
 
@@ -29,21 +27,17 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark">
       <body className={`${outfit.className} antialiased bg-black text-zinc-200 selection:bg-neon-purple selection:text-white overflow-x-hidden w-full relative`}>
-        <RecaptchaProvider>
-          {/* Ambient glow background */}
-          <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-neon-purple/10 blur-[120px] pointer-events-none -z-10 animate-pulse-slow" />
-          <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-neon-green/10 blur-[120px] pointer-events-none -z-10 animate-pulse-slow" style={{ animationDelay: '1s'}} />
+        <ProveedorSitio>
 
           {/* Global navbar — se auto-oculta en /admin, /login, /register, /scanner */}
           <NavbarWrapper />
 
-          <GlobalOrderReadyAlert />
-          <PromoTracker />
+          <AparatoSitio />
 
           <main className="min-h-screen z-10 relative">
             {children}
           </main>
-        </RecaptchaProvider>
+        </ProveedorSitio>
       </body>
     </html>
   );
