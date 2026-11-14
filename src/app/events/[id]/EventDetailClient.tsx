@@ -27,6 +27,10 @@ export default function EventDetailClient({ params }: { params: { id: string } }
   const [showQrModal, setShowQrModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [pageUrl, setPageUrl] = useState('https://kasadelsol.co');
+  // Llave del enlace privado (?pass=...): con ella el servidor añade esa boleta, que no está en la página.
+  const [pass, setPass] = useState<string | null>(null);
+  const [privateTicket, setPrivateTicket] = useState<any>(null);
+  const [passFailed, setPassFailed] = useState(false);
   
   const carouselRef = useRef<HTMLDivElement>(null);
   const scrollCarousel = (dir: 'left' | 'right') => {
@@ -48,9 +52,23 @@ export default function EventDetailClient({ params }: { params: { id: string } }
       fetch(`${apiEndpoint}/events/${params.id}/view`, { method: 'POST' }).catch(() => {});
     }
 
-    fetch(`${apiEndpoint}/events/${params.id}`)
+    const urlPass = new URLSearchParams(window.location.search).get('pass');
+    setPass(urlPass);
+
+    const url = urlPass
+      ? `${apiEndpoint}/events/${params.id}?pass=${encodeURIComponent(urlPass)}`
+      : `${apiEndpoint}/events/${params.id}`;
+
+    fetch(url)
       .then(res => res.json())
-      .then(setEvent)
+      .then(data => {
+        setEvent(data);
+        // El servidor devuelve `private_ticket` solo cuando la llave sirve; si viene null, el enlace ya no vale.
+        if (urlPass) {
+          setPrivateTicket(data?.private_ticket ?? null);
+          setPassFailed(!data?.private_ticket);
+        }
+      })
       .catch(console.error);
   }, [params.id]);
 
@@ -96,7 +114,7 @@ export default function EventDetailClient({ params }: { params: { id: string } }
             'Authorization': `Bearer ${token}`,
             'recaptcha-token': recaptchaToken
           },
-          body: JSON.stringify({ attendees: payloadAttendees, hp })
+          body: JSON.stringify({ attendees: payloadAttendees, hp, pass })
         });
 
         if (!res.ok) {
@@ -122,7 +140,7 @@ export default function EventDetailClient({ params }: { params: { id: string } }
           'Authorization': `Bearer ${token}`,
           'recaptcha-token': recaptchaToken
         },
-        body: JSON.stringify({ attendees: payloadAttendees, hp, promoter_code: promoterCode })
+        body: JSON.stringify({ attendees: payloadAttendees, hp, promoter_code: promoterCode, pass })
       });
 
       if (!res.ok) {
@@ -137,14 +155,11 @@ export default function EventDetailClient({ params }: { params: { id: string } }
       // Bold no tiene callback de éxito en JS: tras pagar vuelve a /checkout/bold-result,
       // que confirma el pago con el servidor y muestra las entradas.
       if (data.gateway === 'bold') {
-        const boldBuyer = attendees[0];
+        // Los datos del comprador (correo, nombre y documento) ya vienen saneados desde el
+        // servidor dentro de `data.bold`: no se sobreescriben desde el navegador.
         await openBoldCheckout({
           ...data.bold,
           redirectionUrl: `${window.location.origin}/checkout/bold-result`,
-          customerData: {
-            email: boldBuyer?.attendee_email,
-            fullName: boldBuyer?.attendee_name,
-          },
         });
         setWizardLoading(false);
         setShowWizard(false);
@@ -408,6 +423,24 @@ export default function EventDetailClient({ params }: { params: { id: string } }
               </div>
             )}
 
+            {privateTicket && (
+              <div className="mb-4 p-3 bg-neon-purple/10 border border-neon-purple/30 rounded-xl">
+                <p className="text-neon-purple text-[10px] font-black uppercase tracking-widest">Entrada reservada para ti</p>
+                <p className="text-zinc-300 text-xs font-bold mt-1">
+                  «{privateTicket.name}» no aparece en la página del evento: llegaste a ella por un enlace privado.
+                </p>
+              </div>
+            )}
+
+            {passFailed && (
+              <div className="mb-4 p-3 bg-zinc-900 border border-zinc-800 rounded-xl">
+                <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">Enlace privado no disponible</p>
+                <p className="text-zinc-500 text-xs font-bold mt-1">
+                  Ese enlace ya se cerró o se agotó. Abajo están las entradas que siguen a la venta.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-3">
               {sortStages<any>(event.ticket_types).map((ticket: any) => {
                 const now = new Date();
@@ -448,6 +481,9 @@ export default function EventDetailClient({ params }: { params: { id: string } }
                           {canBuy && (
                              <span className="bg-neon-green/10 text-neon-green text-[8px] px-2 py-0.5 rounded font-black uppercase tracking-[0.2em] border border-neon-green/20 animate-pulse shrink-0 flex-initial">DISPONIBLE AHORA</span>
                           )}
+                          {ticket.kind === 'PRIVATE' && (
+                             <span className="bg-neon-purple/10 text-neon-purple text-[8px] px-2 py-0.5 rounded font-black uppercase tracking-[0.2em] border border-neon-purple/20 shrink-0">ENLACE PRIVADO</span>
+                          )}
                         </div>
                         <p className={`text-xs mt-1 font-medium ${canBuy && ticket.hide_stock && ticket.available <= 20 ? 'text-orange-400 font-bold' : 'text-zinc-500'}`}>
                           {!canBuy ? 'No disponible para compra' : 
@@ -457,7 +493,7 @@ export default function EventDetailClient({ params }: { params: { id: string } }
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         <div className="text-right">
-                          {promo && canBuy && ticket.price > 0 && (
+                          {promo && canBuy && ticket.price > 0 && ticket.kind !== 'PRIVATE' && (
                             <span className="block text-xs font-bold text-zinc-500 line-through">
                               {Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(ticket.price)}
                             </span>
@@ -466,10 +502,10 @@ export default function EventDetailClient({ params }: { params: { id: string } }
                             {ticket.price === 0
                               ? 'GRATIS'
                               : Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(
-                                  promo && canBuy ? discountedTotal(ticket.price, promo.perc, 1) : ticket.price
+                                  promo && canBuy && ticket.kind !== 'PRIVATE' ? discountedTotal(ticket.price, promo.perc, 1) : ticket.price
                                 )}
                           </span>
-                          {promo && canBuy && ticket.price > 0 && (
+                          {promo && canBuy && ticket.price > 0 && ticket.kind !== 'PRIVATE' && (
                             <span className="block text-[9px] font-black text-neon-purple uppercase tracking-widest">-{promo.perc}% con tu enlace</span>
                           )}
                         </div>

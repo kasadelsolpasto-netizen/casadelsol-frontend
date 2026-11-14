@@ -1,8 +1,13 @@
 /**
  * Carga masiva de cortesías desde Excel (.xlsx), CSV o texto pegado (Google Sheets / Excel).
- * Acepta cualquier orden de columnas: se reconocen por el encabezado ("Nombre", "Cédula", "Correo", "Tipo de entrada")
- * o, si no hay encabezado, por el contenido (la columna con @ es el correo, la de solo números es la cédula).
- * Este archivo no toca la red ni la pantalla: solo convierte filas en una lista revisable.
+ * Acepta cualquier orden de columnas: se reconocen por el encabezado ("Nombre", "Cédula", "Correo",
+ * "Denominación", "Cantidad", "Clase") o, si no hay encabezado, por el contenido (la columna con @ es el correo,
+ * la de solo números es la cédula). Este archivo no toca la red ni la pantalla: solo convierte filas en una
+ * lista revisable.
+ *
+ * «Denominación» es una denominación DE CORTESÍA del evento (Prensa, Staff, Lista VIP...), nunca una boleta que
+ * se vende. «Cantidad» son varias cortesías a nombre de la MISMA persona. «Clase» es personal (intransferible)
+ * o libre (transferible).
  */
 
 export interface TicketTypeLite {
@@ -12,6 +17,11 @@ export interface TicketTypeLite {
 
 export type RowStatus = 'ok' | 'error' | 'dup_file' | 'already';
 
+export type CourtesyKind = 'PERSONAL' | 'LIBRE';
+
+/** Cortesías que se pueden pedir para una misma persona en una fila (igual que el tope del servidor). */
+export const MAX_QUANTITY = 20;
+
 export interface ImportRow {
   /** Número de fila en el archivo original (empezando en 1). */
   line: number;
@@ -20,6 +30,10 @@ export interface ImportRow {
   email: string;
   ticket_type_id: string;
   ticket_type_name: string;
+  /** Cuántas cortesías para esta misma persona (1 si la columna no viene). */
+  quantity: number;
+  /** Personal (intransferible) o libre (transferible). */
+  kind: CourtesyKind;
   status: RowStatus;
   message: string;
 }
@@ -43,11 +57,13 @@ const fold = (s: unknown): string =>
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '');
 
-const HEADERS: Record<'name' | 'dni' | 'email' | 'type', string[]> = {
+const HEADERS: Record<'name' | 'dni' | 'email' | 'type' | 'quantity' | 'kind', string[]> = {
   name: ['nombre', 'nombres', 'nombrecompleto', 'nombreyapellido', 'nombresyapellidos', 'apellidosynombres', 'name', 'fullname', 'invitado', 'asistente', 'persona'],
   dni: ['cedula', 'cedulas', 'cc', 'documento', 'documentodeidentidad', 'dni', 'identificacion', 'numerodedocumento', 'numerodecedula', 'id'],
   email: ['correo', 'correos', 'correoelectronico', 'email', 'mail', 'emailaddress'],
-  type: ['tipo', 'tipodeentrada', 'tipoentrada', 'entrada', 'ticket', 'tickettype', 'localidad', 'categoria', 'zona'],
+  type: ['tipo', 'tipodeentrada', 'tipoentrada', 'entrada', 'ticket', 'tickettype', 'localidad', 'categoria', 'zona', 'denominacion', 'denominaciondecortesia'],
+  quantity: ['cantidad', 'cantidades', 'cupos', 'numero', 'nro', 'cuantas', 'quantity', 'qty'],
+  kind: ['clase', 'clasedecortesia', 'tipodecortesia', 'personalolibre', 'transferible', 'kind'],
 };
 
 type Field = keyof typeof HEADERS;
@@ -77,6 +93,29 @@ export const normalizeDniText = (s: string): string => {
 };
 
 const looksLikeDni = (s: string): boolean => /^[\d.\s-]{5,}$/.test(s);
+
+/** Cantidad de la fila. Vacío = 1. Lo que no sea un entero de 1 a MAX_QUANTITY se reporta como error. */
+export function parseQuantity(raw: string): { quantity: number; error: string } {
+  const t = raw.trim();
+  if (!t) return { quantity: 1, error: '' };
+  if (!/^\d+$/.test(t)) return { quantity: 1, error: `La cantidad "${raw.trim()}" no es un número entero.` };
+  const n = Number(t);
+  if (n < 1) return { quantity: 1, error: 'La cantidad debe ser 1 o más.' };
+  if (n > MAX_QUANTITY) return { quantity: 1, error: `Máximo ${MAX_QUANTITY} cortesías para una misma persona.` };
+  return { quantity: n, error: '' };
+}
+
+const LIBRE_WORDS = ['libre', 'libres', 'transferible', 'transferibles', 'abierta', 'abierto', 'si', 'x'];
+const PERSONAL_WORDS = ['personal', 'personales', 'intransferible', 'intransferibles', 'nominal', 'no'];
+
+/** Clase de la fila. Vacío = la que traiga por defecto. Una palabra desconocida se reporta como error. */
+export function parseKind(raw: string, fallback: CourtesyKind): { kind: CourtesyKind; error: string } {
+  const f = fold(raw);
+  if (!f) return { kind: fallback, error: '' };
+  if (LIBRE_WORDS.includes(f)) return { kind: 'LIBRE', error: '' };
+  if (PERSONAL_WORDS.includes(f)) return { kind: 'PERSONAL', error: '' };
+  return { kind: fallback, error: `La clase "${raw.trim()}" no se entiende: escribe «personal» o «libre».` };
+}
 
 const isEmptyRow = (r: unknown[]): boolean => r.every((c) => cellText(c) === '');
 
@@ -176,7 +215,11 @@ export function buildImport(
   types: TicketTypeLite[],
   defaultTypeId: string,
   existing: Array<{ email?: string | null; ticket_type_id?: string | null }> = [],
+  opts: { defaultKind?: CourtesyKind; canSetKind?: boolean } = {},
 ): ImportResult {
+  // Quien no está habilitado para elegir la clase emite siempre personal: la columna «Clase» se ignora.
+  const canSetKind = opts.canSetKind !== false;
+  const defaultKind: CourtesyKind = canSetKind ? opts.defaultKind ?? 'PERSONAL' : 'PERSONAL';
   const numbered = table.map((r, i) => ({ r, line: i + 1 })).filter((x) => !isEmptyRow(x.r));
 
   // ¿La primera fila (entre las 5 primeras) es un encabezado?
@@ -199,6 +242,8 @@ export function buildImport(
     const guess = mapFromContent(data.map((x) => x.r), types);
     const taken = new Set(Object.values(map));
     // Con encabezado solo se completan correo y nombre; sin encabezado, todo se deduce por el contenido.
+    // La cantidad y la clase NO se adivinan por el contenido: una columna de números se confundiría con la
+    // cédula y una cortesía de más no se puede deshacer sin pedirle el QR a la persona.
     const fields: Field[] = headerFound ? ['email', 'name'] : ['email', 'dni', 'name', 'type'];
     for (const f of fields) {
       const g = guess[f];
@@ -232,16 +277,36 @@ export function buildImport(
       else typeErr = `El tipo "${typeText}" no existe en este evento.`;
     }
 
-    const base = { line, name, dni, email, ticket_type_id: type?.id ?? '', ticket_type_name: type?.name ?? typeText };
+    const { quantity, error: qtyErr } = parseQuantity(get('quantity'));
+    const { kind, error: kindErr } = canSetKind ? parseKind(get('kind'), defaultKind) : { kind: 'PERSONAL' as const, error: '' };
+
+    const base = {
+      line, name, dni, email, quantity, kind,
+      ticket_type_id: type?.id ?? '', ticket_type_name: type?.name ?? typeText,
+    };
     if (!name) return { ...base, status: 'error' as const, message: 'Falta el nombre.' };
     if (!email) return { ...base, status: 'error' as const, message: 'Falta el correo.' };
     if (!isEmail(email)) return { ...base, status: 'error' as const, message: 'El correo no es válido.' };
     if (typeErr) return { ...base, status: 'error' as const, message: typeErr };
-    if (!type) return { ...base, status: 'error' as const, message: 'Elige el tipo de entrada.' };
+    if (!type) return { ...base, status: 'error' as const, message: 'Elige la denominación de cortesía.' };
+    if (qtyErr) return { ...base, status: 'error' as const, message: qtyErr };
+    if (kindErr) return { ...base, status: 'error' as const, message: kindErr };
     const k = key(email, type.id);
-    if (seen.has(k)) return { ...base, status: 'dup_file' as const, message: 'Repetida en el archivo: se envía solo una.' };
+    if (seen.has(k)) {
+      return {
+        ...base,
+        status: 'dup_file' as const,
+        message: 'Repetida en el archivo: se envía solo una. Si quieres varias, pon la cantidad en una sola fila.',
+      };
+    }
     seen.add(k);
-    if (already.has(k)) return { ...base, status: 'already' as const, message: 'Ya tiene una cortesía de este tipo en este evento.' };
+    if (already.has(k)) {
+      return {
+        ...base,
+        status: 'already' as const,
+        message: 'Ya tiene una cortesía de esta denominación en este evento. Para darle más, emítelas desde «Individual» con la cantidad.',
+      };
+    }
     return { ...base, status: 'ok' as const, message: '' };
   });
 
@@ -255,16 +320,16 @@ export function chunk<T>(items: readonly T[], size: number): T[][] {
   return out;
 }
 
-export const TEMPLATE_HEADERS = ['Nombre', 'Cédula', 'Correo', 'Tipo de entrada'] as const;
+export const TEMPLATE_HEADERS = ['Nombre', 'Cédula', 'Correo', 'Denominación', 'Cantidad', 'Clase'] as const;
 
 /** Contenido de la plantilla CSV (con BOM para que Excel respete las tildes). */
 export function templateCsv(typeNames: string[]): string {
-  const t = typeNames[0] ?? 'General';
+  const t = typeNames[0] ?? 'Cortesía general';
   const lines = [
     TEMPLATE_HEADERS.join(','),
-    `Juan Pérez,1000000001,juan@correo.com,${t}`,
-    `María Gómez,1000000002,maria@correo.com,${t}`,
-    `Carlos Ruiz,,carlos@correo.com,`,
+    `Juan Pérez,1000000001,juan@correo.com,${t},1,personal`,
+    `María Gómez,1000000002,maria@correo.com,${t},3,libre`,
+    `Carlos Ruiz,,carlos@correo.com,,,`,
   ];
   return '﻿' + lines.join('\r\n') + '\r\n';
 }

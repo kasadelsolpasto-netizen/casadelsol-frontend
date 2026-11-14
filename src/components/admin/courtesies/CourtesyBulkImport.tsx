@@ -7,6 +7,7 @@ import Pager from '@/components/ui/Pager';
 import { apiFetch, ApiError } from '@/lib/kasa-api';
 import { paginate } from '@/lib/paging';
 import { BATCH_SIZE, MAX_ROWS, buildImport, chunk, parseDelimited, templateCsv, type ImportRow, type TicketTypeLite } from '@/lib/courtesy-import';
+import { COURTESY_KIND_HINT, COURTESY_KIND_LABEL, type CourtesyKind } from '@/lib/partners';
 
 type Existing = { email?: string | null; ticket_type_id?: string | null };
 
@@ -49,16 +50,20 @@ export default function CourtesyBulkImport({
   eventId,
   eventTitle,
   ticketTypes,
+  canSetKind = true,
   existing,
   onDone,
 }: {
   eventId: string;
   eventTitle: string;
-  ticketTypes: TicketTypeLite[];
+  ticketTypes: Array<TicketTypeLite & { transferable_default?: boolean; unlimited?: boolean; available?: number }>;
+  /** false cuando quien emite no está habilitado para decidir cortesías libres: todo sale personal. */
+  canSetKind?: boolean;
   existing: Existing[];
   onDone: () => void;
 }) {
   const [defaultType, setDefaultType] = useState(ticketTypes[0]?.id ?? '');
+  const [defaultKind, setDefaultKind] = useState<CourtesyKind>(ticketTypes[0]?.transferable_default ? 'LIBRE' : 'PERSONAL');
   const [table, setTable] = useState<unknown[][] | null>(null);
   const [source, setSource] = useState('');
   const [pasteText, setPasteText] = useState('');
@@ -96,7 +101,10 @@ export default function CourtesyBulkImport({
     return () => window.removeEventListener('beforeunload', h);
   }, [sending]);
 
-  const parsed = useMemo(() => (table ? buildImport(table, ticketTypes, defaultType, existing) : null), [table, ticketTypes, defaultType, existing]);
+  const parsed = useMemo(
+    () => (table ? buildImport(table, ticketTypes, defaultType, existing, { defaultKind, canSetKind }) : null),
+    [table, ticketTypes, defaultType, existing, defaultKind, canSetKind],
+  );
 
   const sendable = useMemo(
     () => (parsed?.rows ?? []).filter((r) => r.status === 'ok' || (includeAlready && r.status === 'already')),
@@ -186,7 +194,12 @@ export default function CourtesyBulkImport({
       try {
         const res = await apiFetch<BulkAnswer[]>(`/courtesies/bulk/${eventId}`, {
           method: 'POST',
-          body: { courtesies: batch.map((r) => ({ name: r.name, email: r.email, dni: r.dni, ticket_type_id: r.ticket_type_id })) },
+          body: {
+            courtesies: batch.map((r) => ({
+              name: r.name, email: r.email, dni: r.dni, ticket_type_id: r.ticket_type_id,
+              quantity: r.quantity, kind: r.kind,
+            })),
+          },
         });
         const list = Array.isArray(res) ? res : [];
         batch.forEach((row, i) => {
@@ -266,13 +279,53 @@ export default function CourtesyBulkImport({
       {!report && (
         <>
           <div>
-            <label htmlFor="bulk-type" className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Tipo de entrada para todos</label>
-            <select id="bulk-type" value={defaultType} onChange={(e) => setDefaultType(e.target.value)} disabled={sending || typeCount === 0} className={`${inputCls} appearance-none`}>
+            <label htmlFor="bulk-type" className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Denominación de cortesía para todos</label>
+            <select
+              id="bulk-type"
+              value={defaultType}
+              onChange={(e) => {
+                setDefaultType(e.target.value);
+                const t = ticketTypes.find((x) => x.id === e.target.value);
+                if (t?.transferable_default) setDefaultKind('LIBRE');
+              }}
+              disabled={sending || typeCount === 0}
+              className={`${inputCls} appearance-none`}
+            >
               {ticketTypes.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
+                <option key={t.id} value={t.id}>
+                  {t.name}{t.unlimited === false && t.available !== undefined ? ` · quedan ${t.available}` : ''}
+                </option>
               ))}
             </select>
-            <p className="text-[11px] text-zinc-600 mt-1.5">Se usa cuando el archivo no trae la columna «Tipo de entrada» o la celda va vacía.</p>
+            <p className="text-[11px] text-zinc-600 mt-1.5">Se usa cuando el archivo no trae la columna «Denominación» o la celda va vacía. No es una boleta de venta: las cortesías tienen su propio cupo.</p>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Clase para todos</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(['PERSONAL', 'LIBRE'] as CourtesyKind[]).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setDefaultKind(k)}
+                  disabled={sending || !canSetKind}
+                  className={`h-10 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-40 ${
+                    (canSetKind ? defaultKind : 'PERSONAL') === k
+                      ? k === 'LIBRE'
+                        ? 'bg-neon-green/10 border-neon-green text-neon-green'
+                        : 'bg-neon-purple/10 border-neon-purple text-neon-purple'
+                      : 'bg-black border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  {COURTESY_KIND_LABEL[k]}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-zinc-600 mt-1.5">
+              {canSetKind
+                ? `${COURTESY_KIND_HINT[defaultKind]} El archivo puede traer una columna «Clase» para decidirlo fila por fila.`
+                : 'No estás habilitado para emitir cortesías libres: todas saldrán personales.'}
+            </p>
           </div>
 
           {!table && (
@@ -342,12 +395,17 @@ export default function CourtesyBulkImport({
                     <div className="rounded-lg border border-zinc-800 bg-black p-2"><p className={`text-lg font-black ${counts.already ? 'text-yellow-400' : 'text-zinc-500'}`}>{counts.already}</p><p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Ya enviadas</p></div>
                   </div>
 
-                  {!parsed.headerFound && <p className="text-[11px] text-zinc-500">No encontré títulos de columnas; deduje cuál es el nombre, la cédula y el correo por su contenido. Revísalo en la lista.</p>}
+                  {!parsed.headerFound && (
+                    <p className="text-[11px] text-zinc-500">
+                      No encontré títulos de columnas; deduje cuál es el nombre, la cédula y el correo por su contenido. La cantidad y la clase
+                      no se deducen sin títulos: se usan 1 y la clase elegida arriba. Revísalo en la lista.
+                    </p>
+                  )}
 
                   {counts.already > 0 && (
                     <label className="flex items-start gap-2 text-[11px] text-zinc-400 cursor-pointer">
                       <input type="checkbox" checked={includeAlready} onChange={(e) => setIncludeAlready(e.target.checked)} className="mt-0.5" />
-                      Enviar también a quienes ya tienen una cortesía de este tipo en este evento (se les daría otra).
+                      Enviar también a quienes ya tienen una cortesía de esta denominación en este evento (se les daría otra).
                     </label>
                   )}
                   {counts.error + counts.dup_file + counts.already > 0 && (
@@ -362,7 +420,10 @@ export default function CourtesyBulkImport({
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="text-sm font-bold text-white truncate">{r.name || '(sin nombre)'}</p>
-                            <p className="text-[11px] text-zinc-500 truncate">{r.email || '(sin correo)'}{r.ticket_type_name ? ` · ${r.ticket_type_name}` : ''}{r.dni ? ` · ${r.dni}` : ''}</p>
+                            <p className="text-[11px] text-zinc-500 truncate">
+                              {r.email || '(sin correo)'}{r.ticket_type_name ? ` · ${r.ticket_type_name}` : ''}{r.dni ? ` · ${r.dni}` : ''}
+                              {r.quantity > 1 ? ` · ${r.quantity} cortesías` : ''} · {COURTESY_KIND_LABEL[r.kind]}
+                            </p>
                           </div>
                           <span className={`shrink-0 text-[10px] font-black uppercase tracking-widest ${STATUS_LABEL[r.status].cls}`}>{STATUS_LABEL[r.status].text}</span>
                         </div>
