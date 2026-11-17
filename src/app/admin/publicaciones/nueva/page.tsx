@@ -1,4 +1,5 @@
 "use client";
+import { sanitizeHtml } from '@/lib/sanitize-html';
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -43,6 +44,7 @@ export default function NewPostPage() {
     media_urls: [] as string[],
     is_pinned: false,
     is_draft: false,
+    signature: '',
   });
   const [seo, setSeo] = useState({ seo_title: '', seo_description: '', seo_slug: '' });
   const [uploading, setUploading] = useState(false);
@@ -162,6 +164,20 @@ export default function NewPostPage() {
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
               className="w-full bg-black border border-zinc-800 rounded-xl py-4 px-5 text-white text-lg font-bold placeholder:text-zinc-700 hover:border-zinc-600 focus:border-neon-purple outline-none transition-all"
             />
+          </div>
+
+          {/* Firma */}
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Firma</label>
+            <input
+              type="text"
+              maxLength={80}
+              placeholder="Quién firma esta publicación (opcional)"
+              value={form.signature}
+              onChange={e => setForm(f => ({ ...f, signature: e.target.value }))}
+              className="w-full bg-black border border-zinc-800 rounded-xl py-3 px-5 text-white text-sm font-bold placeholder:text-zinc-700 hover:border-zinc-600 focus:border-neon-purple outline-none transition-all"
+            />
+            <p className="text-[10px] text-zinc-600">Aparece al pie de la publicación tal como la escribas. Si la dejas vacía, la publicación sale sin firma.</p>
           </div>
 
           {/* Imagen de portada */}
@@ -314,7 +330,7 @@ export default function NewPostPage() {
               {form.content ? (
                 <div
                   className="post-content text-sm line-clamp-[8] overflow-hidden"
-                  dangerouslySetInnerHTML={{ __html: form.content }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(form.content) }}
                 />
               ) : (
                 <p className="text-zinc-600 text-sm">El contenido aparecerá aquí...</p>

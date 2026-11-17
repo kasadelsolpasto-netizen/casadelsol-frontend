@@ -1,4 +1,5 @@
 "use client";
+import { sanitizeHtml } from '@/lib/sanitize-html';
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -44,9 +45,14 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
   };
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/posts/${params.id}/public`)
+    // Se lee del listado del administrador: la ruta pública no entrega borradores y no dejaba editarlos.
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/posts/admin/all`, {
+      headers: { 'Authorization': `Bearer ${getToken()}` },
+    })
       .then(r => r.json())
-      .then(data => {
+      .then(list => {
+        const data = Array.isArray(list) ? list.find((p: any) => p.id === params.id || p.seo_slug === params.id) : null;
+        if (!data) { setError('No se encontró la publicación.'); return; }
         setForm({
           title:      data.title || '',
           content:    data.content || '',
@@ -55,6 +61,7 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
           media_urls: data.media_urls || [],
           is_pinned:  data.is_pinned ?? false,
           is_draft:   data.is_draft ?? false,
+          signature:  data.signature || '',
         });
         setSeo({
           seo_title:       data.seo_title       || '',
@@ -148,6 +155,21 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
             <input type="text" value={form.title} onChange={e => setForm((f: any) => ({ ...f, title: e.target.value }))}
               className="w-full bg-black border border-zinc-800 rounded-xl py-4 px-5 text-white text-lg font-bold placeholder:text-zinc-700 focus:border-neon-purple outline-none transition-all" />
           </div>
+
+          {/* Firma */}
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Firma</label>
+            <input
+              type="text"
+              maxLength={80}
+              placeholder="Quién firma esta publicación (opcional)"
+              value={form.signature || ''}
+              onChange={e => setForm((f: any) => ({ ...f, signature: e.target.value }))}
+              className="w-full bg-black border border-zinc-800 rounded-xl py-3 px-5 text-white text-sm font-bold placeholder:text-zinc-700 hover:border-zinc-600 focus:border-neon-purple outline-none transition-all"
+            />
+            <p className="text-[10px] text-zinc-600">Aparece al pie de la publicación tal como la escribas. Si la dejas vacía, la publicación sale sin firma.</p>
+          </div>
+
 
           {/* Portada */}
           <div className="space-y-2">
@@ -250,7 +272,7 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
             <div className="p-6">
               <h2 className="text-xl font-black uppercase text-white mb-3 leading-tight">{form.title || 'Título...'}</h2>
               {form.content ? (
-                <div className="post-content text-sm line-clamp-[6] overflow-hidden" dangerouslySetInnerHTML={{ __html: form.content }} />
+                <div className="post-content text-sm line-clamp-[6] overflow-hidden" dangerouslySetInnerHTML={{ __html: sanitizeHtml(form.content) }} />
               ) : (
                 <p className="text-zinc-600 text-sm">Contenido...</p>
               )}

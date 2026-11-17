@@ -108,10 +108,16 @@ export default function RichEditor({ value, onChange, placeholder = 'Escribe el 
   const handleLink = useCallback(() => {
     if (!editor) return;
     const prev = editor.getAttributes('link').href || '';
-    const url  = window.prompt('URL del enlace:', prev);
-    if (url === null) return;
+    const typed = window.prompt('URL del enlace:', prev);
+    if (typed === null) return;
+    let url = typed.trim();
     if (url === '') { editor.chain().focus().unsetLink().run(); return; }
-    editor.chain().focus().setLink({ href: url }).run();
+    // "soundcloud.com/x" => "https://soundcloud.com/x". Solo se aceptan enlaces web, correo o teléfono.
+    if (!/^(https?:\/\/|mailto:|tel:)/i.test(url)) {
+      if (/^[a-z][a-z0-9+.-]*:/i.test(url)) { alert('Ese tipo de enlace no está permitido. Usa una dirección que empiece por https://'); return; }
+      url = `https://${url}`;
+    }
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   }, [editor]);
 
   if (!editor) return null;

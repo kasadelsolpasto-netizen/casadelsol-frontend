@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { excerptHtml } from '@/lib/sanitize-html';
 import { Loader2, Megaphone, FileText, MessageSquare, Music, Pin, ArrowRight } from 'lucide-react';
 
 const TYPE_META: Record<string, { label: string; Icon: any; accent: string; tag: string }> = {
@@ -166,7 +167,7 @@ export default function PostsFeedPage() {
                   )}
                   <div className="px-6 pb-6">
                     <h2 className="text-xl font-black uppercase tracking-tight text-white mb-2">{post.title}</h2>
-                    <p className="text-zinc-400 text-sm leading-relaxed line-clamp-3">{post.content}</p>
+                    <div className="post-excerpt text-zinc-400 line-clamp-3" dangerouslySetInnerHTML={{ __html: excerptHtml(post.content) }} />
                     <div className="flex items-center justify-between mt-5 gap-4">
                       {/* Reacciones inline — e.preventDefault evita navegar */}
                       <ReactionBar postId={post.id} initialCounts={post.reactionCounts || {}} />
@@ -198,7 +199,7 @@ export default function PostsFeedPage() {
                         <span className="text-zinc-600 text-[10px] font-bold">{new Date(post.published_at).toLocaleDateString('es-CO')}</span>
                       </div>
                       <h2 className="text-lg font-black uppercase tracking-tight text-white mb-2 group-hover:text-neon-purple transition-colors line-clamp-2">{post.title}</h2>
-                      <p className="text-zinc-500 text-sm leading-relaxed line-clamp-2">{post.content}</p>
+                      <div className="post-excerpt text-zinc-500 line-clamp-2" dangerouslySetInnerHTML={{ __html: excerptHtml(post.content) }} />
                     </Link>
                     {/* Reacciones en la parte inferior — fuera del Link para no propagar */}
                     <div className="flex items-center justify-between mt-4">
