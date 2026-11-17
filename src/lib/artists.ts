@@ -80,6 +80,8 @@ export interface ArtistDetail {
   doc_number?: string | null;
   address?: string | null;
   phone?: string | null;
+  /** Cuenta donde recibe el pago (privado). */
+  payout_info?: string | null;
   bookings: ArtistBookingView[];
   payments: ArtistPaymentView[];
   promoter_codes?: ArtistPromoterCode[];

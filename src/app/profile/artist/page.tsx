@@ -7,6 +7,7 @@ import ImageUpload from '@/components/artists/ImageUpload';
 import ArtistPageEditor from '@/components/artists/ArtistPageEditor';
 import ArtistDocsNotice, { DocsReminder } from '@/components/artists/ArtistDocsNotice';
 import ArtistContracts from '@/components/artists/ArtistContracts';
+import CuentaCobro from '@/components/artists/CuentaCobro';
 import { isEventOver } from '@/lib/artists';
 import StatStrip, { BalanceChip } from '@/components/artists/StatStrip';
 import ProfileTabs from '@/components/profile/ProfileTabs';
@@ -206,6 +207,7 @@ export default function ArtistProfilePage() {
                       </div>
                       {b.role && <p className="text-[11px] text-zinc-500 mt-2">{b.role}</p>}
                       {!isEventOver(b.event.date) && <DocsReminder stageName={artist.stage_name} eventTitle={b.event.title} />}
+                      <CuentaCobro artist={artist} booking={b} position={[...artist.bookings].sort((x, y) => x.event.date.localeCompare(y.event.date)).findIndex((x) => x.id === b.id) + 1} />
                       <ArtistCourtesies booking={b} onChanged={load} />
                     </AccordionRow>
                   ))}
