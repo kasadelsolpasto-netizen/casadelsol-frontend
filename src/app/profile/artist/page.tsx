@@ -2,7 +2,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Music, Loader2, CalendarDays, Banknote, UserRound, ChevronLeft, CheckCircle2 } from 'lucide-react';
+import { Music, Loader2, CalendarDays, Banknote, UserRound, ChevronLeft, CheckCircle2, Globe } from 'lucide-react';
+import ImageUpload from '@/components/artists/ImageUpload';
+import ArtistPageEditor from '@/components/artists/ArtistPageEditor';
 import StatStrip, { BalanceChip } from '@/components/artists/StatStrip';
 import ProfileTabs from '@/components/profile/ProfileTabs';
 import AccordionRow from '@/components/ui/AccordionRow';
@@ -14,10 +16,11 @@ import { apiFetch, ApiError, authToken } from '@/lib/kasa-api';
 import { formatCOP } from '@/lib/sales-view';
 import { courtesyRemaining, fmtDate, type ArtistDetail } from '@/lib/artists';
 
-type Tab = 'eventos' | 'pagos' | 'perfil';
+type Tab = 'eventos' | 'pagos' | 'pagina' | 'perfil';
 const TABS: { key: Tab; label: string; Icon: typeof Music }[] = [
   { key: 'eventos', label: 'Mis eventos', Icon: CalendarDays },
   { key: 'pagos', label: 'Pagos', Icon: Banknote },
+  { key: 'pagina', label: 'Mi página', Icon: Globe },
   { key: 'perfil', label: 'Mi perfil', Icon: UserRound },
 ];
 
@@ -127,7 +130,7 @@ export default function ArtistProfilePage() {
 
           <div className="mb-5"><StatStrip fee={artist.total_fee} paid={artist.total_paid} pending={artist.pending} paidLabel="Recibido" /></div>
 
-          <div role="tablist" aria-label="Secciones del artista" className="mb-6 grid grid-cols-3 gap-1 p-1 rounded-2xl bg-zinc-950 border border-zinc-900">
+          <div role="tablist" aria-label="Secciones del artista" className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 rounded-2xl bg-zinc-950 border border-zinc-900">
             {TABS.map(({ key, label, Icon }) => (
               <button
                 key={key}
@@ -202,6 +205,8 @@ export default function ArtistProfilePage() {
             )
           )}
 
+          {tab === 'pagina' && <ArtistPageEditor />}
+
           {tab === 'perfil' && (
             <form onSubmit={save} className="space-y-4">
               <div>
@@ -212,11 +217,7 @@ export default function ArtistProfilePage() {
                 <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Descripción</label>
                 <textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={1000} rows={4} className={`${inputCls} h-auto py-3`} />
               </div>
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Foto (enlace)</label>
-                <input value={photo} onChange={(e) => setPhoto(e.target.value)} className={inputCls} placeholder="https://..." />
-                <p className="mt-1.5 text-[11px] font-bold text-zinc-500">Enlace https:// de una imagen en Cloudinary o Supabase; las de otras páginas no se muestran. Pronto podrás subirla directamente.</p>
-              </div>
+              <ImageUpload value={photo} onChange={setPhoto} folder="artists/photos" label="Tu imagen" shape="round" maxSide={1600} hint="Es la imagen que te identifica en tu página y en el cartel de los eventos. Guarda el perfil para aplicarla." />
               {saveMsg && (
                 <p role="status" className={`text-xs font-bold flex items-center gap-1.5 ${saveMsg.tone === 'ok' ? 'text-neon-green' : 'text-red-400'}`}>
                   {saveMsg.tone === 'ok' && <CheckCircle2 className="w-4 h-4" />} {saveMsg.text}

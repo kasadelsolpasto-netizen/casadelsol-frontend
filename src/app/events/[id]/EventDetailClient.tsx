@@ -1,4 +1,5 @@
 "use client";
+import { sanitizeHtml } from '@/lib/sanitize-html';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, MapPin, QrCode as QrCodeIcon, X, Copy, Check, Link2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
@@ -403,7 +404,7 @@ export default function EventDetailClient({ params }: { params: { id: string } }
             <div className="w-full overflow-hidden">
               <div 
                 className="post-content text-zinc-400 leading-relaxed break-words" 
-                dangerouslySetInnerHTML={{ __html: event.description || '' }} 
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(event.description) }} 
               />
             </div>
           </section>

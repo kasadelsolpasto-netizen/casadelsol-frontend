@@ -1,3 +1,4 @@
+import { sanitizeHtml, htmlToText } from '@/lib/sanitize-html';
 import Link from 'next/link';
 import Image from 'next/image';
 import { JetBrains_Mono } from 'next/font/google';
@@ -76,7 +77,6 @@ export default async function Home() {
   return (
     <div className={`${tekno.variable} rave-home relative min-h-screen`}>
       <RaveScene />
-      <div className="crt-lines" aria-hidden="true" />
 
       {/* ── HERO 3D ─────────────────────────────────────────── */}
       <section className="relative isolate max-w-7xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12 pb-16 grid lg:grid-cols-[minmax(0,1fr)_auto] gap-12 lg:gap-16 items-center lg:min-h-[calc(100dvh-8rem)]">
@@ -147,7 +147,7 @@ export default async function Home() {
             <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-neon-purple mb-2">{T.listEyebrow}</p>
             <h2
               className="text-3xl md:text-5xl font-black uppercase tracking-widest text-white"
-              dangerouslySetInnerHTML={{ __html: brandConfig.homeTitle || defaultTitle }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(brandConfig.homeTitle || defaultTitle) }}
             />
           </div>
           <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-zinc-600 tabular-nums">[{String(events.length).padStart(2, '0')}]</span>
@@ -177,7 +177,7 @@ export default async function Home() {
                           alt={event.title}
                           fill
                           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                          className="object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80 group-hover:opacity-100"
+                          className="object-cover group-hover:scale-110 transition-transform duration-1000"
                         />
                       )}
                       <span className="absolute top-3 left-3 z-20 rounded-full bg-black/70 backdrop-blur px-2.5 py-1 font-mono text-[10px] tracking-[0.2em] text-neon-green">
@@ -256,7 +256,7 @@ export default async function Home() {
                         {isPinned && <span className="text-[8px] text-neon-green">📌</span>}
                       </div>
                       <h3 className="text-sm font-black uppercase tracking-wider text-white line-clamp-2 group-hover:text-neon-purple transition-colors">{post.title}</h3>
-                      <p className="text-zinc-500 text-[11px] mt-1 line-clamp-1">{post.content}</p>
+                      <p className="text-zinc-500 text-[11px] mt-1 line-clamp-1">{htmlToText(post.content, 160)}</p>
                     </div>
                     <ArrowRight className="w-4 h-4 text-zinc-700 group-hover:text-neon-purple group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
                   </TiltCard>

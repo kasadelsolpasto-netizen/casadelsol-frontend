@@ -17,6 +17,7 @@ import {
   Sun,
   Wallet
 } from 'lucide-react';
+import { ShieldCheck as PartnerIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -25,7 +26,7 @@ export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<{id: string; name: string; role: string; avatar?: string} | null>(null);
-  const [userProfile, setUserProfile] = useState<{promoter_codes?: Array<{id: string}>; artist_profile?: {id: string; is_active: boolean} | null} | null>(null);
+  const [userProfile, setUserProfile] = useState<{is_partner?: boolean; promoter_codes?: Array<{id: string}>; artist_profile?: {id: string; is_active: boolean} | null} | null>(null);
   const [mounted, setMounted] = useState(false);
   const [brandLogo, setBrandLogo] = useState<string | null>(null);
 
@@ -178,10 +179,18 @@ export function Navbar() {
                    </Link>
 
                    {/* Opción Promotor */}
-                   {userProfile?.promoter_codes?.length > 0 && (
+                   {(userProfile?.promoter_codes?.length ?? 0) > 0 && (
                      <Link href="/profile/promoter" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item border-t border-zinc-900">
                         <DollarSign className="w-4 h-4 text-neon-green group-hover/item:scale-110 transition-transform" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Panel de Promotor</span>
+                     </Link>
+                   )}
+
+                   {/* Opción Socio: acceso autorizado por evento */}
+                   {userProfile?.is_partner && (
+                     <Link href="/profile/socio" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-900 transition-colors group/item border-t border-zinc-900">
+                        <PartnerIcon className="w-4 h-4 text-neon-green group-hover/item:scale-110 transition-transform" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Panel de Socio</span>
                      </Link>
                    )}
 
@@ -220,6 +229,12 @@ export function Navbar() {
             <ShoppingBag className={`w-6 h-6 transition-all ${isActive('/shop') ? 'drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'group-hover:scale-110'}`} />
             <span className="text-[8px] font-black uppercase tracking-wider">Tienda</span>
             {isActive('/shop') && <div className="absolute -bottom-2 w-1 h-1 rounded-full bg-orange-500 shadow-[0_0_10px_#f97316]" />}
+         </Link>
+
+         <Link href="/artistas" className={`flex flex-col items-center gap-1 group relative ${pathname?.startsWith('/artistas') ? 'text-neon-purple' : 'text-zinc-600 hover:text-zinc-300'}`}>
+            <Music className={`w-6 h-6 transition-all ${pathname?.startsWith('/artistas') ? 'drop-shadow-[0_0_8px_rgba(191,0,255,0.5)]' : 'group-hover:scale-110'}`} />
+            <span className="text-[8px] font-black uppercase tracking-wider">Artistas</span>
+            {pathname?.startsWith('/artistas') && <div className="absolute -bottom-2 w-1 h-1 rounded-full bg-neon-purple shadow-[0_0_10px_#bf00ff]" />}
          </Link>
 
          {user && (
