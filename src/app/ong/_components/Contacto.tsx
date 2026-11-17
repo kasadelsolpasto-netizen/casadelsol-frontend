@@ -96,9 +96,6 @@ export function Contacto({
             <p className="ong-mono">
               {identidad.nombre} · NIT {identidad.nit} · {identidad.domicilio}
             </p>
-            <Link href="/" className="transition-colors hover:text-[var(--ong-red)]">
-              ← Kasa del Sol
-            </Link>
           </div>
         </footer>
         </Revelar>

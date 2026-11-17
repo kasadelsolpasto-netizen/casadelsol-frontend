@@ -232,13 +232,6 @@ body {
     radial-gradient(circle at 50% 30%, rgba(57,255,20,.10), transparent 40%), #000;
 }
 
-.crt-lines {
-  pointer-events: none; position: fixed; inset: 0; z-index: 60;
-  background: repeating-linear-gradient(0deg, #00000030, #00000030 1px, #0000 1px 3px);
-  opacity: .5;
-  mix-blend-mode: multiply;
-}
-
 /* Título: gira con el cursor (no con la música). Su contorno es un borde luminoso
    que reacciona con suavidad: brilla a medio tempo. */
 .title-stage { perspective: 900px; }
@@ -266,7 +259,8 @@ body {
   transition: transform 120ms linear;
   will-change: transform;
 }
-.flyer-img { transform: translateZ(0); filter: brightness(calc(.92 + var(--viz-half) * .3)) saturate(calc(1 + var(--viz-bass) * .4)); }
+/* La imagen del flyer se muestra tal cual: sin filtros ni tramas encima, para no perder calidad. */
+.flyer-img { transform: translateZ(0); }
 /* Esquinas cúbicas del flyer: escuadras con volumen que se levantan como una tapa.
    Cada escuadra son capas apiladas en Z (frente neón, fondo más oscuro) → se ve sólida al girar. */
 .corner-cube {
@@ -332,3 +326,16 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .title-3d, .flyer-3d, .tilt-card { transform: none !important; }
 }
+
+/* ── Resumen con formato en las tarjetas del feed ──────────────────────── */
+.post-excerpt { font-size: 0.875rem; line-height: 1.625; overflow-wrap: anywhere; }
+.post-excerpt p, .post-excerpt ul, .post-excerpt ol, .post-excerpt blockquote, .post-excerpt pre { display: inline; margin: 0; padding: 0; }
+.post-excerpt p::after, .post-excerpt li::after, .post-excerpt blockquote::after { content: " "; }
+.post-excerpt li { display: inline; }
+.post-excerpt li::before { content: "· "; }
+.post-excerpt strong, .post-excerpt b { color: #e4e4e7; font-weight: 800; }
+.post-excerpt em, .post-excerpt i { font-style: italic; }
+.post-excerpt u { text-decoration: underline; text-underline-offset: 3px; }
+.post-excerpt s { text-decoration: line-through; }
+.post-excerpt .post-link { color: #bf00ff; text-decoration: underline; text-underline-offset: 3px; }
+.post-content { overflow-wrap: anywhere; }

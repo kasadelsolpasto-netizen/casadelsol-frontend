@@ -75,8 +75,6 @@ export function TiltFlyer({
           )}
           {/* Brillo especular que sigue al puntero */}
           <span className="flyer-glare absolute inset-0 pointer-events-none" aria-hidden="true" />
-          {/* Barrido de líneas CRT */}
-          <span className="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.18),rgba(0,0,0,0.18)_1px,transparent_1px,transparent_3px)]" aria-hidden="true" />
         </span>
 
         {/* Esquinas cúbicas: se levantan un poco fuera del recuadro, como una tapa */}

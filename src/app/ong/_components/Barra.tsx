@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 import { SolEntero } from "./Sol";
 import type { Identidad, Seccion } from "../contenido";
 
@@ -56,14 +55,6 @@ export function Barra({
           ))}
         </ul>
 
-        {/* Salida al sitio de eventos */}
-        <Link
-          href="/"
-          className="hidden shrink-0 items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] ong-faint transition-colors duration-500 hover:text-[var(--ong-red)] lg:inline-flex"
-        >
-          Kasa del Sol
-          <ArrowUpRight className="h-3 w-3" />
-        </Link>
       </div>
     </nav>
   );

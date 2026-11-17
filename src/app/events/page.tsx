@@ -43,7 +43,7 @@ export default async function EventsFeed() {
                 <img 
                   src={event.flyer_url} 
                   alt={event.title}
-                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100" 
+                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" 
                 />
               )}
             </div>
