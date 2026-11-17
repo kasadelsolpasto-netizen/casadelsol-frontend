@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildImport, parseDelimited, chunk, templateCsv, normalizeDniText, MAX_ROWS } from './courtesy-import.ts';
+import { buildImport, parseDelimited, chunk, templateCsv, normalizeDniText, parseKind, parseQuantity, MAX_QUANTITY, MAX_ROWS } from './courtesy-import.ts';
 
 const TYPES = [
   { id: 't-gen', name: 'General' },
@@ -12,10 +12,90 @@ test('plantilla: se lee tal cual y todas las filas quedan listas', () => {
   assert.equal(r.headerFound, true);
   assert.equal(r.rows.length, 3);
   assert.ok(r.rows.every((x) => x.status === 'ok'));
-  assert.deepEqual(r.rows[0], { line: 2, name: 'Juan Pérez', dni: '1000000001', email: 'juan@correo.com', ticket_type_id: 't-gen', ticket_type_name: 'General', status: 'ok', message: '' });
+  assert.deepEqual(r.rows[0], { line: 2, name: 'Juan Pérez', dni: '1000000001', email: 'juan@correo.com', ticket_type_id: 't-gen', ticket_type_name: 'General', quantity: 1, kind: 'PERSONAL', status: 'ok', message: '' });
+  // la plantilla trae una fila con 3 cortesías libres para la misma persona
+  assert.deepEqual([r.rows[1].quantity, r.rows[1].kind], [3, 'LIBRE']);
   // sin cédula y sin tipo: usa el tipo elegido en pantalla
   assert.equal(r.rows[2].dni, '');
   assert.equal(r.rows[2].ticket_type_id, 't-gen');
+  assert.deepEqual([r.rows[2].quantity, r.rows[2].kind], [1, 'PERSONAL']);
+});
+
+test('cantidad: varias cortesías a nombre de la misma persona', () => {
+  const rows = [
+    ['Nombre', 'Correo', 'Cantidad'],
+    ['Ana Torres', 'ana@x.co', '4'],
+    ['Beto Páez', 'beto@x.co', ''],
+    ['Caro Díaz', 'caro@x.co', '0'],
+    ['Dani Mora', 'dani@x.co', 'dos'],
+    ['Eva Cruz', 'eva@x.co', String(MAX_QUANTITY + 1)],
+  ];
+  const r = buildImport(rows, TYPES, 't-gen');
+  assert.deepEqual(r.rows.map((x) => [x.quantity, x.status]), [
+    [4, 'ok'],
+    [1, 'ok'],
+    [1, 'error'],
+    [1, 'error'],
+    [1, 'error'],
+  ]);
+  assert.match(r.rows[2].message, /1 o más/);
+  assert.match(r.rows[3].message, /entero/);
+  assert.match(r.rows[4].message, new RegExp(String(MAX_QUANTITY)));
+});
+
+test('clase: personal es intransferible, libre es transferible, y lo que no se entiende se reporta', () => {
+  const rows = [
+    ['Nombre', 'Correo', 'Clase'],
+    ['Ana Torres', 'ana@x.co', 'libre'],
+    ['Beto Páez', 'beto@x.co', 'Intransferible'],
+    ['Caro Díaz', 'caro@x.co', ''],
+    ['Dani Mora', 'dani@x.co', 'oro'],
+  ];
+  const r = buildImport(rows, TYPES, 't-gen');
+  assert.deepEqual(r.rows.map((x) => [x.kind, x.status]), [
+    ['LIBRE', 'ok'],
+    ['PERSONAL', 'ok'],
+    ['PERSONAL', 'ok'],
+    ['PERSONAL', 'error'],
+  ]);
+  assert.match(r.rows[3].message, /personal/i);
+});
+
+test('clase: la denominación puede traerla por defecto, y quien no puede elegirla emite siempre personal', () => {
+  const rows = [
+    ['Nombre', 'Correo', 'Clase'],
+    ['Ana Torres', 'ana@x.co', ''],
+    ['Beto Páez', 'beto@x.co', 'libre'],
+  ];
+  const porDefecto = buildImport(rows, TYPES, 't-gen', [], { defaultKind: 'LIBRE' });
+  assert.deepEqual(porDefecto.rows.map((x) => x.kind), ['LIBRE', 'LIBRE']);
+
+  // Socio sin la facultad: la columna «Clase» se ignora y nada sale libre.
+  const sinFacultad = buildImport(rows, TYPES, 't-gen', [], { defaultKind: 'LIBRE', canSetKind: false });
+  assert.deepEqual(sinFacultad.rows.map((x) => [x.kind, x.status]), [['PERSONAL', 'ok'], ['PERSONAL', 'ok']]);
+});
+
+test('la cantidad y la clase NO se adivinan sin encabezado (una columna de números no es una cantidad)', () => {
+  const rows = [
+    ['1000000001', 'Luis Pardo', 'luis@x.co'],
+    ['1000000002', 'Eva Cruz', 'eva@x.co'],
+  ];
+  const r = buildImport(rows, TYPES, 't-gen');
+  assert.deepEqual(r.rows.map((x) => [x.dni, x.quantity]), [
+    ['1000000001', 1],
+    ['1000000002', 1],
+  ]);
+});
+
+test('parseQuantity y parseKind por separado', () => {
+  assert.deepEqual(parseQuantity(''), { quantity: 1, error: '' });
+  assert.deepEqual(parseQuantity('  5 '), { quantity: 5, error: '' });
+  assert.equal(parseQuantity('2.5').error !== '', true);
+  assert.equal(parseQuantity('-3').error !== '', true);
+  assert.deepEqual(parseKind('', 'LIBRE'), { kind: 'LIBRE', error: '' });
+  assert.deepEqual(parseKind('TRANSFERIBLE', 'PERSONAL'), { kind: 'LIBRE', error: '' });
+  assert.deepEqual(parseKind('nominal', 'LIBRE'), { kind: 'PERSONAL', error: '' });
+  assert.equal(parseKind('vip', 'PERSONAL').error !== '', true);
 });
 
 test('cualquier orden de columnas y encabezados con tildes, mayúsculas o sinónimos', () => {

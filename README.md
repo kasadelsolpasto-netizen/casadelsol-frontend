@@ -53,3 +53,22 @@ Lo guardado se fusiona sobre el contenido de fábrica (`src/lib/ong-contenido.ts
 de modo que los campos nuevos que se agreguen en código aparecen aunque el
 documento almacenado sea anterior. Si el backend no responde, la página
 publica el contenido de fábrica en vez de caerse.
+
+## Pase permanente (QR identificador) y saldo
+
+Cada usuario tiene un QR que **no caduca** y que lo identifica en la puerta y en la barra. No
+reemplaza las entradas —cada entrada conserva su QR de un solo uso—: es otra forma de llegar a
+ellas, pensada para que mañana vaya impreso en un carné.
+
+- **`/pase`** — la pantalla de la persona: su QR (`KASA_ID:<token>`), el código del carné
+  (`KS-XXXX-XXXX-XX`), su saldo, sus movimientos y la recarga en línea. Guarda una copia local:
+  sin señal el QR sigue a la vista, igual que las entradas (`lib/offline-tickets`).
+- **Scanner** — el mismo lector reconoce entradas, pedidos de barra y ahora pases. Al leer un pase
+  se abre `components/scanner/PassPanel`: quién es, sus entradas del evento (una toca para
+  admitir), su saldo, sus pedidos abiertos, y el teclado para cobrar o abonar efectivo. Leer el
+  pase no consume nada. Si la cámara falla, en *Taquilla* se escribe el código del carné.
+- **Admin** — dentro de la ficha de cada usuario (`components/admin/UserWalletCard`): estado del
+  pase, saldo, libro completo de movimientos, y devolución o ajuste con motivo.
+
+`lib/pass.ts` guarda las reglas puras (reconocer un pase, leer montos escritos en pesos, nombrar
+cada movimiento) y se prueba con `npm run test:scan`.

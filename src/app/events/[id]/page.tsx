@@ -1,5 +1,6 @@
 // SERVER COMPONENT — sin "use client"
 // Genera <title>, <meta>, Open Graph y JSON-LD Event (rich results en Google)
+import { toJsonLd } from '@/lib/sanitize-html';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import EventDetailClient from './EventDetailClient';
@@ -139,7 +140,7 @@ export default async function EventPage({ params }: { params: { id: string } }) 
       {/* JSON-LD inyectado en el <head> — activa Event Rich Results en Google */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: toJsonLd(jsonLd) }}
       />
 
       {/* Toda la interactividad (checkout, wizard, etc.) en el client component */}

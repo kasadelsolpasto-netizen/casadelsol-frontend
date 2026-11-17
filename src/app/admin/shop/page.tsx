@@ -59,11 +59,21 @@ export default function ShopInventoryPage() {
   
   // Product Form (Ficha)
   const [editingProduct, setEditingProduct] = useState<any>(null);
-  const [formData, setFormData] = useState({
+  // Precio y stock se guardan como TEXTO mientras se escriben (así la casilla puede quedar vacía);
+  // se convierten a número solo al guardar (ver handleSaveProduct).
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    price: string;
+    stock: string;
+    image_url: string;
+    category_id: string;
+    is_active: boolean;
+  }>({
     name: '',
     description: '',
-    price: 0,
-    stock: 0,
+    price: '',
+    stock: '',
     image_url: '',
     category_id: '',
     is_active: true

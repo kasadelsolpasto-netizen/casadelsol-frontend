@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { profileAreas, profileTabs } from './profile-tabs.ts';
 
 test('profileAreas: artista solo si el perfil está activo; promotor solo con códigos', () => {
-  assert.deepEqual(profileAreas(null), { artist: false, promoter: false });
-  assert.deepEqual(profileAreas({ artist_profile: { is_active: false }, promoter_codes: [] }), { artist: false, promoter: false });
-  assert.deepEqual(profileAreas({ artist_profile: { is_active: true }, promoter_codes: [] }), { artist: true, promoter: false });
-  assert.deepEqual(profileAreas({ artist_profile: null, promoter_codes: [{}] }), { artist: false, promoter: true });
-  assert.deepEqual(profileAreas({ artist_profile: { is_active: true }, promoter_codes: [{}, {}] }), { artist: true, promoter: true });
+  assert.deepEqual(profileAreas(null), { artist: false, promoter: false, partner: false });
+  assert.deepEqual(profileAreas({ artist_profile: { is_active: false }, promoter_codes: [] }), { artist: false, promoter: false, partner: false });
+  assert.deepEqual(profileAreas({ artist_profile: { is_active: true }, promoter_codes: [] }), { artist: true, promoter: false, partner: false });
+  assert.deepEqual(profileAreas({ artist_profile: null, promoter_codes: [{}] }), { artist: false, promoter: true, partner: false });
+  assert.deepEqual(profileAreas({ artist_profile: { is_active: true }, promoter_codes: [{}, {}] }), { artist: true, promoter: true, partner: false });
 });
 
 test('profileTabs: sin otras áreas no hay pestañas', () => {
@@ -24,4 +24,11 @@ test('profileTabs: orden Mi cuenta, Artista, Promotor y enlaces correctos', () =
 
 test('profileTabs: sin id de usuario, Mi cuenta lleva al inicio', () => {
   assert.equal(profileTabs(null, { artist: true, promoter: false })[0].href, '/');
+});
+
+test('socio: es un área propia, no depende de ser promotor', () => {
+  assert.equal(profileAreas({ is_partner: true }).partner, true);
+  assert.equal(profileAreas({ is_partner: undefined }).partner, false);
+  assert.deepEqual(profileTabs('u1', { artist: false, promoter: false, partner: true }).map((x) => x.href), ['/profile/u1', '/profile/socio']);
+  assert.deepEqual(profileTabs('u1', { artist: true, promoter: true, partner: true }).map((x) => x.key), ['cuenta', 'artista', 'promotor', 'socio']);
 });

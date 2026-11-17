@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 import { ArrowLeft, Loader2, Calendar, Megaphone, FileText, MessageSquare, Music } from 'lucide-react';
 
 const TYPE_META: Record<string, { label: string; Icon: any; tag: string }> = {
@@ -77,7 +78,7 @@ export default function PostDetailClient({ post }: { post: any }) {
       <div className="relative w-full">
         {post.cover_url ? (
           <div className="relative h-[55vh] overflow-hidden">
-            <img src={post.cover_url} alt={post.title} className="w-full h-full object-cover opacity-60" />
+            <img src={post.cover_url} alt={post.title} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/60 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/20 to-transparent" />
           </div>
@@ -87,7 +88,7 @@ export default function PostDetailClient({ post }: { post: any }) {
       </div>
 
       {/* CONTENIDO */}
-      <main className="max-w-3xl mx-auto px-4 -mt-32 relative z-10 pb-32">
+      <main className={`max-w-3xl mx-auto px-4 relative z-10 pb-32 ${post.cover_url ? '-mt-32' : '-mt-24'}`}>
         {/* Nav */}
         <Link href="/posts" className="inline-flex items-center gap-2 text-zinc-500 hover:text-white transition-all mb-8 uppercase font-bold tracking-widest text-[10px]">
           <ArrowLeft className="w-4 h-4" /> Feed
@@ -115,7 +116,7 @@ export default function PostDetailClient({ post }: { post: any }) {
         </h1>
 
         {/* Contenido HTML enriquecido */}
-        <div className="post-content" dangerouslySetInnerHTML={{ __html: post.content }} />
+        <div className="post-content" dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }} />
 
         {/* Galería */}
         {post.media_urls?.length > 0 && (
@@ -145,16 +146,20 @@ export default function PostDetailClient({ post }: { post: any }) {
           </div>
         </div>
 
-        {/* Autor */}
+        {/* Firma: solo la que se escribió en el editor. Sin firma no se muestra autor. */}
         <div className="mt-10 flex items-center gap-4 p-6 bg-zinc-900/40 rounded-2xl border border-zinc-800">
-          <div className="w-12 h-12 rounded-full bg-neon-purple/20 border border-neon-purple/30 flex items-center justify-center text-neon-purple font-black text-lg shrink-0">
-            {post.author?.name?.[0] || 'K'}
-          </div>
-          <div>
-            <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-0.5">Publicado por</p>
-            <p className="text-sm font-black text-white uppercase">{post.author?.name || 'Kasa del Sol'}</p>
-          </div>
-          <Link href="/posts" className="ml-auto text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-neon-purple transition-colors flex items-center gap-1">
+          {post.signature && (
+            <>
+              <div className="w-12 h-12 rounded-full bg-neon-purple/20 border border-neon-purple/30 flex items-center justify-center text-neon-purple font-black text-lg shrink-0">
+                {String(post.signature).trim()[0]?.toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-0.5">Firma</p>
+                <p className="text-sm font-black text-white break-words">{post.signature}</p>
+              </div>
+            </>
+          )}
+          <Link href="/posts" className="ml-auto text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-neon-purple transition-colors flex items-center gap-1 shrink-0">
             Ver más posts →
           </Link>
         </div>

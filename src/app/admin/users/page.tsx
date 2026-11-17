@@ -19,6 +19,7 @@ import {
   Info
 } from 'lucide-react';
 import { AdminGuard } from '@/components/AdminGuard';
+import UserWalletCard from '@/components/admin/UserWalletCard';
 
 /**
  * DICCIONARIO VISUAL DE CLASIFICACIONES
@@ -485,7 +486,7 @@ export default function CommunityDashboard() {
 
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-                    Segmentos Requeridos <Info className="w-3 h-3 text-zinc-700" title="Solo los usuarios con estos tags verán esta promo" />
+                    Segmentos Requeridos <span title="Solo los usuarios con estos tags verán esta promo"><Info className="w-3 h-3 text-zinc-700" /></span>
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {Object.keys(TAG_INFO).map(tag => (
@@ -617,6 +618,9 @@ export default function CommunityDashboard() {
                     </div>
                     <textarea value={editComment} onChange={e => setEditComment(e.target.value)} placeholder="Agrega notas internas sobre conducta, incidentes o sumas de energía..." className="w-full bg-black border border-zinc-800 rounded-2xl p-6 text-white text-sm outline-none focus:border-orange-400/50 transition-all h-40 resize-none font-medium text-zinc-400 leading-relaxed" />
                   </div>
+
+                  {/* Pase permanente y saldo a favor */}
+                  <UserWalletCard userId={selectedUser.id} />
 
                   <div className="space-y-6">
                      <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-600 flex items-center gap-3"><History className="w-4 h-4" /> Historial Operativo</h4>

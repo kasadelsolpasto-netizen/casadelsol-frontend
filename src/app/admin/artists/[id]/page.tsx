@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, X, Plus, Pencil, Trash2, Banknote, Power } from 'lucide-react';
 import { AdminGuard } from '@/components/AdminGuard';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import ArtistContractsPanel, { ContractModePicker } from '@/components/admin/ArtistContractsPanel';
+import { type BookingContractResult, type ContractMode } from '@/lib/artist-contracts';
 import FormModal, { Field, inputCls } from '@/components/ui/FormModal';
 import StatStrip, { BalanceChip } from '@/components/artists/StatStrip';
 import AccordionRow from '@/components/ui/AccordionRow';
@@ -126,7 +128,13 @@ export default function AdminArtistDetailPage() {
     setModal({ kind: 'profile' });
   };
 
+  const [fContract, setFContract] = useState<ContractMode>('none');
+  const [fContractBody, setFContractBody] = useState('');
+  const [contractsKey, setContractsKey] = useState(0);
+
   const openBooking = (booking: ArtistBookingView | null) => {
+    setFContract('none');
+    setFContractBody('');
     setFEvent('');
     setFRole(booking?.role ?? '');
     setFFee(booking ? String(booking.fee) : '');
@@ -174,6 +182,11 @@ export default function AdminArtistDetailPage() {
       setFormError('Elige el evento.');
       return;
     }
+    if (!editing && fContract === 'custom' && !fContractBody.trim()) {
+      setFormError('Escribe o pega el texto del contrato, o elige la plantilla.');
+      return;
+    }
+    if (!editing) return saveNewBooking(fee, quota);
     return run(
       () =>
         editing
@@ -181,6 +194,36 @@ export default function AdminArtistDetailPage() {
           : apiFetch(`/artists/${id}/bookings`, { method: 'POST', body: { event_id: fEvent, role: fRole.trim(), fee, notes: fNotes.trim() || null, courtesy_quota: quota, courtesy_ticket_type_id: fType || null } }),
       editing ? 'Cachet actualizado.' : 'Artista agregado al evento.',
     );
+  };
+
+  /** Programar al artista en un evento, con el contrato que se le indique. El aviso final dice si el contrato salió. */
+  const saveNewBooking = async (fee: number, quota: number) => {
+    setBusy(true);
+    setFormError('');
+    try {
+      const res = await apiFetch<{ contract?: BookingContractResult }>(`/artists/${id}/bookings`, {
+        method: 'POST',
+        body: {
+          event_id: fEvent, role: fRole.trim(), fee, notes: fNotes.trim() || null, courtesy_quota: quota, courtesy_ticket_type_id: fType || null,
+          ...(fContract !== 'none' ? { contract: { mode: fContract, body: fContract === 'custom' ? fContractBody : undefined } } : {}),
+        },
+      });
+      setModal(null);
+      await load();
+      setContractsKey((k) => k + 1);
+      const c = res?.contract;
+      setNotice(
+        !c
+          ? { tone: 'ok', text: 'Artista agregado al evento.' }
+          : c.sent
+            ? { tone: 'ok', text: `Artista agregado al evento. Se le envió el contrato n.º ${c.number}: lo acepta con un clic desde su perfil.` }
+            : { tone: 'error', text: `Artista agregado al evento. ${c.warning ?? 'El contrato no se pudo enviar.'}` },
+      );
+    } catch (e) {
+      setFormError(e instanceof ApiError ? e.message : 'Error de conexión. Intenta de nuevo.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const openPromoter = () => {
@@ -390,6 +433,14 @@ export default function AdminArtistDetailPage() {
               )}
             </section>
 
+            <ArtistContractsPanel
+              key={contractsKey}
+              artistId={artist.id}
+              bookings={artist.bookings}
+              legal={{ legal_name: artist.legal_name ?? null, doc_type: artist.doc_type ?? null, doc_number: artist.doc_number ?? null, address: artist.address ?? null }}
+              onChanged={load}
+            />
+
             <section>
               <div className="flex items-center justify-between gap-3 mb-3">
                 <h2 className="text-sm font-black uppercase tracking-widest text-white">Pagos</h2>
@@ -519,6 +570,9 @@ export default function AdminArtistDetailPage() {
                   ))}
                 </select>
               </Field>
+              {modal?.kind === 'booking' && !modal.booking && (
+                <ContractModePicker mode={fContract} onMode={setFContract} body={fContractBody} onBody={setFContractBody} allowNone />
+              )}
             </FormModal>
 
             <FormModal open={modal?.kind === 'payment'} title="Registrar pago" submitLabel="Registrar" busy={busy} error={formError} onSubmit={savePayment} onClose={closeAll}>

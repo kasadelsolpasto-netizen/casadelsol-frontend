@@ -1,17 +1,19 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { CheckCircle, XCircle, ArrowLeft, Loader2, ShieldAlert, DoorOpen, QrCode, DollarSign, CreditCard, Search, ChevronDown, WifiOff, RefreshCw, LogIn } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowLeft, Loader2, ShieldAlert, DoorOpen, QrCode, DollarSign, CreditCard, Search, ChevronDown, WifiOff, RefreshCw, LogIn, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { StaffGuard } from '@/components/StaffGuard';
 import { API_URL as API, authFetch, getAuthToken, refreshSession } from '@/lib/session';
 import { postScan, type ScanResult, extractScanToken } from '@/lib/scan-client';
+import { PASS_PREFIX, isPassPayload, normalizePassCode } from '@/lib/pass';
+import PassPanel, { type PassResolved } from '@/components/scanner/PassPanel';
 
 type ProblemKind = 'network' | 'server' | 'rate' | 'session' | 'forbidden';
 
 type ScanStatus =
   | { type: 'idle' }
   | { type: 'loading'; note?: string }
-  | { type: 'admitted'; name: string; ticket: string; time: string; replayed?: boolean }
+  | { type: 'admitted'; name: string; ticket: string; time: string; replayed?: boolean; courtesyKind?: 'PERSONAL' | 'LIBRE' | null; dni?: string | null }
   | { type: 'shop_success'; name: string; total: number }
   | { type: 'shop_error'; message: string }
   | { type: 'shop_order'; order: any; intent: 'PAY' | 'DELIVER' }
@@ -23,7 +25,7 @@ type ScanStatus =
 type DniStatus =
   | { type: 'idle' }
   | { type: 'loading' }
-  | { type: 'admitted'; name: string; ticket: string; dni: string }
+  | { type: 'admitted'; name: string; ticket: string; dni: string; courtesyKind?: 'PERSONAL' | 'LIBRE' | null }
   | { type: 'already_used'; message: string }
   | { type: 'not_found'; message: string }
   | { type: 'error'; message: string };
@@ -111,6 +113,13 @@ export default function ScannerPage() {
   const [taqError, setTaqError] = useState('');
   const [taqCount, setTaqCount] = useState(0);
   const [taqRevenue, setTaqRevenue] = useState(0);
+
+  // ── Pase permanente (QR identificador) ───────────────────────
+  // Leer un pase abre su propia pantalla: ahí se ven sus entradas y su saldo, y el staff decide.
+  const [pass, setPass] = useState<{ data: PassResolved; token: string } | null>(null);
+  const [codeInput, setCodeInput] = useState('');
+  const [codeError, setCodeError] = useState('');
+  const [codeLoading, setCodeLoading] = useState(false);
 
   // ── Cédula ───────────────────────────────────────────────────
   const [dniInput, setDniInput] = useState('');
@@ -216,6 +225,9 @@ export default function ScannerPage() {
           ticket: r.data.ticket_type?.name || 'Entrada',
           time: new Date().toLocaleTimeString('es-CO'),
           replayed: r.replayed,
+          // Cortesía personal: en la puerta hay que comparar la cédula del titular.
+          courtesyKind: (r.data as any)?.courtesy_kind ?? null,
+          dni: (r.data as any)?.attendee_dni ?? null,
         });
         return false;
       case 'already_used':
@@ -248,6 +260,64 @@ export default function ScannerPage() {
         setStatus({ type: 'problem', kind: 'network', message: 'No hay conexión con el servidor. Pulsa REINTENTAR: si la entrada ya había quedado registrada, aparecerá LISTO igualmente.' });
         return true;
     }
+  };
+
+  /**
+   * Lee un pase contra el servidor. Es de SOLO LECTURA: no quema entradas ni mueve plata.
+   * Devuelve el resultado del escaneo para que cada pantalla decida qué mostrar.
+   */
+  const resolvePass = async (raw: string): Promise<ScanResult> =>
+    postScan({
+      url: `${API}/pass/resolve`,
+      body: { pass: raw, event_id: activeEventIdRef.current || undefined },
+      getToken: getAuthToken,
+      refreshToken,
+      onRetry: (attempt) => setStatus({ type: 'loading', note: `Reintentando (${attempt + 1})…` }),
+    });
+
+  /**
+   * Pase leído por la cámara: abre su pantalla con sus entradas y su saldo.
+   * Devuelve true para que la cámara no se reinicie sola mientras el staff decide.
+   */
+  const handlePassToken = async (raw: string): Promise<boolean> => {
+    const r = await resolvePass(raw);
+    if (r.kind === 'ok') {
+      setPass({ data: r.data as PassResolved, token: raw });
+      setStatus({ type: 'idle' });
+      return true;
+    }
+    return applyScanResult(r);
+  };
+
+  /** Cerrar la pantalla del pase y volver a escanear. */
+  const closePass = () => {
+    setPass(null);
+    cooldownRef.current = false;
+    setStatus({ type: 'idle' });
+  };
+
+  /** La cámara falló: el staff escribe el código impreso en el carné. */
+  const handleCodeSearch = async () => {
+    const code = normalizePassCode(codeInput);
+    if (!code) {
+      setCodeError('Ese código no es válido. Son 10 caracteres, como KS-7F3K-9QD2-AB.');
+      return;
+    }
+    setCodeLoading(true);
+    setCodeError('');
+    const r = await resolvePass(`${PASS_PREFIX}${code}`);
+    setCodeLoading(false);
+    if (r.kind === 'ok') {
+      setPass({ data: r.data as PassResolved, token: `${PASS_PREFIX}${code}` });
+      setCodeInput('');
+      return;
+    }
+    if (r.kind === 'session_expired') setSessionExpired(true);
+    setCodeError(
+      r.kind === 'invalid' || r.kind === 'wrong_event'
+        ? 'No hay ningún pase con ese código.'
+        : problemText(r),
+    );
   };
 
   // QR de la tienda (cobro / entrega de pedidos)
@@ -287,6 +357,10 @@ export default function ScannerPage() {
         setSessionExpired(true);
         setStatus({ type: 'problem', kind: 'session', message: 'Tu sesión venció. Inicia sesión de nuevo para seguir escaneando.' });
         return true;
+      }
+      // Pase permanente del usuario: no se quema nada, se abre su pantalla.
+      if (isPassPayload(token)) {
+        return await handlePassToken(token);
       }
       if (token.startsWith('KASA_SHOP_PAY:') || token.startsWith('KASA_SHOP_DELIVER:')) {
         return await handleShopToken(token);
@@ -382,7 +456,7 @@ export default function ScannerPage() {
       });
       if (r.kind === 'session_expired') setSessionExpired(true);
       if (r.kind === 'ok') {
-        setDniStatus({ type: 'admitted', name: r.data.attendee_name || 'Asistente', ticket: r.data.ticket_type?.name || 'Entrada', dni: r.data.attendee_dni || dni });
+        setDniStatus({ type: 'admitted', name: r.data.attendee_name || 'Asistente', ticket: r.data.ticket_type?.name || 'Entrada', dni: r.data.attendee_dni || dni, courtesyKind: (r.data as any)?.courtesy_kind ?? null });
       } else if (r.kind === 'already_used') {
         setDniStatus({ type: 'already_used', message: r.message || 'Entrada ya utilizada.' });
       } else if (r.kind === 'invalid' || r.kind === 'wrong_event') {
@@ -494,8 +568,11 @@ export default function ScannerPage() {
             </div>
             <div className="w-full">
               {status.type === 'idle' && (
-                <div className="w-full p-5 rounded-2xl border border-zinc-800 bg-black/40 flex items-center justify-center min-h-[100px]">
+                <div className="w-full p-5 rounded-2xl border border-zinc-800 bg-black/40 flex flex-col items-center justify-center gap-2 min-h-[100px]">
                   <span className="text-zinc-600 uppercase text-xs font-bold animate-pulse">Esperando código…</span>
+                  <span className="text-zinc-700 text-[10px] font-bold uppercase tracking-widest text-center">
+                    Entradas · pases de usuario · pedidos de barra
+                  </span>
                 </div>
               )}
               {status.type === 'loading' && (
@@ -516,6 +593,16 @@ export default function ScannerPage() {
                     <p className="text-black font-black text-2xl uppercase leading-tight">{status.name}</p>
                     {status.type === 'admitted' && status.ticket && <p className="text-black/70 font-black text-lg uppercase">{status.ticket}</p>}
                     {status.type === 'admitted' && status.replayed && <p className="text-black/60 font-bold text-xs uppercase mt-1">Registrada hace instantes (reintento)</p>}
+                    {status.type === 'admitted' && status.courtesyKind === 'PERSONAL' && (
+                      <p className="mt-2 inline-block bg-black/80 text-white font-black text-sm uppercase tracking-widest px-3 py-1.5 rounded-lg">
+                        Cortesía personal · pide la cédula{status.dni ? ` ${status.dni}` : ''}
+                      </p>
+                    )}
+                    {status.type === 'admitted' && status.courtesyKind === 'LIBRE' && (
+                      <p className="mt-2 inline-block bg-black/60 text-white font-black text-xs uppercase tracking-widest px-3 py-1.5 rounded-lg">
+                        Cortesía libre · no pidas cédula
+                      </p>
+                    )}
                     {status.type === 'shop_success' && <p className="text-black/60 font-black text-xl">{Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(status.total)}</p>}
                   </div>
                 </div>
@@ -603,6 +690,12 @@ export default function ScannerPage() {
                   <p className="text-black font-black text-3xl uppercase tracking-tight">{dniStatus.name}</p>
                   <p className="text-black/70 font-bold text-sm">{dniStatus.ticket}</p>
                   <p className="text-black/50 font-mono text-xs">CC {dniStatus.dni}</p>
+                  {dniStatus.courtesyKind === 'PERSONAL' && (
+                    <p className="bg-black/80 text-white font-black text-xs uppercase tracking-widest px-3 py-1.5 rounded-lg">Cortesía personal · verifica la cédula</p>
+                  )}
+                  {dniStatus.courtesyKind === 'LIBRE' && (
+                    <p className="bg-black/60 text-white font-black text-xs uppercase tracking-widest px-3 py-1.5 rounded-lg">Cortesía libre</p>
+                  )}
                   <p className="text-black font-black text-xl mt-1">✅ ENTRADA VÁLIDA — QUEMADA</p>
                 </div>
               )}
@@ -627,6 +720,37 @@ export default function ScannerPage() {
                   <p className="text-zinc-300 text-sm text-center">{dniStatus.message}</p>
                 </div>
               )}
+            </div>
+
+            {/* BUSCAR POR CÓDIGO DE CARNÉ */}
+            <div className="bg-zinc-900/80 border border-zinc-700 rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <Wallet className="w-5 h-5 text-neon-purple" />
+                <h2 className="text-base font-black uppercase tracking-widest text-white">Buscar por Carné</h2>
+              </div>
+              <p className="text-zinc-500 text-xs mb-4">
+                Si la cámara no lee el QR del pase, escribe el código impreso en el carné.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  placeholder="KS-7F3K-9QD2-AB"
+                  value={codeInput}
+                  onChange={e => { setCodeInput(e.target.value.toUpperCase()); setCodeError(''); }}
+                  onKeyDown={e => { if (e.key === 'Enter') handleCodeSearch(); }}
+                  className="flex-1 bg-black border border-zinc-700 rounded-xl px-4 py-4 text-lg font-black text-white outline-none focus:border-neon-purple tracking-widest font-mono uppercase"
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  spellCheck={false}
+                />
+                <button
+                  onClick={handleCodeSearch}
+                  disabled={!codeInput.trim() || codeLoading}
+                  className="bg-neon-purple text-white font-black px-5 rounded-xl disabled:opacity-40 active:scale-95 flex items-center"
+                >
+                  {codeLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+                </button>
+              </div>
+              {codeError && <p className="text-amber-400 text-xs font-bold mt-3">{codeError}</p>}
             </div>
 
             {/* REGISTRAR ASISTENTE */}
@@ -661,6 +785,18 @@ export default function ScannerPage() {
             </div>
 
           </div>
+        )}
+
+        {/* ── Pantalla del pase permanente (puerta y barra) ── */}
+        {pass && (
+          <PassPanel
+            data={pass.data}
+            passToken={pass.token}
+            eventTitle={activeEvent?.title}
+            onClose={closePass}
+            onSessionExpired={() => { setSessionExpired(true); closePass(); }}
+            onRefreshed={(fresh) => setPass((prev) => (prev ? { ...prev, data: fresh } : prev))}
+          />
         )}
       </div>
     </StaffGuard>

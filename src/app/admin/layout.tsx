@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { QrCode, CalendarPlus, Users, Activity, Ticket, ArrowLeft, DoorOpen, ShoppingBag, Zap, Menu, X, Newspaper, Music, Sun } from 'lucide-react';
+import { QrCode, CalendarPlus, Users, Activity, Ticket, ArrowLeft, DoorOpen, ShoppingBag, Zap, Menu, X, Newspaper, Music, Sun, EyeOff } from 'lucide-react';
 import AdminLogoutButton from '@/components/AdminLogoutButton';
 import AdminNotifications from '@/components/admin/AdminNotifications';
 
@@ -126,6 +126,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
           <Link href="/admin/ong" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group ${pathname.startsWith('/admin/ong') ? 'bg-zinc-900 border border-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
             <Sun className={`w-4 h-4 ${pathname.startsWith('/admin/ong') ? 'text-red-600' : 'group-hover:text-red-600'} transition-all`} /> Fundación
+          </Link>
+          <Link href="/admin/boletas-privadas" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group ${pathname.startsWith('/admin/boletas-privadas') ? 'bg-zinc-900 border border-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
+            <EyeOff className={`w-4 h-4 ${pathname.startsWith('/admin/boletas-privadas') ? 'text-neon-purple' : 'group-hover:text-neon-purple'} transition-all`} /> Boletas Privadas
           </Link>
           <Link href="/admin/settings" className={`flex items-center gap-3 px-4 py-3 rounded-lg tracking-wider text-sm transition-all group border border-dashed hover:border-solid hover:border-neon-purple ${pathname.startsWith('/admin/settings') ? 'bg-zinc-900 border-neon-purple text-white font-bold' : 'border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
             <Activity className="w-4 h-4 group-hover:text-neon-purple transition-all" /> Configuraciones

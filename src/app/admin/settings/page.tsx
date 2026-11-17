@@ -1,21 +1,15 @@
 "use client";
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Save, Lock, Link as LinkIcon, AlertTriangle, Key, Image as ImageIcon, FileText, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CreditCard, Save, Lock, Link as LinkIcon, AlertTriangle, Key, Image as ImageIcon, FileText, CheckCircle, Type, RotateCcw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AdminGuard } from '@/components/AdminGuard';
-import PaymentGatewaySettings from '@/components/admin/PaymentGatewaySettings';
+import PaymentRecipientsSettings from '@/components/admin/PaymentRecipientsSettings';
+import { HOME_TEXT_DEFAULTS, HOME_TEXT_GROUPS, diffHomeTexts, resolveHomeTexts, type HomeTextKey, type HomeTexts } from '@/lib/home-texts';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'pagos' | 'brand' | 'seguridad' | 'dian'>('pagos');
-  
-  // Wompi config state
-  const [publicKey, setPublicKey] = useState('');
-  const [privateKey, setPrivateKey] = useState('');
-  const [eventsSecret, setEventsSecret] = useState('');
-  const [integritySecret, setIntegritySecret] = useState('');
-  const [environment, setEnvironment] = useState('sandbox'); // sandbox | production
+  const [activeTab, setActiveTab] = useState<'pagos' | 'brand' | 'portada' | 'seguridad' | 'dian'>('pagos');
   
   // Admin credentials state
   const [adminEmail, setAdminEmail] = useState('');
@@ -23,8 +17,6 @@ export default function SettingsPage() {
   const [isSavingCreds, setIsSavingCreds] = useState(false);
   const [saveCredsMessage, setSaveCredsMessage] = useState('');
 
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState('');
   const [loading, setLoading] = useState(true);
 
   // Brand / PWA state
@@ -34,6 +26,12 @@ export default function SettingsPage() {
   const [homeDescription, setHomeDescription] = useState('');
   const [isSavingBrand, setIsSavingBrand] = useState(false);
   const [saveBrandMessage, setSaveBrandMessage] = useState('');
+
+  // Textos de la portada
+  const [homeTexts, setHomeTexts] = useState<HomeTexts>(HOME_TEXT_DEFAULTS);
+  const [backendKeepsHomeTexts, setBackendKeepsHomeTexts] = useState(false);
+  const [isSavingHome, setIsSavingHome] = useState(false);
+  const [saveHomeMessage, setSaveHomeMessage] = useState('');
 
   // DIAN state
   const [dianIsConfigured, setDianIsConfigured] = useState(false);
@@ -60,21 +58,6 @@ export default function SettingsPage() {
         const token = document.cookie.split('kasa_auth_token=')[1]?.split(';')[0];
         if (!token) return router.push('/login');
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/settings/wompi`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          if (data) {
-            setPublicKey(data.publicKey || '');
-            setPrivateKey(data.privateKey || '');
-            setEventsSecret(data.eventsSecret || '');
-            setIntegritySecret(data.integritySecret || '');
-            setEnvironment(data.environment || 'sandbox');
-          }
-        }
-
         const brandRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/settings/brand`);
         if (brandRes.ok) {
           const brandData = await brandRes.json();
@@ -86,6 +69,8 @@ export default function SettingsPage() {
           }
           if (brandData && brandData.homeTitle) setHomeTitle(brandData.homeTitle);
           if (brandData && brandData.homeDescription) setHomeDescription(brandData.homeDescription);
+          if (brandData && brandData.homeTexts && typeof brandData.homeTexts === 'object') setBackendKeepsHomeTexts(true);
+          setHomeTexts(resolveHomeTexts(brandData?.homeTexts));
         }
 
         // Cargar config DIAN
@@ -115,35 +100,6 @@ export default function SettingsPage() {
     };
     fetchConfig();
   }, [router]);
-
-  const handleSavePayments = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setSaveMessage('');
-
-    try {
-      const token = document.cookie.split('kasa_auth_token=')[1]?.split(';')[0];
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/settings/wompi`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ publicKey, privateKey, eventsSecret, integritySecret, environment })
-      });
-
-      if (res.ok) {
-        setSaveMessage('Configuración asegurada y guardada.');
-      } else {
-        setSaveMessage('Fallo al guardar.');
-      }
-    } catch (err) {
-      setSaveMessage('Error de conexión.');
-    } finally {
-      setIsSaving(false);
-      setTimeout(() => setSaveMessage(''), 3000);
-    }
-  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -178,7 +134,8 @@ export default function SettingsPage() {
           logoBase64,
           whatsappNumber: whatsappNumber ? `57${whatsappNumber}` : '',
           homeTitle,
-          homeDescription
+          homeDescription,
+          ...(backendKeepsHomeTexts ? { homeTexts: diffHomeTexts(homeTexts) } : {})
         })
       });
 
@@ -192,6 +149,55 @@ export default function SettingsPage() {
     } finally {
       setIsSavingBrand(false);
       setTimeout(() => setSaveBrandMessage(''), 4000);
+    }
+  };
+
+  const handleSaveHome = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingHome(true);
+    setSaveHomeMessage('');
+    const api = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const sent = diffHomeTexts(homeTexts);
+
+    try {
+      const token = document.cookie.split('kasa_auth_token=')[1]?.split(';')[0];
+      const res = await fetch(`${api}/admin/settings/brand`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          logoBase64,
+          whatsappNumber: whatsappNumber ? `57${whatsappNumber}` : '',
+          homeTitle,
+          homeDescription,
+          homeTexts: sent
+        })
+      });
+
+      if (!res.ok) {
+        setSaveHomeMessage(`Error: el servidor rechazó los textos de portada (HTTP ${res.status}).`);
+        return;
+      }
+
+      // Verificación: el servidor debe devolver los textos tal como se enviaron
+      const check = await fetch(`${api}/settings/brand`, { cache: 'no-store' });
+      const saved = check.ok ? await check.json() : null;
+      const keys = Object.keys(sent) as HomeTextKey[];
+      const persisted = saved?.homeTexts && typeof saved.homeTexts === 'object'
+        && keys.every((k) => saved.homeTexts[k] === sent[k]);
+
+      if (persisted || (keys.length === 0 && saved?.homeTexts)) {
+        setBackendKeepsHomeTexts(true);
+        setSaveHomeMessage('Textos de la portada actualizados.');
+      } else if (keys.length === 0) {
+        setSaveHomeMessage('Título y descripción guardados. Los demás textos usan sus valores por defecto.');
+      } else {
+        setSaveHomeMessage('Error: el servidor guardó la marca pero no conservó los textos de portada. Hay que habilitar el campo homeTexts en el backend.');
+      }
+    } catch (err) {
+      setSaveHomeMessage('Error de conexión.');
+    } finally {
+      setIsSavingHome(false);
+      setTimeout(() => setSaveHomeMessage(''), 8000);
     }
   };
 
@@ -324,6 +330,12 @@ export default function SettingsPage() {
                <ImageIcon className="w-4 h-4" /> Identidad
              </button>
              <button 
+               onClick={() => setActiveTab('portada')} 
+               className={`w-full text-left px-5 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-3 border ${activeTab === 'portada' ? 'bg-neon-green/10 border-neon-green text-neon-green shadow-[0_0_15px_rgba(57,255,20,0.2)]' : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'}`}
+             >
+               <Type className="w-4 h-4" /> Portada
+             </button>
+             <button 
                onClick={() => setActiveTab('dian')} 
                className={`w-full text-left px-5 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-3 border ${activeTab === 'dian' ? 'bg-blue-900/20 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'}`}
              >
@@ -346,125 +358,7 @@ export default function SettingsPage() {
               </div>
             ) : (
               <>
-                {activeTab === 'pagos' && <PaymentGatewaySettings />}
-                {activeTab === 'pagos' && (
-                  <div className="glass-panel p-8 rounded-2xl border-t-2 border-t-neon-purple animate-in fade-in slide-in-from-bottom-4 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-neon-purple/10 blur-3xl rounded-full"></div>
-                    
-                    <div className="flex items-center gap-4 mb-8">
-                      <div className="w-12 h-12 rounded-xl bg-neon-purple/20 flex items-center justify-center border border-neon-purple/50">
-                         <CreditCard className="w-6 h-6 text-neon-purple" />
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-black uppercase tracking-widest text-white">Integración Pasarela: Wompi</h2>
-                        <p className="text-xs text-zinc-400 mt-1 uppercase tracking-widest font-bold">Gestión de API Keys Dinámicas</p>
-                      </div>
-                    </div>
-
-                    <form onSubmit={handleSavePayments} className="space-y-6 relative z-10">
-                      <div className="bg-zinc-900/50 p-4 rounded-lg flex items-start gap-4 border border-zinc-800 mb-8">
-                        <AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
-                        <div>
-                           <p className="text-xs text-zinc-300">Asegúrate de pegar exactamente las llaves que Wompi te proporciona en tu <a href="https://comercios.wompi.co/" target="_blank" rel="noreferrer" className="text-neon-purple hover:underline">Comercio Wompi</a>. Kasa del Sol usará estas llaves para procesar todos los pagos y facturación de la boletería.</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="md:col-span-2 space-y-2 border-b border-zinc-800 pb-6 mb-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Entorno Tecnológico</label>
-                          <div className="flex gap-4">
-                            <label className={`flex-1 flex items-center justify-center p-4 border rounded cursor-pointer transition-all ${environment === 'sandbox' ? 'bg-orange-500/10 border-orange-500 text-orange-500' : 'bg-black border-zinc-800 text-zinc-500'}`}>
-                              <input type="radio" value="sandbox" checked={environment === 'sandbox'} onChange={() => setEnvironment('sandbox')} className="hidden" />
-                              <span className="text-xs font-bold uppercase tracking-widest">Sandbox (Pruebas)</span>
-                            </label>
-                            <label className={`flex-1 flex items-center justify-center p-4 border rounded cursor-pointer transition-all ${environment === 'production' ? 'bg-neon-green/10 border-neon-green text-neon-green' : 'bg-black border-zinc-800 text-zinc-500'}`}>
-                              <input type="radio" value="production" checked={environment === 'production'} onChange={() => setEnvironment('production')} className="hidden" />
-                              <span className="text-xs font-bold uppercase tracking-widest">Productivo (Dinero Real)</span>
-                            </label>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-white/70">Llave Pública (Public Key)</label>
-                          <input 
-                            type="text" value={publicKey} onChange={e => setPublicKey(e.target.value)} required
-                            className="w-full bg-black border border-zinc-800 rounded py-3 px-4 text-white font-mono tracking-wider focus:border-neon-purple focus:ring-1 focus:ring-neon-purple outline-none text-sm transition-all"
-                            placeholder="pub_test_..."
-                          />
-                          <p className="text-[10px] text-zinc-600">Requerida por la aplicación FrontEnd para inicializar el pago móvil.</p>
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-white/70 flex items-center gap-2">
-                             Llave Privada (Private Key) <Lock className="w-3 h-3 text-red-500" />
-                          </label>
-                          <input 
-                            type="text" value={privateKey} onChange={e => setPrivateKey(e.target.value)} required
-                            className="w-full bg-black border border-zinc-800 rounded py-3 px-4 text-white font-mono tracking-wider focus:border-neon-purple focus:ring-1 focus:ring-neon-purple outline-none text-sm transition-all"
-                            placeholder="prv_test_..."
-                          />
-                          <p className="text-[10px] text-zinc-600">Crucial para emitir URLs al Gateway y chequear transacciones desde el Backend.</p>
-                        </div>
-
-                        <div className="md:col-span-2 space-y-2 bg-[#1a0f2e]/30 p-5 rounded-lg border border-neon-purple/30 mt-4">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-neon-purple flex items-center gap-2">
-                             Secreto de Eventos (Event Signature / Webhooks)
-                          </label>
-                          <input 
-                            type="text" value={eventsSecret} onChange={e => setEventsSecret(e.target.value)} required
-                            className="w-full bg-black/60 border border-neon-purple/30 rounded py-3 px-4 text-white font-mono tracking-wider focus:border-neon-purple focus:ring-1 focus:ring-neon-purple outline-none text-sm transition-all"
-                            placeholder="Para desencriptar notificaciones push Wompi..."
-                          />
-                          <div className="mt-4 flex flex-col sm:flex-row items-center gap-3 pt-3 border-t border-neon-purple/20">
-                            <LinkIcon className="w-4 h-4 text-zinc-400" />
-                            <div className="flex-1 w-full flex items-center bg-black rounded border border-zinc-800 overflow-hidden">
-                              <span className="text-neon-purple text-xs px-3 font-mono py-2 truncate flex-1 block">
-                                https://casadelsol-backend.onrender.com/orders/webhook-wompi
-                              </span>
-                              <button 
-                                type="button" 
-                                onClick={() => {
-                                  navigator.clipboard.writeText('https://casadelsol-backend.onrender.com/orders/webhook-wompi');
-                                  alert('URL copiada al portapapeles');
-                                }}
-                                className="bg-zinc-800 text-white font-bold text-[10px] uppercase px-4 py-2.5 hover:bg-zinc-700 transition-colors"
-                              >
-                                Copiar
-                              </button>
-                            </div>
-                          </div>
-                          <p className="text-[10px] text-zinc-500 mt-2 block w-full text-center sm:text-left">Copia la URL superior y pégala en <b>URL de Eventos (Webhook)</b> dentro del panel de Wompi.</p>
-                        </div>
-
-                        <div className="md:col-span-2 space-y-2 bg-zinc-900/50 p-5 rounded-lg border border-zinc-800 mt-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-white/80 flex items-center gap-2">
-                             Secreto de Integridad (Firma Anti-fraude)
-                          </label>
-                          <input 
-                            type="text" value={integritySecret} onChange={e => setIntegritySecret(e.target.value)}
-                            className="w-full bg-black border border-zinc-700 rounded py-3 px-4 text-white font-mono tracking-wider focus:border-white focus:ring-1 focus:ring-white outline-none text-sm transition-all"
-                            placeholder="Generalmente empieza por prod_integrity_..."
-                          />
-                          <p className="text-[10px] text-zinc-500">Solo cópialo de Wompi si tienes "Firma de Integridad" habilitado en tu cuenta de Bancolombia.</p>
-                        </div>
-
-                      </div>
-
-                      <div className="pt-6 border-t border-zinc-800 flex items-center justify-between">
-                        <p className={`text-xs font-bold uppercase tracking-widest ${saveMessage.includes('Error') || saveMessage.includes('Fallo') ? 'text-red-500' : 'text-neon-green'}`}>
-                          {saveMessage}
-                        </p>
-                        <button 
-                          type="submit" 
-                          disabled={isSaving}
-                          className="flex items-center gap-2 bg-neon-purple text-white px-8 py-3 rounded text-sm font-black uppercase tracking-widest hover:shadow-[0_0_20px_rgba(191,0,255,0.5)] transition-all disabled:opacity-50"
-                        >
-                          <Save className="w-4 h-4" /> {isSaving ? 'Guardando...' : 'Aplicar Llaves'}
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                )}
+                {activeTab === 'pagos' && <PaymentRecipientsSettings />}
 
                 {activeTab === 'brand' && (
                   <div className="glass-panel p-8 rounded-2xl border-t-2 border-t-neon-green animate-in fade-in slide-in-from-bottom-4 relative overflow-hidden">
@@ -535,33 +429,6 @@ export default function SettingsPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-4 mt-6 bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-white mb-2 border-b border-zinc-800 pb-2">Textos del Inicio (Home)</h3>
-                        
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Título Principal</label>
-                          <input 
-                            type="text" 
-                            value={homeTitle} 
-                            onChange={e => setHomeTitle(e.target.value)}
-                            className="w-full bg-black border border-zinc-700 rounded-xl py-3 px-4 text-white focus:border-neon-green focus:ring-1 focus:ring-neon-green outline-none text-sm transition-all"
-                            placeholder='Próximos <span class="text-neon-green">Eventos</span>'
-                          />
-                          <p className="text-[10px] text-zinc-500">Puedes usar código HTML como &lt;span class="text-neon-green"&gt; para dar color verde a una palabra específica.</p>
-                        </div>
-
-                        <div className="space-y-2 mt-4">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Descripción Corta</label>
-                          <textarea 
-                            value={homeDescription} 
-                            onChange={e => setHomeDescription(e.target.value)}
-                            className="w-full bg-black border border-zinc-700 rounded-xl py-3 px-4 text-white focus:border-neon-green focus:ring-1 focus:ring-neon-green outline-none text-sm transition-all resize-none"
-                            placeholder="Navega por la cartelera de música electrónica oficial..."
-                            rows={3}
-                          />
-                        </div>
-                      </div>
-
                       <div className="pt-6 border-t border-zinc-800 flex items-center justify-between">
                         <p className={`text-xs font-bold uppercase tracking-widest ${saveBrandMessage.includes('Error') || saveBrandMessage.includes('Fallo') ? 'text-red-500' : 'text-neon-green'}`}>
                           {saveBrandMessage}
@@ -573,6 +440,91 @@ export default function SettingsPage() {
                         >
                           <Save className="w-4 h-4" /> {isSavingBrand ? 'Guardando...' : 'Guardar Identidad'}
                         </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                {activeTab === 'portada' && (
+                  <div className="glass-panel p-8 rounded-2xl border-t-2 border-t-neon-green animate-in fade-in slide-in-from-bottom-4 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-neon-green/10 blur-3xl rounded-full"></div>
+
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className="w-12 h-12 rounded-xl bg-neon-green/20 flex items-center justify-center border border-neon-green/50">
+                        <Type className="w-6 h-6 text-neon-green" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-black uppercase tracking-widest text-white">Textos de la Portada</h2>
+                        <p className="text-xs text-zinc-400 mt-1 uppercase tracking-widest font-bold">Todo lo que se lee en la página de inicio</p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleSaveHome} className="space-y-6 relative z-10">
+                      <div className="space-y-4 bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-white mb-2 border-b border-zinc-800 pb-2">Portada · Textos principales</h3>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Descripción bajo el título</label>
+                          <textarea
+                            value={homeDescription}
+                            onChange={e => setHomeDescription(e.target.value)}
+                            className="w-full bg-black border border-zinc-700 rounded-xl py-3 px-4 text-white focus:border-neon-green focus:ring-1 focus:ring-neon-green outline-none text-sm transition-all resize-none"
+                            placeholder="Navega por la cartelera de música electrónica oficial..."
+                            rows={3}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Título de la cartelera</label>
+                          <input
+                            type="text"
+                            value={homeTitle}
+                            onChange={e => setHomeTitle(e.target.value)}
+                            className="w-full bg-black border border-zinc-700 rounded-xl py-3 px-4 text-white focus:border-neon-green focus:ring-1 focus:ring-neon-green outline-none text-sm transition-all"
+                            placeholder='Próximos <span class="text-neon-green">Eventos</span>'
+                          />
+                          <p className="text-[10px] text-zinc-500">Puedes usar código HTML como &lt;span class="text-neon-green"&gt; para dar color verde a una palabra específica.</p>
+                        </div>
+                      </div>
+
+                      {HOME_TEXT_GROUPS.map((group) => (
+                        <div key={group.title} className="space-y-4 bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800">
+                          <h3 className="text-xs font-black uppercase tracking-widest text-white mb-2 border-b border-zinc-800 pb-2">{group.title}</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {group.fields.map((f) => (
+                              <div key={f.key} className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{f.label}</label>
+                                <input
+                                  type="text"
+                                  value={homeTexts[f.key]}
+                                  onChange={e => setHomeTexts(prev => ({ ...prev, [f.key]: e.target.value }))}
+                                  className="w-full bg-black border border-zinc-700 rounded-xl py-3 px-4 text-white focus:border-neon-green focus:ring-1 focus:ring-neon-green outline-none text-sm transition-all"
+                                  placeholder={f.fallback}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+
+                      <div className="pt-6 border-t border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <p className={`text-xs font-bold uppercase tracking-widest ${saveHomeMessage.includes('Error') ? 'text-red-500' : 'text-neon-green'}`}>
+                          {saveHomeMessage}
+                        </p>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setHomeTexts(HOME_TEXT_DEFAULTS)}
+                            className="flex items-center gap-2 border border-zinc-700 text-zinc-300 px-5 py-3 rounded text-xs font-black uppercase tracking-widest hover:border-zinc-400 transition-all"
+                          >
+                            <RotateCcw className="w-4 h-4" /> Valores por defecto
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={isSavingHome}
+                            className="flex items-center gap-2 bg-neon-green text-black px-8 py-3 rounded text-sm font-black uppercase tracking-widest hover:shadow-[0_0_20px_rgba(57,255,20,0.5)] transition-all disabled:opacity-50 hover:bg-white"
+                          >
+                            <Save className="w-4 h-4" /> {isSavingHome ? 'Guardando...' : 'Guardar Portada'}
+                          </button>
+                        </div>
                       </div>
                     </form>
                   </div>

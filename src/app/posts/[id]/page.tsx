@@ -1,5 +1,6 @@
 // SERVER COMPONENT — sin "use client"
 // Genera <title>, <meta>, Open Graph y JSON-LD desde los campos SEO del post
+import { toJsonLd } from '@/lib/sanitize-html';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import PostDetailClient from './PostDetailClient';
@@ -87,10 +88,9 @@ export default async function PostDetailPage({ params }: { params: { id: string 
       width:   1200,
       height:  630,
     },
-    author: {
-      '@type': 'Person',
-      name:    post.author?.name || SITE_NAME,
-    },
+    author: post.signature
+      ? { '@type': 'Person', name: post.signature }
+      : { '@type': 'Organization', name: SITE_NAME },
     publisher: {
       '@type': 'Organization',
       name:    SITE_NAME,
@@ -110,7 +110,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
       {/* JSON-LD inyectado en <head> */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: toJsonLd(jsonLd) }}
       />
 
       {/* Componente cliente (reacciones, interactividad) */}
