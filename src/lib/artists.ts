@@ -74,6 +74,12 @@ export interface ArtistDetail {
   photo_url: string | null;
   is_active: boolean;
   user: { id?: string; name?: string; email?: string };
+  /** Identificación para los contratos (privada: solo el artista y el administrador). */
+  legal_name?: string | null;
+  doc_type?: string | null;
+  doc_number?: string | null;
+  address?: string | null;
+  phone?: string | null;
   bookings: ArtistBookingView[];
   payments: ArtistPaymentView[];
   promoter_codes?: ArtistPromoterCode[];

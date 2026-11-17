@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { Music, Loader2, CalendarDays, Banknote, UserRound, ChevronLeft, CheckCircle2, Globe } from 'lucide-react';
 import ImageUpload from '@/components/artists/ImageUpload';
 import ArtistPageEditor from '@/components/artists/ArtistPageEditor';
+import ArtistDocsNotice, { DocsReminder } from '@/components/artists/ArtistDocsNotice';
+import ArtistContracts from '@/components/artists/ArtistContracts';
+import { isEventOver } from '@/lib/artists';
 import StatStrip, { BalanceChip } from '@/components/artists/StatStrip';
 import ProfileTabs from '@/components/profile/ProfileTabs';
 import AccordionRow from '@/components/ui/AccordionRow';
@@ -43,6 +46,17 @@ export default function ArtistProfilePage() {
   const [stage, setStage] = useState('');
   const [bio, setBio] = useState('');
   const [photo, setPhoto] = useState('');
+  const [legalName, setLegalName] = useState('');
+  const [docType, setDocType] = useState('cédula de ciudadanía');
+  const [docNumber, setDocNumber] = useState('');
+  const [address, setAddress] = useState('');
+  const [contractId, setContractId] = useState<string | null>(null);
+
+  // El correo del contrato trae ?contrato=<id>: se abre de entrada.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('contrato');
+    if (id && /^[0-9a-f-]{8,64}$/i.test(id)) setContractId(id);
+  }, []);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
 
@@ -50,6 +64,10 @@ export default function ArtistProfilePage() {
     setStage(a.stage_name);
     setBio(a.bio ?? '');
     setPhoto(a.photo_url ?? '');
+    setLegalName(a.legal_name ?? '');
+    setDocType(a.doc_type || 'cédula de ciudadanía');
+    setDocNumber(a.doc_number ?? '');
+    setAddress(a.address ?? '');
   };
 
   const load = useCallback(async () => {
@@ -94,7 +112,16 @@ export default function ArtistProfilePage() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiFetch('/artists/me', { method: 'PUT', body: { stage_name: stage.trim(), bio: bio.trim() || null, photo_url: photo.trim() || null } });
+      await apiFetch('/artists/me', { method: 'PUT', body: {
+          stage_name: stage.trim(), bio: bio.trim() || null, photo_url: photo.trim() || null,
+          // Los datos del contrato solo viajan si cambiaron: con un contrato por aceptar no se pueden modificar,
+          // y eso no debe impedir guardar la imagen o la descripción.
+          ...((legalName.trim() || null) !== (artist?.legal_name ?? null) ? { legal_name: legalName.trim() || null } : {}),
+          ...((docNumber.trim() || null) !== (artist?.doc_number ?? null) ? { doc_number: docNumber.trim() || null, doc_type: docType } : {}),
+          ...(docType !== (artist?.doc_type || 'cédula de ciudadanía') && docNumber.trim() ? { doc_type: docType } : {}),
+          ...((address.trim() || null) !== (artist?.address ?? null) ? { address: address.trim() || null } : {}),
+        },
+      });
       await load();
       setSaveMsg({ tone: 'ok', text: 'Perfil guardado.' });
     } catch (err) {
@@ -127,6 +154,9 @@ export default function ArtistProfilePage() {
               <h1 className="text-2xl md:text-4xl font-black uppercase tracking-wide text-white break-words">{artist.stage_name}</h1>
             </div>
           </header>
+
+          <ArtistContracts openId={contractId} onChanged={load} />
+          <ArtistDocsNotice userId={userId} stageName={artist.stage_name} upcoming={artist.bookings.filter((b) => !isEventOver(b.event.date)).map((b) => ({ id: b.id, title: b.event.title }))} />
 
           <div className="mb-5"><StatStrip fee={artist.total_fee} paid={artist.total_paid} pending={artist.pending} paidLabel="Recibido" /></div>
 
@@ -175,6 +205,7 @@ export default function ArtistProfilePage() {
                         <div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Recibido</p><p className="text-[13px] sm:text-sm font-black text-neon-green whitespace-nowrap">{formatCOP(b.paid)}</p></div>
                       </div>
                       {b.role && <p className="text-[11px] text-zinc-500 mt-2">{b.role}</p>}
+                      {!isEventOver(b.event.date) && <DocsReminder stageName={artist.stage_name} eventTitle={b.event.title} />}
                       <ArtistCourtesies booking={b} onChanged={load} />
                     </AccordionRow>
                   ))}
@@ -218,6 +249,30 @@ export default function ArtistProfilePage() {
                 <textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={1000} rows={4} className={`${inputCls} h-auto py-3`} />
               </div>
               <ImageUpload value={photo} onChange={setPhoto} folder="artists/photos" label="Tu imagen" shape="round" maxSide={1600} hint="Es la imagen que te identifica en tu página y en el cartel de los eventos. Guarda el perfil para aplicarla." />
+              <fieldset className="rounded-2xl border border-zinc-800 p-4 space-y-4">
+                <legend className="px-2 text-[10px] font-black uppercase tracking-widest text-zinc-400">Datos para tu contrato</legend>
+                <p className="text-[11px] font-bold text-zinc-500">Son privados: solo los ve la organización y figuran en tu contrato. No aparecen en tu página.</p>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2" htmlFor="legal-name">Nombre legal completo</label>
+                  <input id="legal-name" value={legalName} onChange={(e) => setLegalName(e.target.value)} maxLength={120} autoComplete="name" className={inputCls} />
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2" htmlFor="doc-type">Tipo de documento</label>
+                    <select id="doc-type" value={docType} onChange={(e) => setDocType(e.target.value)} className={inputCls}>
+                      {['cédula de ciudadanía', 'cédula de extranjería', 'pasaporte', 'NIT', 'permiso por protección temporal'].map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2" htmlFor="doc-number">Número de documento</label>
+                    <input id="doc-number" value={docNumber} onChange={(e) => setDocNumber(e.target.value)} maxLength={30} inputMode="numeric" className={inputCls} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2" htmlFor="legal-address">Domicilio</label>
+                  <input id="legal-address" value={address} onChange={(e) => setAddress(e.target.value)} maxLength={200} autoComplete="street-address" className={inputCls} />
+                </div>
+              </fieldset>
               {saveMsg && (
                 <p role="status" className={`text-xs font-bold flex items-center gap-1.5 ${saveMsg.tone === 'ok' ? 'text-neon-green' : 'text-red-400'}`}>
                   {saveMsg.tone === 'ok' && <CheckCircle2 className="w-4 h-4" />} {saveMsg.text}
