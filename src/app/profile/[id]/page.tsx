@@ -332,7 +332,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
            </div>
         </header>
 
-        <div className="mb-10 max-w-md mx-auto lg:mx-0"><ProfileTabs active="cuenta" userId={profile?.id} artist={!!profile?.artist_profile?.is_active} promoter={(profile?.promoter_codes?.length ?? 0) > 0} /></div>
+        <div className="mb-10 max-w-md mx-auto lg:mx-0"><ProfileTabs active="cuenta" userId={profile?.id} artist={!!profile?.artist_profile?.is_active} promoter={(profile?.promoter_codes?.length ?? 0) > 0} partner={typeof profile?.is_partner === 'boolean' ? profile.is_partner : undefined} /></div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
            <div className="lg:col-span-2 space-y-16">
